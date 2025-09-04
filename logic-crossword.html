@@ -64,6 +64,127 @@
             margin-bottom: 1rem;
         }
         
+        /* Upload Section Styles */
+        .upload-section {
+            margin-bottom: 3rem;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+        
+        .file-upload-container {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .file-upload {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .file-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .file-label:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .file-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-text {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .file-status {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            min-height: 1.2rem;
+        }
+        
+        .file-status.uploaded {
+            color: #4ade80;
+        }
+        
+        .file-status.error {
+            color: #f87171;
+        }
+        
+        .extract-button {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .extract-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+        }
+        
+        .extract-button:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        /* Results Section Styles */
+        .results-section {
+            margin-top: 2rem;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+        }
+        
+        .results-table th {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .results-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .results-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
         @media (max-width: 768px) {
             h1 {
                 font-size: 2rem;
@@ -72,6 +193,21 @@
             .nav a {
                 display: block;
                 margin: 0.5rem 0;
+            }
+            
+            .file-upload-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .file-label {
+                padding: 1.5rem;
+            }
+            
+            .results-table th,
+            .results-table td {
+                padding: 0.5rem;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -86,10 +222,98 @@
         <h1>Logic Crossword</h1>
         
         <div class="content">
-            <p>Welcome to the Logic Crossword page!</p>
-            <p>This is where you can experiment with logic-based crossword puzzles and AI coding tools.</p>
-            <p>More content coming soon...</p>
+            <div class="upload-section">
+                <h2>Upload Files</h2>
+                <div class="file-upload-container">
+                    <div class="file-upload">
+                        <label for="file1" class="file-label">
+                            <span class="file-icon">📄</span>
+                            <span class="file-text">Choose File 1</span>
+                            <input type="file" id="file1" accept=".txt,.pdf,.doc,.docx" style="display: none;">
+                        </label>
+                        <div id="file1-status" class="file-status"></div>
+                    </div>
+                    
+                    <div class="file-upload">
+                        <label for="file2" class="file-label">
+                            <span class="file-icon">📄</span>
+                            <span class="file-text">Choose File 2</span>
+                            <input type="file" id="file2" accept=".txt,.pdf,.doc,.docx" style="display: none;">
+                        </label>
+                        <div id="file2-status" class="file-status"></div>
+                    </div>
+                </div>
+                
+                <button id="extract-btn" class="extract-button" disabled>
+                    Extract Clues and Answers
+                </button>
+            </div>
+            
+            <div class="results-section">
+                <h2>Results</h2>
+                <div class="table-container">
+                    <table id="results-table" class="results-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>H/V</th>
+                                <th>Start Cell</th>
+                                <th>Clue</th>
+                                <th>Answer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Results will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <script>
+        // File upload handling
+        let uploadedFiles = { file1: null, file2: null };
+        
+        function updateExtractButton() {
+            const extractBtn = document.getElementById('extract-btn');
+            const bothFilesUploaded = uploadedFiles.file1 && uploadedFiles.file2;
+            extractBtn.disabled = !bothFilesUploaded;
+        }
+        
+        function handleFileUpload(fileInput, fileNumber) {
+            const file = fileInput.files[0];
+            const statusElement = document.getElementById(`file${fileNumber}-status`);
+            
+            if (file) {
+                uploadedFiles[`file${fileNumber}`] = file;
+                statusElement.textContent = `✅ ${file.name} uploaded`;
+                statusElement.className = 'file-status uploaded';
+            } else {
+                uploadedFiles[`file${fileNumber}`] = null;
+                statusElement.textContent = '';
+                statusElement.className = 'file-status';
+            }
+            
+            updateExtractButton();
+        }
+        
+        // Event listeners
+        document.getElementById('file1').addEventListener('change', function() {
+            handleFileUpload(this, 1);
+        });
+        
+        document.getElementById('file2').addEventListener('change', function() {
+            handleFileUpload(this, 2);
+        });
+        
+        document.getElementById('extract-btn').addEventListener('click', function() {
+            if (uploadedFiles.file1 && uploadedFiles.file2) {
+                // TODO: Add extraction logic here
+                console.log('Extracting clues from:', uploadedFiles.file1.name, 'and', uploadedFiles.file2.name);
+                alert('Extraction logic will be implemented next!');
+            }
+        });
+    </script>
 </body>
 </html>
