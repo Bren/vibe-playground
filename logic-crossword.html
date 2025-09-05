@@ -728,31 +728,61 @@
             }
             
             if (documentStructure.status === 'success') {
-                // Display horizontal clues
-                documentStructure.clues.horizontal.forEach(clue => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${clue.number}</td>
-                        <td>H</td>
-                        <td>Unknown</td>
-                        <td>${clue.text}</td>
-                        <td>Unknown</td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                console.log('=== DISPLAYING RESULTS ===');
+                console.log('Horizontal clues:', documentStructure.clues.horizontal);
+                console.log('Vertical clues:', documentStructure.clues.vertical);
                 
-                // Display vertical clues
-                documentStructure.clues.vertical.forEach(clue => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${clue.number}</td>
-                        <td>V</td>
-                        <td>Unknown</td>
-                        <td>${clue.text}</td>
-                        <td>Unknown</td>
+                // Add horizontal clues section header
+                if (documentStructure.clues.horizontal.length > 0) {
+                    const headerRow = document.createElement('tr');
+                    headerRow.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+                    headerRow.innerHTML = `
+                        <td colspan="5" style="text-align: center; font-weight: bold; color: #1976d2; padding: 10px;">
+                            🔄 HORIZONTAL CLUES (${documentStructure.clues.horizontal.length})
+                        </td>
                     `;
-                    tbody.appendChild(row);
-                });
+                    tbody.appendChild(headerRow);
+                    
+                    // Display horizontal clues
+                    documentStructure.clues.horizontal.forEach((clue, index) => {
+                        const row = document.createElement('tr');
+                        row.style.backgroundColor = index % 2 === 0 ? 'rgba(33, 150, 243, 0.05)' : 'transparent';
+                        row.innerHTML = `
+                            <td style="font-weight: bold; color: #1976d2; text-align: center;">${clue.number}</td>
+                            <td style="font-weight: bold; color: #1976d2; text-align: center;">H</td>
+                            <td style="color: #666; text-align: center;">TBD</td>
+                            <td style="text-align: right; direction: rtl; padding: 8px;">${clue.text}</td>
+                            <td style="color: #666; text-align: center;">TBD</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+                
+                // Add vertical clues section header
+                if (documentStructure.clues.vertical.length > 0) {
+                    const headerRow = document.createElement('tr');
+                    headerRow.style.backgroundColor = 'rgba(156, 39, 176, 0.1)';
+                    headerRow.innerHTML = `
+                        <td colspan="5" style="text-align: center; font-weight: bold; color: #7b1fa2; padding: 10px;">
+                            ⬇️ VERTICAL CLUES (${documentStructure.clues.vertical.length})
+                        </td>
+                    `;
+                    tbody.appendChild(headerRow);
+                    
+                    // Display vertical clues
+                    documentStructure.clues.vertical.forEach((clue, index) => {
+                        const row = document.createElement('tr');
+                        row.style.backgroundColor = index % 2 === 0 ? 'rgba(156, 39, 176, 0.05)' : 'transparent';
+                        row.innerHTML = `
+                            <td style="font-weight: bold; color: #7b1fa2; text-align: center;">${clue.number}</td>
+                            <td style="font-weight: bold; color: #7b1fa2; text-align: center;">V</td>
+                            <td style="color: #666; text-align: center;">TBD</td>
+                            <td style="text-align: right; direction: rtl; padding: 8px;">${clue.text}</td>
+                            <td style="color: #666; text-align: center;">TBD</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
                 
                 // Add summary row
                 if (documentStructure.clues.horizontal.length === 0 && documentStructure.clues.vertical.length === 0) {
@@ -761,7 +791,8 @@
                     tbody.appendChild(row);
                 } else {
                     const summaryRow = document.createElement('tr');
-                    summaryRow.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    summaryRow.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+                    summaryRow.style.border = '2px solid #4caf50';
                     
                     let gridInfo = '';
                     if (documentStructure.grid.status === 'success') {
@@ -770,18 +801,16 @@
                         const blockedCount = Object.values(documentStructure.grid.cells).filter(cell => cell.type === 'blocked').length;
                         const numberedCount = Object.values(documentStructure.grid.cells).filter(cell => cell.type === 'numbered').length;
                         
-                        gridInfo = ` Grid: ${rows}×${cols} (${cellCount} cells, ${blockedCount} blocked, ${numberedCount} numbered).`;
+                        gridInfo = ` | Grid: ${rows}×${cols} (${cellCount} cells, ${blockedCount} blocked, ${numberedCount} numbered)`;
                     } else if (documentStructure.grid.status === 'no_grid_found') {
-                        gridInfo = ' No grid pattern found in answers document.';
+                        gridInfo = ' | No grid pattern found in answers document';
                     } else if (documentStructure.grid.status === 'error') {
-                        gridInfo = ` Grid parsing error: ${documentStructure.grid.error}.`;
+                        gridInfo = ` | Grid parsing error: ${documentStructure.grid.error}`;
                     }
                     
                     summaryRow.innerHTML = `
-                        <td colspan="5">
-                            <strong>Summary:</strong> 
-                            ${documentStructure.clues.horizontal.length} horizontal clues, 
-                            ${documentStructure.clues.vertical.length} vertical clues found.${gridInfo}
+                        <td colspan="5" style="text-align: center; font-weight: bold; color: #2e7d32; padding: 15px;">
+                            📊 EXTRACTION SUCCESS: ${documentStructure.clues.horizontal.length} horizontal clues, ${documentStructure.clues.vertical.length} vertical clues found${gridInfo}
                         </td>
                     `;
                     tbody.appendChild(summaryRow);
