@@ -564,6 +564,10 @@
                 // Parse the grid structure
                 const grid = parseGridStructure(gridLines);
                 
+                // Extract numbered cells to identify clue numbers
+                const numberedCells = extractNumberedCells(grid);
+                grid.numberedCells = numberedCells;
+                
                 return grid;
             } catch (error) {
                 console.error('Grid extraction error:', error);
@@ -574,6 +578,28 @@
                     error: error.message
                 };
             }
+        }
+        
+        // Extract numbered cells from the grid
+        function extractNumberedCells(gridStructure) {
+            const numberedCells = [];
+            
+            for (const [cellId, cell] of Object.entries(gridStructure.cells)) {
+                if (cell.type === 'numbered' && cell.number) {
+                    numberedCells.push({
+                        cellId: cellId,
+                        number: cell.number,
+                        row: parseInt(cellId.match(/R(\d+)/)[1]),
+                        col: parseInt(cellId.match(/C(\d+)/)[1])
+                    });
+                }
+            }
+            
+            // Sort by number
+            numberedCells.sort((a, b) => a.number - b.number);
+            
+            console.log('Found numbered cells:', numberedCells);
+            return numberedCells;
         }
         
         // Find lines that look like crossword grid rows
@@ -768,6 +794,12 @@
                         const numberedCount = Object.values(documentStructure.grid.cells).filter(cell => cell.type === 'numbered').length;
                         
                         gridInfo = ` | Grid: ${rows}×${cols} (${cellCount} cells, ${blockedCount} blocked, ${numberedCount} numbered)`;
+                        
+                        // Show numbered cells if available
+                        if (documentStructure.grid.numberedCells && documentStructure.grid.numberedCells.length > 0) {
+                            const clueNumbers = documentStructure.grid.numberedCells.map(cell => cell.number).join(', ');
+                            gridInfo += ` | Clue numbers: ${clueNumbers}`;
+                        }
                     } else if (documentStructure.grid.status === 'no_grid_found') {
                         gridInfo = ' | No grid pattern found in answers document';
                     } else if (documentStructure.grid.status === 'error') {
