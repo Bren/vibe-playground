@@ -291,9 +291,6 @@
                 <button onclick="clearCache()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer;">
                     Clear Cache
                 </button>
-                <button onclick="testMode()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer;">
-                    Test Mode
-                </button>
             </div>
             
             <div class="results-section">
@@ -331,21 +328,6 @@
                 delete window.lastDocumentStructure;
             }
             console.log('Cache cleared completely');
-        }
-        
-        // Test mode with sample data
-        function testMode() {
-            console.log('=== TESTING WITH SAMPLE DATA ===');
-            clearCache();
-            
-            // Create mock files with the problematic content
-            const mockCluesFile = new File(['אופקי: 1. הספורטאית מתפנה להסדיר את חובה (עפ"י אלי מועלם) (מ) (5,5) 7. דפק לפני זמן רב (עפ"י איציק בלול) (3) אנכי: 1. נחלשו במדה מסוימת בשל שחמטאי (5) 2. צ:ז5! ,2ז5; 2. פ-ג8, צ-ב+1'], 'test-clues.txt', { type: 'text/plain' });
-            const mockAnswersFile = new File(['תשבץ היגיון פתרון'], 'test-answers.txt', { type: 'text/plain' });
-            
-            uploadedFiles.file1 = mockCluesFile;
-            uploadedFiles.file2 = mockAnswersFile;
-            
-            extractDocumentData(mockCluesFile, mockAnswersFile);
         }
         
         function updateExtractButton() {
