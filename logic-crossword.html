@@ -500,9 +500,9 @@
             const verticalClues = [];
             
             // Find the clue sections and extract clues from the full text
-            // Stop before chess riddle content
-            const horizontalMatch = text.match(/(?:אופקי|מאוזן):\s*(.*?)(?=(?:אנכי|מאונך):|חידת שחמט|פתרון החידה|$)/s);
-            const verticalMatch = text.match(/(?:אנכי|מאונך):\s*(.*?)(?=חידת שחמט|פתרון החידה|$)/s);
+            // Stop before chess riddle content and answer sections
+            const horizontalMatch = text.match(/(?:אופקי|מאוזן):\s*(.*?)(?=(?:אנכי|מאונך):|פתרון|חידת שחמט|פתרון החידה|$)/s);
+            const verticalMatch = text.match(/(?:אנכי|מאונך):\s*(.*?)(?=פתרון|חידת שחמט|פתרון החידה|$)/s);
             
             if (horizontalMatch) {
                 const horizontalText = horizontalMatch[1].trim();
@@ -550,7 +550,10 @@
                             /[τ;!][0-9]/.test(clueText) || /[0-9][τ;!]/.test(clueText) ||
                             clueText.includes('צ:') || clueText.includes('ז5') ||
                             // Skip very short content or content with no Hebrew
-                            clueText.length < 3 || (clueText.match(/[א-ת]/g) || []).length < 2) {
+                            clueText.length < 3 || (clueText.match(/[א-ת]/g) || []).length < 2 ||
+                            // Skip if it looks like an answer (no question marks, parentheses, or long descriptive text)
+                            (!clueText.includes('?') && !clueText.includes('(') && !clueText.includes(')') && 
+                             clueText.length < 10 && !clueText.includes('עפ"י') && !clueText.includes('כ"מ'))) {
                             console.log('Skipping invalid content:', clueText);
                             continue;
                         }
