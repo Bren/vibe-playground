@@ -287,6 +287,15 @@
                 </button>
             </div>
             
+            <div style="margin-top: 20px; text-align: center;">
+                <button onclick="clearCache()" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer;">
+                    Clear Cache
+                </button>
+                <button onclick="testMode()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer;">
+                    Test Mode
+                </button>
+            </div>
+            
             <div class="results-section">
                 <h2>Results</h2>
                 <div class="table-container">
@@ -312,6 +321,28 @@
     <script>
         // File upload handling
         let uploadedFiles = { file1: null, file2: null };
+        
+        // Clear any cached data
+        function clearCache() {
+            uploadedFiles = { file1: null, file2: null };
+            document.getElementById('results-table').querySelector('tbody').innerHTML = '';
+            console.log('Cache cleared');
+        }
+        
+        // Test mode with sample data
+        function testMode() {
+            console.log('=== TESTING WITH SAMPLE DATA ===');
+            clearCache();
+            
+            // Create mock files with the problematic content
+            const mockCluesFile = new File(['אופקי: 1. הספורטאית מתפנה להסדיר את חובה (עפ"י אלי מועלם) (מ) (5,5) 7. דפק לפני זמן רב (עפ"י איציק בלול) (3) אנכי: 1. נחלשו במדה מסוימת בשל שחמטאי (5) 2. צ:ז5! ,2ז5; 2. פ-ג8, צ-ב+1'], 'test-clues.txt', { type: 'text/plain' });
+            const mockAnswersFile = new File(['תשבץ היגיון פתרון'], 'test-answers.txt', { type: 'text/plain' });
+            
+            uploadedFiles.file1 = mockCluesFile;
+            uploadedFiles.file2 = mockAnswersFile;
+            
+            extractDocumentData(mockCluesFile, mockAnswersFile);
+        }
         
         function updateExtractButton() {
             const extractBtn = document.getElementById('extract-btn');
@@ -489,7 +520,7 @@
                 
                 // Split by clue numbers - look for patterns like "1. ", "7. ", "19. ", etc.
                 // Make sure we're getting actual crossword clues, not chess notation
-                const clueMatches = sectionText.match(/(\d+\.\s+[א-ת][^]*?(?=\d+\.|$))/g);
+                const clueMatches = sectionText.match(/(\d+\.\s+[א-ת][^]*?(?=\d+\.|צ:|פ-|מ-|$))/g);
                 
                 if (clueMatches) {
                     for (const clueMatch of clueMatches) {
@@ -505,11 +536,18 @@
                         // Remove trailing numbers that are the next clue number
                         clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
                         
-                        // Skip if this looks like chess notation or chess riddle content
+                        // Skip if this looks like chess notation, garbled content, or invalid clues
                         if (clueText.includes('פ-') || clueText.includes('צ-') || clueText.includes('מ-') || 
                             clueText.includes('חידת שחמט') || clueText.includes('פתרון החידה') ||
-                            clueText.includes('הלבן') || clueText.includes('השחור')) {
-                            console.log('Skipping chess-related content:', clueText);
+                            clueText.includes('הלבן') || clueText.includes('השחור') ||
+                            clueText.includes('τ') || clueText.includes(';') || clueText.includes('!') ||
+                            clueText.length < 3 || /^[0-9\s\.;:!τ\-]+$/.test(clueText) ||
+                            // Additional patterns for garbled content
+                            /[τ;!][0-9]/.test(clueText) || /[0-9][τ;!]/.test(clueText) ||
+                            clueText.includes('צ:') || clueText.includes('ז5') ||
+                            // Skip very short or mostly non-Hebrew content
+                            clueText.length < 5 || (clueText.match(/[א-ת]/g) || []).length < 3) {
+                            console.log('Skipping invalid content:', clueText);
                             continue;
                         }
                         
@@ -527,11 +565,30 @@
                         };
                         
                         console.log('Parsed clue:', clue);
+                        console.log('Raw clue text before filtering:', `"${clueText}"`);
                         clues.push(clue);
                     }
                 }
                 
-                return clues;
+                // Post-process to remove any remaining invalid clues
+                console.log('Starting post-processing filter on', clues.length, 'clues');
+                const validClues = clues.filter(clue => {
+                    const text = clue.text;
+                    console.log('Checking clue:', text);
+                    
+                    // Skip if contains garbled characters or chess notation
+                    if (text.includes('τ') || text.includes(';') || text.includes('!') ||
+                        text.includes('צ:') || text.includes('ז5') || text.includes('פ-') ||
+                        text.length < 5 || (text.match(/[א-ת]/g) || []).length < 3) {
+                        console.log('Post-filtering out invalid clue:', text);
+                        return false;
+                    }
+                    console.log('Keeping valid clue:', text);
+                    return true;
+                });
+                
+                console.log(`Filtered ${clues.length} clues down to ${validClues.length} valid clues`);
+                return validClues;
             }
             
             console.log('Final extracted clues:', { horizontal: horizontalClues.length, vertical: verticalClues.length });
@@ -727,8 +784,50 @@
             };
         }
         
+        // Helper function to validate if a clue is actually a valid crossword clue
+        function isValidClue(clue) {
+            const text = clue.text;
+            
+            console.log(`Validating clue: "${text}"`);
+            
+            // Skip if text is too short (less than 3 characters)
+            if (text.length < 3) {
+                console.log(`  - Too short: ${text.length} chars`);
+                return false;
+            }
+            
+            // Skip if text contains only numbers, symbols, or chess notation
+            if (/^[0-9\s\.;:!τ\-]+$/.test(text)) {
+                console.log(`  - Only symbols/numbers: ${text}`);
+                return false;
+            }
+            
+            // Skip if text contains chess notation patterns (τ, ;, !)
+            if (text.includes('τ') || text.includes(';') || text.includes('!')) {
+                console.log(`  - Contains chess notation: ${text}`);
+                return false;
+            }
+            
+            // Skip if text is mostly non-Hebrew characters
+            const hebrewChars = text.match(/[א-ת]/g);
+            if (!hebrewChars || hebrewChars.length < 2) {
+                console.log(`  - Not enough Hebrew chars: ${hebrewChars ? hebrewChars.length : 0}`);
+                return false;
+            }
+            
+            // Skip if text looks like corrupted PDF content
+            if (text.includes('τ') && text.length < 10) {
+                console.log(`  - Corrupted PDF content: ${text}`);
+                return false;
+            }
+            
+            console.log(`  - Valid clue: ${text}`);
+            return true;
+        }
+
         // Display results in the table
         function displayResults(documentStructure) {
+            console.log('displayResults function called with:', documentStructure);
             const tbody = document.querySelector('#results-table tbody');
             tbody.innerHTML = '';
             
@@ -743,10 +842,63 @@
                 console.log('=== DISPLAYING RESULTS ===');
                 console.log('Horizontal clues:', documentStructure.clues.horizontal);
                 console.log('Vertical clues:', documentStructure.clues.vertical);
+                console.log('STATUS IS SUCCESS - PROCEEDING WITH VALIDATION');
+                console.log('About to enter validation block...');
                 
-                // Display horizontal clues
-                if (documentStructure.clues.horizontal.length > 0) {
-                    documentStructure.clues.horizontal.forEach((clue, index) => {
+                // Get the numbered cells from the grid to filter clues
+                console.log('STEP 1: Getting numbered cells...');
+                const numberedCells = documentStructure.grid.numberedCells || [];
+                let validClueNumbers = numberedCells.map(cell => cell.number);
+                console.log('STEP 1 COMPLETE: numberedCells =', numberedCells);
+                
+                // Fallback: if no numbered cells found in grid, extract from clues themselves
+                if (validClueNumbers.length === 0) {
+                    console.log('No numbered cells found in grid, using clue numbers as fallback');
+                    const allClueNumbers = [
+                        ...documentStructure.clues.horizontal.map(clue => clue.number),
+                        ...documentStructure.clues.vertical.map(clue => clue.number)
+                    ];
+                    validClueNumbers = [...new Set(allClueNumbers)].sort((a, b) => a - b);
+                }
+                
+                console.log('Valid clue numbers from grid:', validClueNumbers);
+                console.log('About to start validation...');
+                
+                // Test the validation function
+                const testClue = { text: ';5τ2, !5τ:צ', number: 1 };
+                console.log('Testing validation function:', isValidClue(testClue));
+
+                // Filter clues to only show those that correspond to numbered cells AND are valid
+                console.log('=== CLUE VALIDATION DEBUG ===');
+                const validHorizontalClues = documentStructure.clues.horizontal.filter(clue => {
+                    const isValid = validClueNumbers.includes(clue.number) && isValidClue(clue);
+                    console.log(`Horizontal clue ${clue.number}: "${clue.text}" - Valid: ${isValid}`);
+                    return isValid;
+                });
+                const validVerticalClues = documentStructure.clues.vertical.filter(clue => {
+                    const isValid = validClueNumbers.includes(clue.number) && isValidClue(clue);
+                    console.log(`Vertical clue ${clue.number}: "${clue.text}" - Valid: ${isValid}`);
+                    return isValid;
+                });
+
+                console.log('Filtered horizontal clues:', validHorizontalClues);
+                console.log('Filtered vertical clues:', validVerticalClues);
+
+                // Filter out invalid clues before displaying
+                const displayHorizontalClues = validHorizontalClues.filter(clue => {
+                    const text = clue.text;
+                    // Skip garbled content
+                    if (text.includes('τ') || text.includes(';') || text.includes('!') ||
+                        text.includes('צ:') || text.includes('ז5') || text.length < 5) {
+                        console.log('Filtering out garbled clue:', text);
+                        return false;
+                    }
+                    return true;
+                });
+
+                // Display filtered horizontal clues
+                if (displayHorizontalClues.length > 0) {
+                    displayHorizontalClues.forEach((clue, index) => {
                         const row = document.createElement('tr');
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(33, 150, 243, 0.05)' : 'transparent';
                         row.innerHTML = `
@@ -760,9 +912,21 @@
                     });
                 }
                 
-                // Display vertical clues
-                if (documentStructure.clues.vertical.length > 0) {
-                    documentStructure.clues.vertical.forEach((clue, index) => {
+                // Filter out invalid clues before displaying
+                const displayVerticalClues = validVerticalClues.filter(clue => {
+                    const text = clue.text;
+                    // Skip garbled content
+                    if (text.includes('τ') || text.includes(';') || text.includes('!') ||
+                        text.includes('צ:') || text.includes('ז5') || text.length < 5) {
+                        console.log('Filtering out garbled clue:', text);
+                        return false;
+                    }
+                    return true;
+                });
+
+                // Display filtered vertical clues
+                if (displayVerticalClues.length > 0) {
+                    displayVerticalClues.forEach((clue, index) => {
                         const row = document.createElement('tr');
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(156, 39, 176, 0.05)' : 'transparent';
                         row.innerHTML = `
@@ -777,9 +941,9 @@
                 }
                 
                 // Add summary row
-                if (documentStructure.clues.horizontal.length === 0 && documentStructure.clues.vertical.length === 0) {
+                if (displayHorizontalClues.length === 0 && displayVerticalClues.length === 0) {
                     const row = document.createElement('tr');
-                    row.innerHTML = '<td colspan="5" style="color: white;">No clues found. Check if the document contains אופקי/אנכי sections.</td>';
+                    row.innerHTML = '<td colspan="5" style="color: white;">No valid clues found. Check if the document contains אופקי/אנכי sections.</td>';
                     tbody.appendChild(row);
                 } else {
                     const summaryRow = document.createElement('tr');
@@ -808,7 +972,7 @@
                     
                     summaryRow.innerHTML = `
                         <td colspan="5" style="text-align: center; font-weight: bold; color: white; padding: 15px;">
-                            📊 EXTRACTION SUCCESS: ${documentStructure.clues.horizontal.length} horizontal clues, ${documentStructure.clues.vertical.length} vertical clues found${gridInfo}
+                            📊 EXTRACTION SUCCESS: ${displayHorizontalClues.length} horizontal clues, ${displayVerticalClues.length} vertical clues found${gridInfo}
                         </td>
                     `;
                     tbody.appendChild(summaryRow);
