@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logic Crossword - drorbren.com</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
@@ -533,20 +535,18 @@
                         // Clean up the clue text more gently - preserve natural structure
                         // Find the answer length (last parentheses with only numbers/commas)
                         const answerLengthMatch = clueText.match(/\(([0-9,]+)\)\s*$/);
-                        let answerLength = '';
                         
                         if (answerLengthMatch) {
-                            answerLength = answerLengthMatch[1];
+                            const answerLength = answerLengthMatch[1];
                             // Remove the answer length from the end
                             clueText = clueText.replace(/\s*\([0-9,]+\)\s*$/, '').trim();
-                        }
-                        
-                        // Clean up extra spaces
-                        clueText = clueText.replace(/\s+/g, ' ').trim();
-                        
-                        // Add back the answer length in standard format
-                        if (answerLength) {
+                            // Clean up extra spaces
+                            clueText = clueText.replace(/\s+/g, ' ').trim();
+                            // Add back the answer length in standard format
                             clueText += ` (${answerLength})`;
+                        } else {
+                            // Clean up extra spaces
+                            clueText = clueText.replace(/\s+/g, ' ').trim();
                         }
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
