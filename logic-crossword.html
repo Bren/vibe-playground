@@ -523,8 +523,8 @@
                 const clues = [];
                 
                 // Split by clue numbers - look for patterns like "1. ", "7. ", "19. ", etc.
-                // Make sure we're getting actual crossword clues, not chess notation
-                const clueMatches = sectionText.match(/(\d+\.\s+[א-ת][^]*?(?=\d+\.|צ:|פ-|מ-|פתרון|מאוזן:|מאונך:|$))/g);
+                // Handle semicolon-separated format: "1. text (length); 5. text (length);"
+                const clueMatches = sectionText.match(/(\d+\.\s+[^;]*?\([^)]+\)[;.]?)/g);
                 
                 if (clueMatches) {
                     for (const clueMatch of clueMatches) {
@@ -534,26 +534,23 @@
                         
                         const clueNumber = parseInt(numberMatch[1]);
                         
-                        // Extract clue text (everything after the number and period)
+                        // Extract clue text (everything after the number and period, up to the answer length)
                         let clueText = clueMatch.replace(/^\d+\.\s*/, '').trim();
                         
-                        // Remove trailing numbers that are the next clue number
-                        clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
+                        // Remove trailing semicolon or period
+                        clueText = clueText.replace(/[;.]$/, '').trim();
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
                         if (clueText.includes('פ-') || clueText.includes('צ-') || clueText.includes('מ-') || 
                             clueText.includes('חידת שחמט') || clueText.includes('פתרון החידה') ||
                             clueText.includes('הלבן') || clueText.includes('השחור') ||
-                            clueText.includes('τ') || clueText.includes(';') || clueText.includes('!') ||
+                            clueText.includes('τ') || clueText.includes('!') ||
                             clueText.length < 3 || /^[0-9\s\.;:!τ\-]+$/.test(clueText) ||
                             // Additional patterns for garbled content
-                            /[τ;!][0-9]/.test(clueText) || /[0-9][τ;!]/.test(clueText) ||
+                            /[τ!][0-9]/.test(clueText) || /[0-9][τ!]/.test(clueText) ||
                             clueText.includes('צ:') || clueText.includes('ז5') ||
                             // Skip very short content or content with no Hebrew
-                            clueText.length < 3 || (clueText.match(/[א-ת]/g) || []).length < 2 ||
-                            // Skip if it looks like an answer (no question marks, parentheses, or long descriptive text)
-                            (!clueText.includes('?') && !clueText.includes('(') && !clueText.includes(')') && 
-                             clueText.length < 10 && !clueText.includes('עפ"י') && !clueText.includes('כ"מ'))) {
+                            clueText.length < 3 || (clueText.match(/[א-ת]/g) || []).length < 2) {
                             console.log('Skipping invalid content:', clueText);
                             continue;
                         }
