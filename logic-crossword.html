@@ -500,28 +500,40 @@
             const verticalAnswers = [];
             
             // Look for the solution section: "פתרון תשבץ הגיון מס' ####"
-            const solutionMatch = text.match(/פתרון תשבץ הגיון.*?\n(.*?)(?=\n\n|\n[א-ת]|$)/s);
+            const solutionMatch = text.match(/פתרון תשבץ הגיון.*?\s+(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
             
             if (solutionMatch) {
                 const solutionText = solutionMatch[1].trim();
                 console.log('Found solution section:', solutionText);
                 
                 // Within the solution section, find מאוזן and מאונך subsections
+                // The format appears to be mixed, so let's split differently
                 const horizontalSolutionMatch = solutionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
                 const verticalSolutionMatch = solutionText.match(/מאונך:\s*(.*?)$/s);
                 
-                if (horizontalSolutionMatch) {
+                // If the standard format doesn't work, try to parse the mixed format
+                if (!horizontalSolutionMatch && !verticalSolutionMatch) {
+                    console.log('Trying alternative parsing for mixed solution format');
+                    // Parse the entire solution text as one block and separate manually
+                    const allSolutions = solutionText;
+                    const horizontalAnswersFromText = parseSolutionsFromText(allSolutions, 'horizontal');
+                    const verticalAnswersFromText = parseSolutionsFromText(allSolutions, 'vertical');
+                    horizontalAnswers.push(...horizontalAnswersFromText);
+                    verticalAnswers.push(...verticalAnswersFromText);
+                } else {
+                    if (horizontalSolutionMatch) {
                     const horizontalText = horizontalSolutionMatch[1].trim();
                     console.log('Horizontal solutions section:', horizontalText);
                     const horizontalAnswersFromText = parseSolutionsFromText(horizontalText, 'horizontal');
                     horizontalAnswers.push(...horizontalAnswersFromText);
                 }
                 
-                if (verticalSolutionMatch) {
-                    const verticalText = verticalSolutionMatch[1].trim();
-                    console.log('Vertical solutions section:', verticalText);
-                    const verticalAnswersFromText = parseSolutionsFromText(verticalText, 'vertical');
-                    verticalAnswers.push(...verticalAnswersFromText);
+                    if (verticalSolutionMatch) {
+                        const verticalText = verticalSolutionMatch[1].trim();
+                        console.log('Vertical solutions section:', verticalText);
+                        const verticalAnswersFromText = parseSolutionsFromText(verticalText, 'vertical');
+                        verticalAnswers.push(...verticalAnswersFromText);
+                    }
                 }
             } else {
                 console.log('No solution section found in text');
@@ -541,35 +553,56 @@
             
             console.log('Parsing solutions from:', sectionType, 'section:', sectionText);
             
-            // Split by periods followed by numbers to separate individual answers
-            // Format is typically: "1. answer1 2. answer2 3. answer3" or "1. answer1; 2. answer2; 3. answer3"
-            const parts = sectionText.split(/(?=\d+\.)/);
+            // For mixed format, we need to look for patterns before and after מאוזן:/מאונך:
+            let textToParse = sectionText;
             
-            parts.forEach(part => {
-                part = part.trim();
-                if (!part) return;
+            if (sectionType === 'horizontal') {
+                // Look for solutions before מאוזן: and between מאוזן: and מאונך:
+                const beforeMaouzan = sectionText.match(/^(.*?)(?=מאוזן:|$)/s);
+                const afterMaouzan = sectionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
                 
-                // Extract number and answer text
-                const match = part.match(/^(\d+)\.\s*(.+?)(?=\s+\d+\.|;|\s*$)/);
-                if (match) {
-                    const number = parseInt(match[1]);
-                    let answerText = match[2].trim();
-                    
-                    // Clean up trailing punctuation and semicolons
-                    answerText = answerText.replace(/[;.\s]+$/, '').trim();
-                    
-                    if (answerText.length > 0) {
-                        const answer = {
-                            number: number,
-                            text: answerText,
-                            type: sectionType
-                        };
-                        
-                        console.log('Extracted solution:', answer);
-                        answers.push(answer);
-                    }
+                if (beforeMaouzan && beforeMaouzan[1].trim()) {
+                    textToParse = beforeMaouzan[1].trim();
+                } else if (afterMaouzan && afterMaouzan[1].trim()) {
+                    textToParse = afterMaouzan[1].trim();
                 }
-            });
+            } else if (sectionType === 'vertical') {
+                // Look for solutions after מאונך:
+                const afterMaounach = sectionText.match(/מאונך:\s*(.*?)$/s);
+                if (afterMaounach && afterMaounach[1].trim()) {
+                    textToParse = afterMaounach[1].trim();
+                }
+            }
+            
+            console.log('Text to parse for', sectionType, ':', textToParse);
+            
+            // Split by periods followed by numbers to separate individual answers
+            // Format is typically: "1. answer1 2. answer2 3. answer3"
+            const matches = textToParse.match(/(\d+)\.\s*([א-ת\s]+?)(?=\s+\d+\.|$)/g);
+            
+            if (matches) {
+                matches.forEach(match => {
+                    const numberMatch = match.match(/^(\d+)\.\s*(.+)$/);
+                    if (numberMatch) {
+                        const number = parseInt(numberMatch[1]);
+                        let answerText = numberMatch[2].trim();
+                        
+                        // Clean up trailing punctuation and extra spaces
+                        answerText = answerText.replace(/[;.\s]+$/, '').trim();
+                        
+                        if (answerText.length > 0 && /[א-ת]/.test(answerText)) {
+                            const answer = {
+                                number: number,
+                                text: answerText,
+                                type: sectionType
+                            };
+                            
+                            console.log('Extracted solution:', answer);
+                            answers.push(answer);
+                        }
+                    }
+                });
+            }
             
             return answers;
         }
