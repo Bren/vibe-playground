@@ -167,6 +167,7 @@
             width: 100%;
             border-collapse: collapse;
             background: transparent;
+            table-layout: fixed;
         }
         
         .results-table th {
@@ -180,6 +181,42 @@
         .results-table td {
             padding: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        
+        /* Column width constraints */
+        .results-table th:nth-child(1),
+        .results-table td:nth-child(1) {
+            width: 8%;
+            text-align: center;
+        }
+        
+        .results-table th:nth-child(2),
+        .results-table td:nth-child(2) {
+            width: 8%;
+            text-align: center;
+        }
+        
+        .results-table th:nth-child(3),
+        .results-table td:nth-child(3) {
+            width: 12%;
+            text-align: center;
+        }
+        
+        .results-table th:nth-child(4),
+        .results-table td:nth-child(4) {
+            width: 60%;
+            max-width: 0;
+            word-break: break-word;
+            white-space: normal;
+        }
+        
+        .results-table th:nth-child(5),
+        .results-table td:nth-child(5) {
+            width: 12%;
+            text-align: center;
         }
         
         .results-table tbody tr:hover {
@@ -748,11 +785,11 @@
                         const row = document.createElement('tr');
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(33, 150, 243, 0.05)' : 'transparent';
                         row.innerHTML = `
-                            <td style="font-weight: bold; color: #1976d2; text-align: center;">${clue.number}</td>
-                            <td style="font-weight: bold; color: #1976d2; text-align: center;">H</td>
-                            <td style="color: #666; text-align: center;">TBD</td>
-                            <td style="text-align: right; direction: rtl; padding: 8px;">${clue.text}</td>
-                            <td style="color: #666; text-align: center;">TBD</td>
+                            <td style="font-weight: bold; color: #1976d2;">${clue.number}</td>
+                            <td style="font-weight: bold; color: #1976d2;">H</td>
+                            <td style="color: #666;">TBD</td>
+                            <td style="text-align: right; direction: rtl;">${clue.text}</td>
+                            <td style="color: #666;">TBD</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -774,11 +811,11 @@
                         const row = document.createElement('tr');
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(156, 39, 176, 0.05)' : 'transparent';
                         row.innerHTML = `
-                            <td style="font-weight: bold; color: #7b1fa2; text-align: center;">${clue.number}</td>
-                            <td style="font-weight: bold; color: #7b1fa2; text-align: center;">V</td>
-                            <td style="color: #666; text-align: center;">TBD</td>
-                            <td style="text-align: right; direction: rtl; padding: 8px;">${clue.text}</td>
-                            <td style="color: #666; text-align: center;">TBD</td>
+                            <td style="font-weight: bold; color: #7b1fa2;">${clue.number}</td>
+                            <td style="font-weight: bold; color: #7b1fa2;">V</td>
+                            <td style="color: #666;">TBD</td>
+                            <td style="text-align: right; direction: rtl;">${clue.text}</td>
+                            <td style="color: #666;">TBD</td>
                         `;
                         tbody.appendChild(row);
                     });
