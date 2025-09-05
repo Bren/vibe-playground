@@ -520,14 +520,14 @@
                 // Skip empty lines
                 if (!line) continue;
                 
-                // Look for clue numbers with more flexible patterns
+                // Only process lines if we're in a clue section
+                if (!currentSection) continue;
+                
+                // Look for clue numbers with more precise patterns
                 const numberPatterns = [
-                    /^(\d+)[\.\)\s]/,
-                    /^(\d+)[\.\)]/,
-                    /^(\d+)\s/,
-                    /(\d+)[\.\)]\s/,
-                    /(\d+)\.\s/,  // Match "1. " pattern
-                    /(\d+)\s+[א-ת]/  // Match "1 Hebrew" pattern
+                    /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
+                    /^(\d+)\s+[א-ת]/,  // Match "1 Hebrew" at start of line
+                    /(\d+)[\.\)]\s+[א-ת]/  // Match "1. Hebrew" or "1) Hebrew" anywhere
                 ];
                 
                 let numberMatch = null;
@@ -562,9 +562,37 @@
                     currentClueText = line.substring(numberMatch[0].length).trim();
                     console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}"`);
                 } else if (currentClueNumber && currentClueText) {
-                    // Continue building current clue
-                    currentClueText += ' ' + line;
-                    console.log(`Continuing clue ${currentClueNumber}: "${currentClueText}"`);
+                    // Only continue building if this looks like part of the same clue
+                    // Check if this line starts with a number (new clue) or is very short (likely continuation)
+                    const startsWithNumber = /^\d+/.test(line);
+                    const isShortLine = line.length < 50;
+                    
+                    if (!startsWithNumber && isShortLine) {
+                        // Continue building current clue
+                        currentClueText += ' ' + line;
+                        console.log(`Continuing clue ${currentClueNumber}: "${currentClueText}"`);
+                    } else {
+                        // This looks like a new clue or unrelated content, save current clue first
+                        if (currentClueNumber && currentClueText && currentSection) {
+                            const clue = {
+                                number: currentClueNumber,
+                                text: currentClueText.trim(),
+                                type: currentSection
+                            };
+                            
+                            console.log('Saving clue:', clue);
+                            
+                            if (currentSection === 'horizontal') {
+                                horizontalClues.push(clue);
+                            } else if (currentSection === 'vertical') {
+                                verticalClues.push(clue);
+                            }
+                        }
+                        
+                        // Reset for potential new clue
+                        currentClueNumber = null;
+                        currentClueText = '';
+                    }
                 }
             }
             
