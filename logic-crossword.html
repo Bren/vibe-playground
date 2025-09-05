@@ -491,7 +491,7 @@
             }
         }
         
-        // Extract answers from text (similar to clues but from answers document)
+        // Extract answers from the solution section (פתרון תשבץ הגיון)
         function extractAnswers(text) {
             console.log('=== ANSWER EXTRACTION DEBUG ===');
             console.log('Answers text for analysis:', text.substring(0, 1000));
@@ -499,22 +499,32 @@
             const horizontalAnswers = [];
             const verticalAnswers = [];
             
-            // Find the answer sections - same structure as clues but with actual answers
-            const horizontalMatch = text.match(/(?:אופקי|מאוזן):\s*(.*?)(?=(?:אנכי|מאונך):|פתרון|חידת שחמט|פתרון החידה|$)/s);
-            const verticalMatch = text.match(/(?:אנכי|מאונך):\s*(.*?)(?=פתרון|חידת שחמט|פתרון החידה|$)/s);
+            // Look for the solution section: "פתרון תשבץ הגיון מס' ####"
+            const solutionMatch = text.match(/פתרון תשבץ הגיון.*?\n(.*?)(?=\n\n|\n[א-ת]|$)/s);
             
-            if (horizontalMatch) {
-                const horizontalText = horizontalMatch[1].trim();
-                console.log('Horizontal answers section:', horizontalText);
-                const horizontalAnswersFromText = parseAnswersFromText(horizontalText, 'horizontal');
-                horizontalAnswers.push(...horizontalAnswersFromText);
-            }
-            
-            if (verticalMatch) {
-                const verticalText = verticalMatch[1].trim();
-                console.log('Vertical answers section:', verticalText);
-                const verticalAnswersFromText = parseAnswersFromText(verticalText, 'vertical');
-                verticalAnswers.push(...verticalAnswersFromText);
+            if (solutionMatch) {
+                const solutionText = solutionMatch[1].trim();
+                console.log('Found solution section:', solutionText);
+                
+                // Within the solution section, find מאוזן and מאונך subsections
+                const horizontalSolutionMatch = solutionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
+                const verticalSolutionMatch = solutionText.match(/מאונך:\s*(.*?)$/s);
+                
+                if (horizontalSolutionMatch) {
+                    const horizontalText = horizontalSolutionMatch[1].trim();
+                    console.log('Horizontal solutions section:', horizontalText);
+                    const horizontalAnswersFromText = parseSolutionsFromText(horizontalText, 'horizontal');
+                    horizontalAnswers.push(...horizontalAnswersFromText);
+                }
+                
+                if (verticalSolutionMatch) {
+                    const verticalText = verticalSolutionMatch[1].trim();
+                    console.log('Vertical solutions section:', verticalText);
+                    const verticalAnswersFromText = parseSolutionsFromText(verticalText, 'vertical');
+                    verticalAnswers.push(...verticalAnswersFromText);
+                }
+            } else {
+                console.log('No solution section found in text');
             }
             
             console.log('Final extracted answers: {horizontal:', horizontalAnswers.length, ', vertical:', verticalAnswers.length, '}');
@@ -525,40 +535,41 @@
             };
         }
         
-        // Parse answers from text section (similar to parseCluesFromText but for answers)
-        function parseAnswersFromText(sectionText, sectionType) {
+        // Parse solutions from the solution section (format: "1. בוטפליקה 2. טלי 3. קלוני")
+        function parseSolutionsFromText(sectionText, sectionType) {
             const answers = [];
             
-            // Use same regex pattern as clues to find numbered entries
-            const clueMatches = sectionText.match(/(\d+\.\s+[^]*?(?=\d+\.|$))/g);
+            console.log('Parsing solutions from:', sectionType, 'section:', sectionText);
             
-            if (clueMatches) {
-                clueMatches.forEach(match => {
-                    const numberMatch = match.match(/^(\d+)\./);
-                    if (numberMatch) {
-                        const number = parseInt(numberMatch[1]);
+            // Split by periods followed by numbers to separate individual answers
+            // Format is typically: "1. answer1 2. answer2 3. answer3" or "1. answer1; 2. answer2; 3. answer3"
+            const parts = sectionText.split(/(?=\d+\.)/);
+            
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                
+                // Extract number and answer text
+                const match = part.match(/^(\d+)\.\s*(.+?)(?=\s+\d+\.|;|\s*$)/);
+                if (match) {
+                    const number = parseInt(match[1]);
+                    let answerText = match[2].trim();
+                    
+                    // Clean up trailing punctuation and semicolons
+                    answerText = answerText.replace(/[;.\s]+$/, '').trim();
+                    
+                    if (answerText.length > 0) {
+                        const answer = {
+                            number: number,
+                            text: answerText,
+                            type: sectionType
+                        };
                         
-                        // Extract the answer text (everything after the number)
-                        let answerText = match.replace(/^\d+\.\s*/, '').trim();
-                        
-                        // Clean up trailing punctuation
-                        answerText = answerText.replace(/[;.]$/, '').trim();
-                        
-                        // For answers, we expect shorter text that's the actual answer
-                        // Skip if it looks like a question rather than an answer
-                        if (answerText.length > 3 && answerText.length < 100) {
-                            const answer = {
-                                number: number,
-                                text: answerText,
-                                type: sectionType
-                            };
-                            
-                            console.log('Extracted answer:', answer);
-                            answers.push(answer);
-                        }
+                        console.log('Extracted solution:', answer);
+                        answers.push(answer);
                     }
-                });
-            }
+                }
+            });
             
             return answers;
         }
