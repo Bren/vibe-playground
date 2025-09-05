@@ -482,6 +482,7 @@
             let currentSection = null;
             let currentClueNumber = null;
             let currentClueText = '';
+            let currentAnswerLength = '';
             
             // Look for various patterns that might indicate clue sections
             const sectionPatterns = [
@@ -573,25 +574,52 @@
                     // Start new clue
                     currentClueNumber = parseInt(numberMatch[1]);
                     
-                    // Extract clue text - keep the full clue including the number
+                    // Extract clue text - parse the full clue format
                     let clueText = '';
+                    let answerLength = '';
+                    
                     if (numberMatch[0].includes('.')) {
-                        // Format: "1. text" - keep the full clue starting with the number
-                        clueText = line.trim();
+                        // Format: "1. text (answer_length)" - extract the clue text
+                        const fullLine = line.trim();
+                        
+                        // Find the answer length pattern at the end (e.g., "(3)", "(5,5)", "(2,4)")
+                        const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
+                        if (answerLengthMatch) {
+                            answerLength = answerLengthMatch[1];
+                            // Remove the answer length from the clue text
+                            clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                        } else {
+                            clueText = fullLine;
+                        }
                     } else if (numberMatch[0].includes(')')) {
-                        // Format: "1) text" - keep the full clue starting with the number
-                        clueText = line.trim();
+                        // Format: "1) text (answer_length)" - extract the clue text
+                        const fullLine = line.trim();
+                        
+                        // Find the answer length pattern at the end
+                        const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
+                        if (answerLengthMatch) {
+                            answerLength = answerLengthMatch[1];
+                            clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                        } else {
+                            clueText = fullLine;
+                        }
                     } else {
-                        // Format: "1 text" - keep the full clue starting with the number
-                        clueText = line.trim();
+                        // Format: "1 text (answer_length)" - extract the clue text
+                        const fullLine = line.trim();
+                        
+                        // Find the answer length pattern at the end
+                        const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
+                        if (answerLengthMatch) {
+                            answerLength = answerLengthMatch[1];
+                            clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                        } else {
+                            clueText = fullLine;
+                        }
                     }
                     
-                    // Clean up the clue text - remove trailing numbers and extra text
-                    // The clue should end before any trailing numbers like "7" or "8"
-                    clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
-                    
                     currentClueText = clueText;
-                    console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}"`);
+                    currentAnswerLength = answerLength;
+                    console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}" (Answer: ${answerLength})`);
                 } else if (currentClueNumber && currentClueText) {
                     // Check if this line starts with a number (new clue)
                     const startsWithNumber = /^\d+/.test(line);
@@ -603,9 +631,12 @@
                     } else {
                         // This looks like a new clue, save current clue first
                         if (currentClueNumber && currentClueText && currentSection) {
+                            const direction = currentSection === 'horizontal' ? 'H' : 'V';
                             const clue = {
                                 number: currentClueNumber,
+                                direction: direction,
                                 text: currentClueText.trim(),
+                                answerLength: currentAnswerLength,
                                 type: currentSection
                             };
                             
@@ -621,15 +652,19 @@
                         // Reset for potential new clue
                         currentClueNumber = null;
                         currentClueText = '';
+                        currentAnswerLength = '';
                     }
                 }
             }
             
             // Don't forget the last clue
             if (currentClueNumber && currentClueText && currentSection) {
+                const direction = currentSection === 'horizontal' ? 'H' : 'V';
                 const clue = {
                     number: currentClueNumber,
+                    direction: direction,
                     text: currentClueText.trim(),
+                    answerLength: currentAnswerLength,
                     type: currentSection
                 };
                 
@@ -843,10 +878,10 @@
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(33, 150, 243, 0.05)' : 'transparent';
                         row.innerHTML = `
                             <td style="font-weight: bold; color: #1976d2;">${clue.number}</td>
-                            <td style="font-weight: bold; color: #1976d2;">H</td>
+                            <td style="font-weight: bold; color: #1976d2;">${clue.direction || 'H'}</td>
                             <td style="color: #666;">TBD</td>
                             <td style="text-align: right; direction: rtl;">${clue.text}</td>
-                            <td style="color: #666;">TBD</td>
+                            <td style="color: #666;">${clue.answerLength || 'TBD'}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -869,10 +904,10 @@
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(156, 39, 176, 0.05)' : 'transparent';
                         row.innerHTML = `
                             <td style="font-weight: bold; color: #7b1fa2;">${clue.number}</td>
-                            <td style="font-weight: bold; color: #7b1fa2;">V</td>
+                            <td style="font-weight: bold; color: #7b1fa2;">${clue.direction || 'V'}</td>
                             <td style="color: #666;">TBD</td>
                             <td style="text-align: right; direction: rtl;">${clue.text}</td>
-                            <td style="color: #666;">TBD</td>
+                            <td style="color: #666;">${clue.answerLength || 'TBD'}</td>
                         `;
                         tbody.appendChild(row);
                     });
