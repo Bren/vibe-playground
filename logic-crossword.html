@@ -456,11 +456,18 @@
                 // Extract clues from the clues document
                 const clues = extractClues(cluesText);
                 
+                // Extract answers from the answers document
+                const answers = extractAnswers(answersText);
+                
+                // Match clues with answers
+                const matchedClues = matchCluesWithAnswers(clues, answers);
+                
                 // Extract grid from the answers document
                 const grid = extractGrid(answersText);
                 
                 return {
-                    clues: clues,
+                    clues: matchedClues,
+                    answers: answers,
                     grid: grid,
                     status: 'success'
                 };
@@ -473,6 +480,121 @@
                     error: error.message
                 };
             }
+        }
+        
+        // Extract answers from text (similar to clues but from answers document)
+        function extractAnswers(text) {
+            console.log('=== ANSWER EXTRACTION DEBUG ===');
+            console.log('Answers text for analysis:', text.substring(0, 1000));
+            
+            const horizontalAnswers = [];
+            const verticalAnswers = [];
+            
+            // Find the answer sections - same structure as clues but with actual answers
+            const horizontalMatch = text.match(/(?:אופקי|מאוזן):\s*(.*?)(?=(?:אנכי|מאונך):|פתרון|חידת שחמט|פתרון החידה|$)/s);
+            const verticalMatch = text.match(/(?:אנכי|מאונך):\s*(.*?)(?=פתרון|חידת שחמט|פתרון החידה|$)/s);
+            
+            if (horizontalMatch) {
+                const horizontalText = horizontalMatch[1].trim();
+                console.log('Horizontal answers section:', horizontalText);
+                const horizontalAnswersFromText = parseAnswersFromText(horizontalText, 'horizontal');
+                horizontalAnswers.push(...horizontalAnswersFromText);
+            }
+            
+            if (verticalMatch) {
+                const verticalText = verticalMatch[1].trim();
+                console.log('Vertical answers section:', verticalText);
+                const verticalAnswersFromText = parseAnswersFromText(verticalText, 'vertical');
+                verticalAnswers.push(...verticalAnswersFromText);
+            }
+            
+            console.log('Final extracted answers: {horizontal:', horizontalAnswers.length, ', vertical:', verticalAnswers.length, '}');
+            
+            return {
+                horizontal: horizontalAnswers,
+                vertical: verticalAnswers
+            };
+        }
+        
+        // Parse answers from text section (similar to parseCluesFromText but for answers)
+        function parseAnswersFromText(sectionText, sectionType) {
+            const answers = [];
+            
+            // Use same regex pattern as clues to find numbered entries
+            const clueMatches = sectionText.match(/(\d+\.\s+[^]*?(?=\d+\.|$))/g);
+            
+            if (clueMatches) {
+                clueMatches.forEach(match => {
+                    const numberMatch = match.match(/^(\d+)\./);
+                    if (numberMatch) {
+                        const number = parseInt(numberMatch[1]);
+                        
+                        // Extract the answer text (everything after the number)
+                        let answerText = match.replace(/^\d+\.\s*/, '').trim();
+                        
+                        // Clean up trailing punctuation
+                        answerText = answerText.replace(/[;.]$/, '').trim();
+                        
+                        // For answers, we expect shorter text that's the actual answer
+                        // Skip if it looks like a question rather than an answer
+                        if (answerText.length > 3 && answerText.length < 100) {
+                            const answer = {
+                                number: number,
+                                text: answerText,
+                                type: sectionType
+                            };
+                            
+                            console.log('Extracted answer:', answer);
+                            answers.push(answer);
+                        }
+                    }
+                });
+            }
+            
+            return answers;
+        }
+        
+        // Match clues with their corresponding answers
+        function matchCluesWithAnswers(clues, answers) {
+            console.log('=== MATCHING CLUES WITH ANSWERS ===');
+            
+            // Create lookup maps for answers
+            const horizontalAnswerMap = new Map();
+            const verticalAnswerMap = new Map();
+            
+            answers.horizontal.forEach(answer => {
+                horizontalAnswerMap.set(answer.number, answer.text);
+            });
+            
+            answers.vertical.forEach(answer => {
+                verticalAnswerMap.set(answer.number, answer.text);
+            });
+            
+            // Match horizontal clues with answers
+            const matchedHorizontalClues = clues.horizontal.map(clue => {
+                const answer = horizontalAnswerMap.get(clue.number);
+                return {
+                    ...clue,
+                    answer: answer || 'TBD'
+                };
+            });
+            
+            // Match vertical clues with answers
+            const matchedVerticalClues = clues.vertical.map(clue => {
+                const answer = verticalAnswerMap.get(clue.number);
+                return {
+                    ...clue,
+                    answer: answer || 'TBD'
+                };
+            });
+            
+            console.log('Matched horizontal clues:', matchedHorizontalClues.length);
+            console.log('Matched vertical clues:', matchedVerticalClues.length);
+            
+            return {
+                horizontal: matchedHorizontalClues,
+                vertical: matchedVerticalClues
+            };
         }
         
         // Extract clues from text
@@ -915,7 +1037,7 @@
                             <td style="font-weight: bold; color: white;">${clue.direction || 'H'}</td>
                             <td style="color: white;">TBD</td>
                             <td style="text-align: right; direction: rtl; color: white;">${clue.text}</td>
-                            <td style="color: white;">${clue.answerLength || 'TBD'}</td>
+                            <td style="color: white;">${clue.answer || 'TBD'}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -943,7 +1065,7 @@
                             <td style="font-weight: bold; color: white;">${clue.direction || 'V'}</td>
                             <td style="color: white;">TBD</td>
                             <td style="text-align: right; direction: rtl; color: white;">${clue.text}</td>
-                            <td style="color: white;">${clue.answerLength || 'TBD'}</td>
+                            <td style="color: white;">${clue.answer || 'TBD'}</td>
                         `;
                         tbody.appendChild(row);
                     });
