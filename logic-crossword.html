@@ -567,15 +567,13 @@
                         }
                         
                         // The answer length is part of the clue text, not separate
-                        let answerLength = '';
-                        
                         const direction = sectionType === 'horizontal' ? 'H' : 'V';
                         
                         const clue = {
                             number: clueNumber,
                             direction: direction,
                             text: clueText,
-                            answerLength: answerLength,
+                            answerLength: '', // Answer length is now part of the text
                             type: sectionType
                         };
                         
