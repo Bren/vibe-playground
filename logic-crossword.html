@@ -534,13 +534,13 @@
                     console.log(`HORIZONTAL DEBUG - Line ${i}: "${line}"`);
                 }
                 
-                // Look for clue numbers with more flexible patterns
+                // Look for clue numbers - prioritize patterns that match the actual format
                 const numberPatterns = [
                     /^(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" at start of line
                     /^(\d+)\s+[א-ת]/,  // Match "1 Hebrew" at start of line
+                    /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
                     /(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" or "1) Hebrew" anywhere
                     /(\d+)\s+[א-ת]/,  // Match "1 Hebrew" anywhere
-                    /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
                     /(\d+)[\.\)]\s/  // Match "1. " or "1) " anywhere
                 ];
                 
@@ -578,44 +578,21 @@
                     let clueText = '';
                     let answerLength = '';
                     
-                    if (numberMatch[0].includes('.')) {
-                        // Format: "1. text (answer_length)" - extract the clue text
-                        const fullLine = line.trim();
-                        
-                        // Find the answer length pattern at the end (e.g., "(3)", "(5,5)", "(2,4)")
-                        const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
-                        if (answerLengthMatch) {
-                            answerLength = answerLengthMatch[1];
-                            // Remove the answer length from the clue text
-                            clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                        } else {
-                            clueText = fullLine;
-                        }
-                    } else if (numberMatch[0].includes(')')) {
-                        // Format: "1) text (answer_length)" - extract the clue text
-                        const fullLine = line.trim();
-                        
-                        // Find the answer length pattern at the end
-                        const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
-                        if (answerLengthMatch) {
-                            answerLength = answerLengthMatch[1];
-                            clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                        } else {
-                            clueText = fullLine;
-                        }
+                    const fullLine = line.trim();
+                    
+                    // Find the answer length pattern at the end (e.g., "(3)", "(5,5)", "(2,4)")
+                    const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
+                    if (answerLengthMatch) {
+                        answerLength = answerLengthMatch[1];
+                        // Remove the answer length from the clue text
+                        clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
                     } else {
-                        // Format: "1 text (answer_length)" - extract the clue text
-                        const fullLine = line.trim();
-                        
-                        // Find the answer length pattern at the end
-                        const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
-                        if (answerLengthMatch) {
-                            answerLength = answerLengthMatch[1];
-                            clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                        } else {
-                            clueText = fullLine;
-                        }
+                        clueText = fullLine;
                     }
+                    
+                    // Remove trailing numbers that are actually the next clue number
+                    // Pattern: remove numbers at the end that are not part of the answer length
+                    clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
                     
                     currentClueText = clueText;
                     currentAnswerLength = answerLength;
