@@ -326,7 +326,11 @@
         function clearCache() {
             uploadedFiles = { file1: null, file2: null };
             document.getElementById('results-table').querySelector('tbody').innerHTML = '';
-            console.log('Cache cleared');
+            // Clear any global variables that might be holding data
+            if (typeof window.lastDocumentStructure !== 'undefined') {
+                delete window.lastDocumentStructure;
+            }
+            console.log('Cache cleared completely');
         }
         
         // Test mode with sample data
@@ -497,8 +501,8 @@
             
             // Find the clue sections and extract clues from the full text
             // Stop before chess riddle content
-            const horizontalMatch = text.match(/אופקי:\s*(.*?)(?=אנכי:|חידת שחמט|פתרון החידה|$)/s);
-            const verticalMatch = text.match(/אנכי:\s*(.*?)(?=חידת שחמט|פתרון החידה|$)/s);
+            const horizontalMatch = text.match(/(?:אופקי|מאוזן):\s*(.*?)(?=(?:אנכי|מאונך):|חידת שחמט|פתרון החידה|$)/s);
+            const verticalMatch = text.match(/(?:אנכי|מאונך):\s*(.*?)(?=חידת שחמט|פתרון החידה|$)/s);
             
             if (horizontalMatch) {
                 const horizontalText = horizontalMatch[1].trim();
@@ -864,9 +868,7 @@
                 console.log('Valid clue numbers from grid:', validClueNumbers);
                 console.log('About to start validation...');
                 
-                // Test the validation function
-                const testClue = { text: ';5τ2, !5τ:צ', number: 1 };
-                console.log('Testing validation function:', isValidClue(testClue));
+                // Test the validation function (removed to avoid confusion)
 
                 // Filter clues to only show those that correspond to numbered cells AND are valid
                 console.log('=== CLUE VALIDATION DEBUG ===');
