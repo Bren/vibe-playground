@@ -424,30 +424,68 @@
             const horizontalClues = [];
             const verticalClues = [];
             
+            console.log('=== CLUE EXTRACTION DEBUG ===');
+            console.log('Full text for analysis:', text);
+            
             // Split text into lines for processing
             const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            console.log('Total lines to process:', lines.length);
             
             let currentSection = null;
             let currentClueNumber = null;
             let currentClueText = '';
             
+            // Look for various patterns that might indicate clue sections
+            const sectionPatterns = [
+                /אופקי/gi,
+                /אופק/gi,
+                /אנכי/gi,
+                /אנכ/gi,
+                /horizontal/gi,
+                /vertical/gi,
+                /across/gi,
+                /down/gi
+            ];
+            
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
+                console.log(`Processing line ${i}: "${line}"`);
                 
-                // Check for section headers
-                if (line.includes('אופקי') || line.includes('אופק')) {
-                    currentSection = 'horizontal';
-                    continue;
-                } else if (line.includes('אנכי') || line.includes('אנכ')) {
-                    currentSection = 'vertical';
-                    continue;
+                // Check for section headers with more flexible patterns
+                let foundSection = false;
+                for (const pattern of sectionPatterns) {
+                    if (pattern.test(line)) {
+                        if (pattern.source.includes('אופק') || pattern.source.includes('horizontal') || pattern.source.includes('across')) {
+                            currentSection = 'horizontal';
+                            console.log('Found horizontal section:', line);
+                        } else if (pattern.source.includes('אנכ') || pattern.source.includes('vertical') || pattern.source.includes('down')) {
+                            currentSection = 'vertical';
+                            console.log('Found vertical section:', line);
+                        }
+                        foundSection = true;
+                        break;
+                    }
                 }
+                
+                if (foundSection) continue;
                 
                 // Skip empty lines
                 if (!line) continue;
                 
-                // Look for clue numbers (Hebrew or Arabic numerals)
-                const numberMatch = line.match(/^(\d+)[\.\)\s]/);
+                // Look for clue numbers with more flexible patterns
+                const numberPatterns = [
+                    /^(\d+)[\.\)\s]/,
+                    /^(\d+)[\.\)]/,
+                    /^(\d+)\s/,
+                    /(\d+)[\.\)]\s/
+                ];
+                
+                let numberMatch = null;
+                for (const pattern of numberPatterns) {
+                    numberMatch = line.match(pattern);
+                    if (numberMatch) break;
+                }
+                
                 if (numberMatch) {
                     // Save previous clue if exists
                     if (currentClueNumber && currentClueText && currentSection) {
@@ -456,6 +494,8 @@
                             text: currentClueText.trim(),
                             type: currentSection
                         };
+                        
+                        console.log('Saving clue:', clue);
                         
                         if (currentSection === 'horizontal') {
                             horizontalClues.push(clue);
@@ -467,9 +507,11 @@
                     // Start new clue
                     currentClueNumber = parseInt(numberMatch[1]);
                     currentClueText = line.substring(numberMatch[0].length).trim();
+                    console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}"`);
                 } else if (currentClueNumber && currentClueText) {
                     // Continue building current clue
                     currentClueText += ' ' + line;
+                    console.log(`Continuing clue ${currentClueNumber}: "${currentClueText}"`);
                 }
             }
             
@@ -481,6 +523,8 @@
                     type: currentSection
                 };
                 
+                console.log('Saving final clue:', clue);
+                
                 if (currentSection === 'horizontal') {
                     horizontalClues.push(clue);
                 } else if (currentSection === 'vertical') {
@@ -488,7 +532,9 @@
                 }
             }
             
-            console.log('Extracted clues:', { horizontal: horizontalClues.length, vertical: verticalClues.length });
+            console.log('Final extracted clues:', { horizontal: horizontalClues.length, vertical: verticalClues.length });
+            console.log('Horizontal clues:', horizontalClues);
+            console.log('Vertical clues:', verticalClues);
             
             return {
                 horizontal: horizontalClues,
