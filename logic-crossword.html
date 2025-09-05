@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logic Crossword - drorbren.com</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -309,11 +310,113 @@
         
         document.getElementById('extract-btn').addEventListener('click', function() {
             if (uploadedFiles.file1 && uploadedFiles.file2) {
-                // TODO: Add extraction logic here
-                console.log('Extracting clues from:', uploadedFiles.file1.name, 'and', uploadedFiles.file2.name);
-                alert('Extraction logic will be implemented next!');
+                extractDocumentData(uploadedFiles.file1, uploadedFiles.file2);
             }
         });
+        
+        // Document extraction logic
+        async function extractDocumentData(cluesFile, answersFile) {
+            try {
+                console.log('Starting extraction from:', cluesFile.name, 'and', answersFile.name);
+                
+                // Extract text from both files
+                const cluesText = await extractTextFromFile(cluesFile);
+                const answersText = await extractTextFromFile(answersFile);
+                
+                console.log('Clues text extracted:', cluesText.substring(0, 200) + '...');
+                console.log('Answers text extracted:', answersText.substring(0, 200) + '...');
+                
+                // Parse document structure
+                const documentStructure = parseDocumentStructure(cluesText, answersText);
+                
+                console.log('Document structure:', documentStructure);
+                
+                // Display results in table
+                displayResults(documentStructure);
+                
+            } catch (error) {
+                console.error('Extraction failed:', error);
+                alert('Extraction failed: ' + error.message);
+            }
+        }
+        
+        // Extract text from file (PDF or text)
+        async function extractTextFromFile(file) {
+            return new Promise((resolve, reject) => {
+                if (file.type === 'application/pdf') {
+                    // Handle PDF files with PDF.js
+                    const reader = new FileReader();
+                    
+                    reader.onload = async function(e) {
+                        try {
+                            const arrayBuffer = e.target.result;
+                            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                            let fullText = '';
+                            
+                            // Extract text from all pages
+                            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                                const page = await pdf.getPage(pageNum);
+                                const textContent = await page.getTextContent();
+                                const pageText = textContent.items.map(item => item.str).join(' ');
+                                fullText += pageText + '\n';
+                            }
+                            
+                            resolve(fullText);
+                        } catch (error) {
+                            reject(new Error('Failed to parse PDF: ' + error.message));
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        reject(new Error('Failed to read PDF file'));
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    // Handle text files
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        resolve(e.target.result);
+                    };
+                    
+                    reader.onerror = function() {
+                        reject(new Error('Failed to read text file'));
+                    };
+                    
+                    reader.readAsText(file);
+                }
+            });
+        }
+        
+        // Parse document structure
+        function parseDocumentStructure(cluesText, answersText) {
+            // This is where we'll implement the parsing logic
+            // For now, return a mock structure
+            return {
+                clues: {
+                    horizontal: [],
+                    vertical: []
+                },
+                grid: {
+                    size: { rows: 0, cols: 0 },
+                    cells: {}
+                },
+                status: 'parsing_not_implemented'
+            };
+        }
+        
+        // Display results in the table
+        function displayResults(documentStructure) {
+            const tbody = document.querySelector('#results-table tbody');
+            tbody.innerHTML = '';
+            
+            if (documentStructure.status === 'parsing_not_implemented') {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5">PDF parsing not yet implemented. Working on text extraction...</td>';
+                tbody.appendChild(row);
+            }
+        }
     </script>
 </body>
 </html>
