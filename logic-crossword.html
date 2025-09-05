@@ -391,18 +391,114 @@
         
         // Parse document structure
         function parseDocumentStructure(cluesText, answersText) {
-            // This is where we'll implement the parsing logic
-            // For now, return a mock structure
+            try {
+                // Extract clues from the clues document
+                const clues = extractClues(cluesText);
+                
+                // Extract grid from the answers document
+                const grid = extractGrid(answersText);
+                
+                return {
+                    clues: clues,
+                    grid: grid,
+                    status: 'success'
+                };
+            } catch (error) {
+                console.error('Parsing error:', error);
+                return {
+                    clues: { horizontal: [], vertical: [] },
+                    grid: { size: { rows: 0, cols: 0 }, cells: {} },
+                    status: 'error',
+                    error: error.message
+                };
+            }
+        }
+        
+        // Extract clues from text
+        function extractClues(text) {
+            const horizontalClues = [];
+            const verticalClues = [];
+            
+            // Split text into lines for processing
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            
+            let currentSection = null;
+            let currentClueNumber = null;
+            let currentClueText = '';
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                
+                // Check for section headers
+                if (line.includes('אופקי') || line.includes('אופק')) {
+                    currentSection = 'horizontal';
+                    continue;
+                } else if (line.includes('אנכי') || line.includes('אנכ')) {
+                    currentSection = 'vertical';
+                    continue;
+                }
+                
+                // Skip empty lines
+                if (!line) continue;
+                
+                // Look for clue numbers (Hebrew or Arabic numerals)
+                const numberMatch = line.match(/^(\d+)[\.\)\s]/);
+                if (numberMatch) {
+                    // Save previous clue if exists
+                    if (currentClueNumber && currentClueText && currentSection) {
+                        const clue = {
+                            number: currentClueNumber,
+                            text: currentClueText.trim(),
+                            type: currentSection
+                        };
+                        
+                        if (currentSection === 'horizontal') {
+                            horizontalClues.push(clue);
+                        } else if (currentSection === 'vertical') {
+                            verticalClues.push(clue);
+                        }
+                    }
+                    
+                    // Start new clue
+                    currentClueNumber = parseInt(numberMatch[1]);
+                    currentClueText = line.substring(numberMatch[0].length).trim();
+                } else if (currentClueNumber && currentClueText) {
+                    // Continue building current clue
+                    currentClueText += ' ' + line;
+                }
+            }
+            
+            // Don't forget the last clue
+            if (currentClueNumber && currentClueText && currentSection) {
+                const clue = {
+                    number: currentClueNumber,
+                    text: currentClueText.trim(),
+                    type: currentSection
+                };
+                
+                if (currentSection === 'horizontal') {
+                    horizontalClues.push(clue);
+                } else if (currentSection === 'vertical') {
+                    verticalClues.push(clue);
+                }
+            }
+            
+            console.log('Extracted clues:', { horizontal: horizontalClues.length, vertical: verticalClues.length });
+            
             return {
-                clues: {
-                    horizontal: [],
-                    vertical: []
-                },
-                grid: {
-                    size: { rows: 0, cols: 0 },
-                    cells: {}
-                },
-                status: 'parsing_not_implemented'
+                horizontal: horizontalClues,
+                vertical: verticalClues
+            };
+        }
+        
+        // Extract grid from text (placeholder for now)
+        function extractGrid(text) {
+            // This will be implemented in the next concept
+            // For now, return a basic structure
+            return {
+                size: { rows: 0, cols: 0 },
+                cells: {},
+                status: 'grid_parsing_not_implemented'
             };
         }
         
@@ -411,9 +507,61 @@
             const tbody = document.querySelector('#results-table tbody');
             tbody.innerHTML = '';
             
-            if (documentStructure.status === 'parsing_not_implemented') {
+            if (documentStructure.status === 'error') {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="5">PDF parsing not yet implemented. Working on text extraction...</td>';
+                row.innerHTML = `<td colspan="5">Error: ${documentStructure.error}</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+            
+            if (documentStructure.status === 'success') {
+                // Display horizontal clues
+                documentStructure.clues.horizontal.forEach(clue => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${clue.number}</td>
+                        <td>H</td>
+                        <td>Unknown</td>
+                        <td>${clue.text}</td>
+                        <td>Unknown</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Display vertical clues
+                documentStructure.clues.vertical.forEach(clue => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${clue.number}</td>
+                        <td>V</td>
+                        <td>Unknown</td>
+                        <td>${clue.text}</td>
+                        <td>Unknown</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Add summary row
+                if (documentStructure.clues.horizontal.length === 0 && documentStructure.clues.vertical.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="5">No clues found. Check if the document contains אופקי/אנכי sections.</td>';
+                    tbody.appendChild(row);
+                } else {
+                    const summaryRow = document.createElement('tr');
+                    summaryRow.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    summaryRow.innerHTML = `
+                        <td colspan="5">
+                            <strong>Summary:</strong> 
+                            ${documentStructure.clues.horizontal.length} horizontal clues, 
+                            ${documentStructure.clues.vertical.length} vertical clues found.
+                            ${documentStructure.grid.status === 'grid_parsing_not_implemented' ? ' Grid parsing not yet implemented.' : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(summaryRow);
+                }
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5">Processing...</td>';
                 tbody.appendChild(row);
             }
         }
