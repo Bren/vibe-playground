@@ -323,8 +323,13 @@
                 const cluesText = await extractTextFromFile(cluesFile);
                 const answersText = await extractTextFromFile(answersFile);
                 
-                console.log('Clues text extracted:', cluesText.substring(0, 200) + '...');
-                console.log('Answers text extracted:', answersText.substring(0, 200) + '...');
+                console.log('=== EXTRACTION RESULTS ===');
+                console.log('Clues file:', cluesFile.name);
+                console.log('Answers file:', answersFile.name);
+                console.log('Clues text length:', cluesText.length);
+                console.log('Answers text length:', answersText.length);
+                console.log('Clues text preview:', cluesText.substring(0, 500));
+                console.log('Answers text preview:', answersText.substring(0, 500));
                 
                 // Parse document structure
                 const documentStructure = parseDocumentStructure(cluesText, answersText);
