@@ -559,9 +559,7 @@
                             /[τ!][0-9]/.test(clueText) || /[0-9][τ!]/.test(clueText) ||
                             clueText.includes('צ:') || clueText.includes('ז5') ||
                             // Skip very short content or content with no Hebrew
-                            clueText.length < 2 || (clueText.match(/[א-ת]/g) || []).length < 1 ||
-                            // Skip if clue doesn't follow the standard format "clue text (#,#)"
-                            !clueText.match(/\([^)]+\)$/)) {
+                            clueText.length < 2 || (clueText.match(/[א-ת]/g) || []).length < 1) {
                             console.log('Skipping invalid content:', clueText);
                             continue;
                         }
