@@ -458,228 +458,76 @@
         
         // Extract clues from text
         function extractClues(text) {
-            const horizontalClues = [];
-            const verticalClues = [];
-            
             console.log('=== CLUE EXTRACTION DEBUG ===');
             console.log('Full text for analysis:', text);
             
-            // Split text into lines for processing - handle various line break patterns
-            let lines = text.split(/\r?\n/);
+            const horizontalClues = [];
+            const verticalClues = [];
             
-            // If we still have very few lines, try splitting on other patterns
-            if (lines.length < 10) {
-                console.log('Few lines detected, trying alternative splitting...');
-                // Try splitting on periods, colons, or other sentence boundaries
-                lines = text.split(/[\.:;]\s+/);
+            // Find the clue sections and extract clues from the full text
+            const horizontalMatch = text.match(/אופקי:\s*(.*?)(?=אנכי:|$)/s);
+            const verticalMatch = text.match(/אנכי:\s*(.*?)$/s);
+            
+            if (horizontalMatch) {
+                const horizontalText = horizontalMatch[1].trim();
+                console.log('Horizontal section text:', horizontalText);
+                const horizontalCluesFromText = parseCluesFromText(horizontalText, 'horizontal');
+                horizontalClues.push(...horizontalCluesFromText);
             }
             
-            // Clean up lines
-            lines = lines.map(line => line.trim()).filter(line => line.length > 0);
-            console.log('Total lines to process:', lines.length);
-            console.log('First few lines:', lines.slice(0, 5));
+            if (verticalMatch) {
+                const verticalText = verticalMatch[1].trim();
+                console.log('Vertical section text:', verticalText);
+                const verticalCluesFromText = parseCluesFromText(verticalText, 'vertical');
+                verticalClues.push(...verticalCluesFromText);
+            }
             
-            let currentSection = null;
-            let currentClueNumber = null;
-            let currentClueText = '';
-            let currentAnswerLength = '';
-            
-            // Look for various patterns that might indicate clue sections
-            const sectionPatterns = [
-                /אופקי/gi,
-                /אופק/gi,
-                /אנכי/gi,
-                /אנכ/gi,
-                /horizontal/gi,
-                /vertical/gi,
-                /across/gi,
-                /down/gi
-            ];
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-                console.log(`Processing line ${i}: "${line}"`);
+            // Helper function to parse clues from a section of text
+            function parseCluesFromText(sectionText, sectionType) {
+                const clues = [];
                 
-                // Check for section headers with more flexible patterns
-                let foundSection = false;
-                for (const pattern of sectionPatterns) {
-                    if (pattern.test(line)) {
-                        if (pattern.source.includes('אופק') || pattern.source.includes('horizontal') || pattern.source.includes('across')) {
-                            currentSection = 'horizontal';
-                            console.log('Found horizontal section:', line);
-                        } else if (pattern.source.includes('אנכ') || pattern.source.includes('vertical') || pattern.source.includes('down')) {
-                            currentSection = 'vertical';
-                            console.log('Found vertical section:', line);
+                // Split by clue numbers - look for patterns like "1. ", "7. ", "19. ", etc.
+                const clueMatches = sectionText.match(/(\d+\.\s+[^]*?(?=\d+\.|$))/g);
+                
+                if (clueMatches) {
+                    for (const clueMatch of clueMatches) {
+                        // Extract clue number
+                        const numberMatch = clueMatch.match(/^(\d+)\./);
+                        if (!numberMatch) continue;
+                        
+                        const clueNumber = parseInt(numberMatch[1]);
+                        
+                        // Extract clue text (everything after the number and period)
+                        let clueText = clueMatch.replace(/^\d+\.\s*/, '').trim();
+                        
+                        // Find answer length at the end
+                        const answerLengthMatch = clueText.match(/\(([^)]+)\)\s*$/);
+                        let answerLength = '';
+                        if (answerLengthMatch) {
+                            answerLength = answerLengthMatch[1];
+                            // Remove answer length from clue text
+                            clueText = clueText.replace(/\s*\([^)]+\)\s*$/, '').trim();
                         }
-                        foundSection = true;
-                        break;
-                    }
-                }
-                
-                if (foundSection) continue;
-                
-                // Skip empty lines
-                if (!line) continue;
-                
-                // Only process lines if we're in a clue section
-                if (!currentSection) {
-                    console.log(`Skipping line ${i} - not in clue section`);
-                    continue;
-                }
-                
-                console.log(`Processing line ${i} in ${currentSection} section: "${line}"`);
-                
-                // Special debug for horizontal section
-                if (currentSection === 'horizontal' && i >= 68 && i <= 84) {
-                    console.log(`HORIZONTAL DEBUG - Line ${i}: "${line}"`);
-                }
-                
-                // Check if this line is just a number (clue number on its own line)
-                const isJustNumber = /^(\d+)$/.test(line);
-                
-                if (isJustNumber) {
-                    // This is a clue number on its own line, store it for the next line
-                    currentClueNumber = parseInt(line);
-                    console.log(`Found clue number on its own line: ${currentClueNumber}`);
-                    continue;
-                }
-                
-                // Look for clue numbers in the text - prioritize patterns that match the actual format
-                const numberPatterns = [
-                    /^(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" at start of line
-                    /^(\d+)\s+[א-ת]/,  // Match "1 Hebrew" at start of line
-                    /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
-                    /(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" or "1) Hebrew" anywhere
-                    /(\d+)\s+[א-ת]/,  // Match "1 Hebrew" anywhere
-                    /(\d+)[\.\)]\s/  // Match "1. " or "1) " anywhere
-                ];
-                
-                let numberMatch = null;
-                for (const pattern of numberPatterns) {
-                    numberMatch = line.match(pattern);
-                    if (numberMatch) {
-                        console.log(`Found number match with pattern ${pattern}:`, numberMatch);
-                        break;
-                    }
-                }
-                
-                if (numberMatch) {
-                    // Save previous clue if exists
-                    if (currentClueNumber && currentClueText && currentSection) {
+                        
+                        // Remove trailing numbers that are the next clue number
+                        clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
+                        
+                        const direction = sectionType === 'horizontal' ? 'H' : 'V';
+                        
                         const clue = {
-                            number: currentClueNumber,
-                            text: currentClueText.trim(),
-                            type: currentSection
+                            number: clueNumber,
+                            direction: direction,
+                            text: clueText,
+                            answerLength: answerLength,
+                            type: sectionType
                         };
                         
-                        console.log('Saving clue:', clue);
-                        
-                        if (currentSection === 'horizontal') {
-                            horizontalClues.push(clue);
-                        } else if (currentSection === 'vertical') {
-                            verticalClues.push(clue);
-                        }
-                    }
-                    
-                    // Start new clue
-                    currentClueNumber = parseInt(numberMatch[1]);
-                    
-                    // Extract clue text - parse the full clue format
-                    let clueText = '';
-                    let answerLength = '';
-                    
-                    const fullLine = line.trim();
-                    
-                    // Find the answer length pattern at the end (e.g., "(3)", "(5,5)", "(2,4)")
-                    const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
-                    if (answerLengthMatch) {
-                        answerLength = answerLengthMatch[1];
-                        // Remove the answer length from the clue text
-                        clueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                    } else {
-                        clueText = fullLine;
-                    }
-                    
-                    // Remove trailing numbers that are actually the next clue number
-                    // Pattern: remove numbers at the end that are not part of the answer length
-                    clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
-                    
-                    currentClueText = clueText;
-                    currentAnswerLength = answerLength;
-                    console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}" (Answer: ${answerLength})`);
-                } else if (currentClueNumber && !currentClueText) {
-                    // We have a clue number from a previous line, now we have the clue text
-                    const fullLine = line.trim();
-                    
-                    // Find the answer length pattern at the end (e.g., "(3)", "(5,5)", "(2,4)")
-                    const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
-                    if (answerLengthMatch) {
-                        currentAnswerLength = answerLengthMatch[1];
-                        // Remove the answer length from the clue text
-                        currentClueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                    } else {
-                        currentClueText = fullLine;
-                    }
-                    
-                    // Remove trailing numbers that are actually the next clue number
-                    currentClueText = currentClueText.replace(/\s+\d+\s*$/, '').trim();
-                    
-                    console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}" (Answer: ${currentAnswerLength})`);
-                } else if (currentClueNumber && currentClueText) {
-                    // Check if this line starts with a number (new clue)
-                    const startsWithNumber = /^\d+/.test(line);
-                    
-                    if (!startsWithNumber) {
-                        // Continue building current clue
-                        currentClueText += ' ' + line;
-                        console.log(`Continuing clue ${currentClueNumber}: "${currentClueText}"`);
-                    } else {
-                        // This looks like a new clue, save current clue first
-                        if (currentClueNumber && currentClueText && currentSection) {
-                            const direction = currentSection === 'horizontal' ? 'H' : 'V';
-                            const clue = {
-                                number: currentClueNumber,
-                                direction: direction,
-                                text: currentClueText.trim(),
-                                answerLength: currentAnswerLength,
-                                type: currentSection
-                            };
-                            
-                            console.log('Saving clue:', clue);
-                            
-                            if (currentSection === 'horizontal') {
-                                horizontalClues.push(clue);
-                            } else if (currentSection === 'vertical') {
-                                verticalClues.push(clue);
-                            }
-                        }
-                        
-                        // Reset for potential new clue
-                        currentClueNumber = null;
-                        currentClueText = '';
-                        currentAnswerLength = '';
+                        console.log('Parsed clue:', clue);
+                        clues.push(clue);
                     }
                 }
-            }
-            
-            // Don't forget the last clue
-            if (currentClueNumber && currentClueText && currentSection) {
-                const direction = currentSection === 'horizontal' ? 'H' : 'V';
-                const clue = {
-                    number: currentClueNumber,
-                    direction: direction,
-                    text: currentClueText.trim(),
-                    answerLength: currentAnswerLength,
-                    type: currentSection
-                };
                 
-                console.log('Saving final clue:', clue);
-                
-                if (currentSection === 'horizontal') {
-                    horizontalClues.push(clue);
-                } else if (currentSection === 'vertical') {
-                    verticalClues.push(clue);
-                }
+                return clues;
             }
             
             console.log('Final extracted clues:', { horizontal: horizontalClues.length, vertical: verticalClues.length });
