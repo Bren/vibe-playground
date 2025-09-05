@@ -573,20 +573,22 @@
                     // Start new clue
                     currentClueNumber = parseInt(numberMatch[1]);
                     
-                    // Extract clue text - look for the pattern after the number
+                    // Extract clue text - keep the full clue including the number
                     let clueText = '';
                     if (numberMatch[0].includes('.')) {
-                        // Format: "1. text" - extract everything after the period and space
-                        const afterPeriod = line.substring(line.indexOf('.') + 1).trim();
-                        clueText = afterPeriod;
+                        // Format: "1. text" - keep the full clue starting with the number
+                        clueText = line.trim();
                     } else if (numberMatch[0].includes(')')) {
-                        // Format: "1) text" - extract everything after the parenthesis and space
-                        const afterParen = line.substring(line.indexOf(')') + 1).trim();
-                        clueText = afterParen;
+                        // Format: "1) text" - keep the full clue starting with the number
+                        clueText = line.trim();
                     } else {
-                        // Format: "1 text" - extract everything after the number and space
-                        clueText = line.substring(numberMatch[0].length).trim();
+                        // Format: "1 text" - keep the full clue starting with the number
+                        clueText = line.trim();
                     }
+                    
+                    // Clean up the clue text - remove trailing numbers and extra text
+                    // The clue should end before any trailing numbers like "7" or "8"
+                    clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
                     
                     currentClueText = clueText;
                     console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}"`);
