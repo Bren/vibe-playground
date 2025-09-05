@@ -500,17 +500,11 @@
                         // Extract clue text (everything after the number and period)
                         let clueText = clueMatch.replace(/^\d+\.\s*/, '').trim();
                         
-                        // Find answer length at the end
-                        const answerLengthMatch = clueText.match(/\(([^)]+)\)\s*$/);
-                        let answerLength = '';
-                        if (answerLengthMatch) {
-                            answerLength = answerLengthMatch[1];
-                            // Remove answer length from clue text
-                            clueText = clueText.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                        }
-                        
                         // Remove trailing numbers that are the next clue number
                         clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
+                        
+                        // The answer length is part of the clue text, not separate
+                        let answerLength = '';
                         
                         const direction = sectionType === 'horizontal' ? 'H' : 'V';
                         
