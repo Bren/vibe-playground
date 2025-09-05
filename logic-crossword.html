@@ -528,12 +528,18 @@
                 
                 console.log(`Processing line ${i} in ${currentSection} section: "${line}"`);
                 
+                // Special debug for horizontal section
+                if (currentSection === 'horizontal' && i >= 68 && i <= 84) {
+                    console.log(`HORIZONTAL DEBUG - Line ${i}: "${line}"`);
+                }
+                
                 // Look for clue numbers with more flexible patterns
                 const numberPatterns = [
-                    /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
+                    /^(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" at start of line
                     /^(\d+)\s+[א-ת]/,  // Match "1 Hebrew" at start of line
                     /(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" or "1) Hebrew" anywhere
                     /(\d+)\s+[א-ת]/,  // Match "1 Hebrew" anywhere
+                    /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
                     /(\d+)[\.\)]\s/  // Match "1. " or "1) " anywhere
                 ];
                 
@@ -566,7 +572,23 @@
                     
                     // Start new clue
                     currentClueNumber = parseInt(numberMatch[1]);
-                    currentClueText = line.substring(numberMatch[0].length).trim();
+                    
+                    // Extract clue text - look for the pattern after the number
+                    let clueText = '';
+                    if (numberMatch[0].includes('.')) {
+                        // Format: "1. text" - extract everything after the period and space
+                        const afterPeriod = line.substring(line.indexOf('.') + 1).trim();
+                        clueText = afterPeriod;
+                    } else if (numberMatch[0].includes(')')) {
+                        // Format: "1) text" - extract everything after the parenthesis and space
+                        const afterParen = line.substring(line.indexOf(')') + 1).trim();
+                        clueText = afterParen;
+                    } else {
+                        // Format: "1 text" - extract everything after the number and space
+                        clueText = line.substring(numberMatch[0].length).trim();
+                    }
+                    
+                    currentClueText = clueText;
                     console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}"`);
                 } else if (currentClueNumber && currentClueText) {
                     // Check if this line starts with a number (new clue)
