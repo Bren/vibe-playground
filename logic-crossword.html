@@ -541,8 +541,17 @@
                         // Remove trailing semicolon or period
                         clueText = clueText.replace(/[;.]$/, '').trim();
                         
-                        // Clean up garbled content like ";6(" or ";)6("
+                        // Clean up garbled content like ";6(" or ";)6(" but preserve answer lengths in parentheses
                         clueText = clueText.replace(/[;!]?\d*[;!]?\(/g, '').replace(/\)[;!]?\d*[;!]?/g, '');
+                        
+                        // Restore answer lengths in parentheses if they were removed
+                        if (!clueText.includes('(') && !clueText.includes(')')) {
+                            // Try to find answer length pattern in original text
+                            const answerMatch = clueMatch.match(/\(([^)]+)\)/);
+                            if (answerMatch) {
+                                clueText += ` (${answerMatch[1]})`;
+                            }
+                        }
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
                         if (clueText.includes('פ-') || clueText.includes('צ-') || clueText.includes('מ-') || 
@@ -554,7 +563,7 @@
                             /[τ!][0-9]/.test(clueText) || /[0-9][τ!]/.test(clueText) ||
                             clueText.includes('צ:') || clueText.includes('ז5') ||
                             // Skip very short content or content with no Hebrew
-                            clueText.length < 3 || (clueText.match(/[א-ת]/g) || []).length < 2) {
+                            clueText.length < 2 || (clueText.match(/[א-ת]/g) || []).length < 1) {
                             console.log('Skipping invalid content:', clueText);
                             continue;
                         }
