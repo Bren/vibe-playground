@@ -530,28 +530,23 @@
                         // For space-separated format, remove trailing numbers that are the next clue number
                         clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
                         
-                        // Standardize format to "clue text (#,#)" - ensure answer length is always in parentheses at the end
-                        const answerMatches = clueMatch.match(/\(([^)]+)\)/g);
-                        if (answerMatches && answerMatches.length > 0) {
-                            // Find the answer length (usually the last parentheses with numbers)
-                            let answerLength = '';
-                            for (const match of answerMatches) {
-                                const content = match.replace(/[()]/g, '');
-                                // Check if this looks like an answer length (contains numbers or commas)
-                                if (/[\d,]+/.test(content) && content.length <= 10) {
-                                    answerLength = content;
-                                }
-                            }
-                            
-                            // Remove all existing parentheses from the text
-                            clueText = clueText.replace(/\s*\([^)]+\)\s*/g, ' ').trim();
-                            // Clean up extra spaces
-                            clueText = clueText.replace(/\s+/g, ' ').trim();
-                            
-                            // Add the answer length in the standard format if found
-                            if (answerLength) {
-                                clueText += ` (${answerLength})`;
-                            }
+                        // Clean up the clue text more gently - preserve natural structure
+                        // Find the answer length (last parentheses with only numbers/commas)
+                        const answerLengthMatch = clueText.match(/\(([0-9,]+)\)\s*$/);
+                        let answerLength = '';
+                        
+                        if (answerLengthMatch) {
+                            answerLength = answerLengthMatch[1];
+                            // Remove the answer length from the end
+                            clueText = clueText.replace(/\s*\([0-9,]+\)\s*$/, '').trim();
+                        }
+                        
+                        // Clean up extra spaces
+                        clueText = clueText.replace(/\s+/g, ' ').trim();
+                        
+                        // Add back the answer length in standard format
+                        if (answerLength) {
+                            clueText += ` (${answerLength})`;
                         }
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
