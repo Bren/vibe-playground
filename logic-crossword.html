@@ -521,13 +521,20 @@
                 if (!line) continue;
                 
                 // Only process lines if we're in a clue section
-                if (!currentSection) continue;
+                if (!currentSection) {
+                    console.log(`Skipping line ${i} - not in clue section`);
+                    continue;
+                }
                 
-                // Look for clue numbers with more precise patterns
+                console.log(`Processing line ${i} in ${currentSection} section: "${line}"`);
+                
+                // Look for clue numbers with more flexible patterns
                 const numberPatterns = [
                     /^(\d+)[\.\)]\s/,  // Match "1. " or "1) " at start of line
                     /^(\d+)\s+[א-ת]/,  // Match "1 Hebrew" at start of line
-                    /(\d+)[\.\)]\s+[א-ת]/  // Match "1. Hebrew" or "1) Hebrew" anywhere
+                    /(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" or "1) Hebrew" anywhere
+                    /(\d+)\s+[א-ת]/,  // Match "1 Hebrew" anywhere
+                    /(\d+)[\.\)]\s/  // Match "1. " or "1) " anywhere
                 ];
                 
                 let numberMatch = null;
@@ -562,17 +569,15 @@
                     currentClueText = line.substring(numberMatch[0].length).trim();
                     console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}"`);
                 } else if (currentClueNumber && currentClueText) {
-                    // Only continue building if this looks like part of the same clue
-                    // Check if this line starts with a number (new clue) or is very short (likely continuation)
+                    // Check if this line starts with a number (new clue)
                     const startsWithNumber = /^\d+/.test(line);
-                    const isShortLine = line.length < 50;
                     
-                    if (!startsWithNumber && isShortLine) {
+                    if (!startsWithNumber) {
                         // Continue building current clue
                         currentClueText += ' ' + line;
                         console.log(`Continuing clue ${currentClueNumber}: "${currentClueText}"`);
                     } else {
-                        // This looks like a new clue or unrelated content, save current clue first
+                        // This looks like a new clue, save current clue first
                         if (currentClueNumber && currentClueText && currentSection) {
                             const clue = {
                                 number: currentClueNumber,
