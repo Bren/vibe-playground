@@ -861,53 +861,33 @@
                 console.log('Horizontal clues:', documentStructure.clues.horizontal);
                 console.log('Vertical clues:', documentStructure.clues.vertical);
                 
-                // Add horizontal clues section header
+                // Display horizontal clues
                 if (documentStructure.clues.horizontal.length > 0) {
-                    const headerRow = document.createElement('tr');
-                    headerRow.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
-                    headerRow.innerHTML = `
-                        <td colspan="5" style="text-align: center; font-weight: bold; color: #1976d2; padding: 10px;">
-                            🔄 HORIZONTAL CLUES (${documentStructure.clues.horizontal.length})
-                        </td>
-                    `;
-                    tbody.appendChild(headerRow);
-                    
-                    // Display horizontal clues
                     documentStructure.clues.horizontal.forEach((clue, index) => {
                         const row = document.createElement('tr');
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(33, 150, 243, 0.05)' : 'transparent';
                         row.innerHTML = `
-                            <td style="font-weight: bold; color: #1976d2;">${clue.number}</td>
-                            <td style="font-weight: bold; color: #1976d2;">${clue.direction || 'H'}</td>
-                            <td style="color: #666;">TBD</td>
-                            <td style="text-align: right; direction: rtl;">${clue.text}</td>
-                            <td style="color: #666;">${clue.answerLength || 'TBD'}</td>
+                            <td style="font-weight: bold; color: white;">${clue.number}</td>
+                            <td style="font-weight: bold; color: white;">${clue.direction || 'H'}</td>
+                            <td style="color: white;">TBD</td>
+                            <td style="text-align: right; direction: rtl; color: white;">${clue.text}</td>
+                            <td style="color: white;">${clue.answerLength || 'TBD'}</td>
                         `;
                         tbody.appendChild(row);
                     });
                 }
                 
-                // Add vertical clues section header
+                // Display vertical clues
                 if (documentStructure.clues.vertical.length > 0) {
-                    const headerRow = document.createElement('tr');
-                    headerRow.style.backgroundColor = 'rgba(156, 39, 176, 0.1)';
-                    headerRow.innerHTML = `
-                        <td colspan="5" style="text-align: center; font-weight: bold; color: #7b1fa2; padding: 10px;">
-                            ⬇️ VERTICAL CLUES (${documentStructure.clues.vertical.length})
-                        </td>
-                    `;
-                    tbody.appendChild(headerRow);
-                    
-                    // Display vertical clues
                     documentStructure.clues.vertical.forEach((clue, index) => {
                         const row = document.createElement('tr');
                         row.style.backgroundColor = index % 2 === 0 ? 'rgba(156, 39, 176, 0.05)' : 'transparent';
                         row.innerHTML = `
-                            <td style="font-weight: bold; color: #7b1fa2;">${clue.number}</td>
-                            <td style="font-weight: bold; color: #7b1fa2;">${clue.direction || 'V'}</td>
-                            <td style="color: #666;">TBD</td>
-                            <td style="text-align: right; direction: rtl;">${clue.text}</td>
-                            <td style="color: #666;">${clue.answerLength || 'TBD'}</td>
+                            <td style="font-weight: bold; color: white;">${clue.number}</td>
+                            <td style="font-weight: bold; color: white;">${clue.direction || 'V'}</td>
+                            <td style="color: white;">TBD</td>
+                            <td style="text-align: right; direction: rtl; color: white;">${clue.text}</td>
+                            <td style="color: white;">${clue.answerLength || 'TBD'}</td>
                         `;
                         tbody.appendChild(row);
                     });
@@ -916,7 +896,7 @@
                 // Add summary row
                 if (documentStructure.clues.horizontal.length === 0 && documentStructure.clues.vertical.length === 0) {
                     const row = document.createElement('tr');
-                    row.innerHTML = '<td colspan="5">No clues found. Check if the document contains אופקי/אנכי sections.</td>';
+                    row.innerHTML = '<td colspan="5" style="color: white;">No clues found. Check if the document contains אופקי/אנכי sections.</td>';
                     tbody.appendChild(row);
                 } else {
                     const summaryRow = document.createElement('tr');
@@ -938,7 +918,7 @@
                     }
                     
                     summaryRow.innerHTML = `
-                        <td colspan="5" style="text-align: center; font-weight: bold; color: #2e7d32; padding: 15px;">
+                        <td colspan="5" style="text-align: center; font-weight: bold; color: white; padding: 15px;">
                             📊 EXTRACTION SUCCESS: ${documentStructure.clues.horizontal.length} horizontal clues, ${documentStructure.clues.vertical.length} vertical clues found${gridInfo}
                         </td>
                     `;
