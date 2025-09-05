@@ -531,12 +531,27 @@
                         clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
                         
                         // Standardize format to "clue text (#,#)" - ensure answer length is always in parentheses at the end
-                        const answerMatch = clueMatch.match(/\(([^)]+)\)/);
-                        if (answerMatch) {
-                            // Remove any existing answer length from the text
-                            clueText = clueText.replace(/\s*\([^)]+\)\s*$/, '').trim();
-                            // Add the answer length in the standard format
-                            clueText += ` (${answerMatch[1]})`;
+                        const answerMatches = clueMatch.match(/\(([^)]+)\)/g);
+                        if (answerMatches && answerMatches.length > 0) {
+                            // Find the answer length (usually the last parentheses with numbers)
+                            let answerLength = '';
+                            for (const match of answerMatches) {
+                                const content = match.replace(/[()]/g, '');
+                                // Check if this looks like an answer length (contains numbers or commas)
+                                if (/[\d,]+/.test(content) && content.length <= 10) {
+                                    answerLength = content;
+                                }
+                            }
+                            
+                            // Remove all existing parentheses from the text
+                            clueText = clueText.replace(/\s*\([^)]+\)\s*/g, ' ').trim();
+                            // Clean up extra spaces
+                            clueText = clueText.replace(/\s+/g, ' ').trim();
+                            
+                            // Add the answer length in the standard format if found
+                            if (answerLength) {
+                                clueText += ` (${answerLength})`;
+                            }
                         }
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
