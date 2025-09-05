@@ -163,10 +163,13 @@
             overflow-x: auto;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.05);
+            margin: 20px 0;
+            max-width: 100%;
         }
         
         .results-table {
             width: 100%;
+            min-width: 1000px;
             border-collapse: collapse;
             background: transparent;
             table-layout: fixed;
@@ -181,44 +184,49 @@
         }
         
         .results-table td {
-            padding: 1rem;
+            padding: 1.2rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             word-wrap: break-word;
             overflow-wrap: break-word;
             hyphens: auto;
+            vertical-align: top;
         }
         
-        /* Column width constraints */
+        /* Column width constraints - wider layout for better readability */
         .results-table th:nth-child(1),
         .results-table td:nth-child(1) {
-            width: 8%;
+            width: 6%;
             text-align: center;
+            min-width: 50px;
         }
         
         .results-table th:nth-child(2),
         .results-table td:nth-child(2) {
-            width: 8%;
+            width: 6%;
             text-align: center;
+            min-width: 50px;
         }
         
         .results-table th:nth-child(3),
         .results-table td:nth-child(3) {
-            width: 12%;
+            width: 10%;
             text-align: center;
+            min-width: 80px;
         }
         
         .results-table th:nth-child(4),
         .results-table td:nth-child(4) {
-            width: 60%;
-            max-width: 0;
+            width: 58%;
             word-break: break-word;
             white-space: normal;
+            min-width: 400px;
         }
         
         .results-table th:nth-child(5),
         .results-table td:nth-child(5) {
-            width: 12%;
+            width: 20%;
             text-align: center;
+            min-width: 150px;
         }
         
         .results-table tbody tr:hover {
