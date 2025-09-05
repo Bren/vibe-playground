@@ -534,7 +534,17 @@
                     console.log(`HORIZONTAL DEBUG - Line ${i}: "${line}"`);
                 }
                 
-                // Look for clue numbers - prioritize patterns that match the actual format
+                // Check if this line is just a number (clue number on its own line)
+                const isJustNumber = /^(\d+)$/.test(line);
+                
+                if (isJustNumber) {
+                    // This is a clue number on its own line, store it for the next line
+                    currentClueNumber = parseInt(line);
+                    console.log(`Found clue number on its own line: ${currentClueNumber}`);
+                    continue;
+                }
+                
+                // Look for clue numbers in the text - prioritize patterns that match the actual format
                 const numberPatterns = [
                     /^(\d+)[\.\)]\s+[א-ת]/,  // Match "1. Hebrew" at start of line
                     /^(\d+)\s+[א-ת]/,  // Match "1 Hebrew" at start of line
@@ -597,6 +607,24 @@
                     currentClueText = clueText;
                     currentAnswerLength = answerLength;
                     console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}" (Answer: ${answerLength})`);
+                } else if (currentClueNumber && !currentClueText) {
+                    // We have a clue number from a previous line, now we have the clue text
+                    const fullLine = line.trim();
+                    
+                    // Find the answer length pattern at the end (e.g., "(3)", "(5,5)", "(2,4)")
+                    const answerLengthMatch = fullLine.match(/\(([^)]+)\)\s*$/);
+                    if (answerLengthMatch) {
+                        currentAnswerLength = answerLengthMatch[1];
+                        // Remove the answer length from the clue text
+                        currentClueText = fullLine.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                    } else {
+                        currentClueText = fullLine;
+                    }
+                    
+                    // Remove trailing numbers that are actually the next clue number
+                    currentClueText = currentClueText.replace(/\s+\d+\s*$/, '').trim();
+                    
+                    console.log(`Starting new clue ${currentClueNumber}: "${currentClueText}" (Answer: ${currentAnswerLength})`);
                 } else if (currentClueNumber && currentClueText) {
                     // Check if this line starts with a number (new clue)
                     const startsWithNumber = /^\d+/.test(line);
