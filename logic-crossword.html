@@ -491,14 +491,160 @@
             };
         }
         
-        // Extract grid from text (placeholder for now)
+        // Extract grid from text
         function extractGrid(text) {
-            // This will be implemented in the next concept
-            // For now, return a basic structure
+            try {
+                // Look for grid patterns in the text
+                const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                
+                // Find potential grid lines (lines with consistent character patterns)
+                const gridLines = findGridLines(lines);
+                
+                if (gridLines.length === 0) {
+                    return {
+                        size: { rows: 0, cols: 0 },
+                        cells: {},
+                        status: 'no_grid_found'
+                    };
+                }
+                
+                // Parse the grid structure
+                const grid = parseGridStructure(gridLines);
+                
+                return grid;
+            } catch (error) {
+                console.error('Grid extraction error:', error);
+                return {
+                    size: { rows: 0, cols: 0 },
+                    cells: {},
+                    status: 'error',
+                    error: error.message
+                };
+            }
+        }
+        
+        // Find lines that look like crossword grid rows
+        function findGridLines(lines) {
+            const gridLines = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                
+                // Skip very short lines
+                if (line.length < 5) continue;
+                
+                // Look for lines with grid-like patterns:
+                // - Contains squares, blocks, or consistent spacing
+                // - Has a reasonable length (typical crossword size)
+                // - Contains characters that could represent grid cells
+                
+                // Check for patterns like: □□□■□□□ or similar
+                const hasGridPattern = /[□■▢▣⬜⬛\s]{5,}/.test(line) || 
+                                     /[\.\s]{5,}/.test(line) ||
+                                     /[a-zA-Z\s]{5,}/.test(line);
+                
+                if (hasGridPattern && line.length >= 5 && line.length <= 20) {
+                    gridLines.push({
+                        line: line,
+                        index: i,
+                        length: line.length
+                    });
+                }
+            }
+            
+            // Group consecutive lines of similar length
+            const groupedLines = groupConsecutiveGridLines(gridLines);
+            
+            // Return the largest group (most likely to be the actual grid)
+            return groupedLines.reduce((largest, group) => 
+                group.length > largest.length ? group : largest, []);
+        }
+        
+        // Group consecutive lines that could be part of the same grid
+        function groupConsecutiveGridLines(gridLines) {
+            if (gridLines.length === 0) return [];
+            
+            const groups = [];
+            let currentGroup = [gridLines[0]];
+            
+            for (let i = 1; i < gridLines.length; i++) {
+                const current = gridLines[i];
+                const previous = gridLines[i - 1];
+                
+                // Check if lines are consecutive and similar length
+                const isConsecutive = current.index === previous.index + 1;
+                const isSimilarLength = Math.abs(current.length - previous.length) <= 2;
+                
+                if (isConsecutive && isSimilarLength) {
+                    currentGroup.push(current);
+                } else {
+                    if (currentGroup.length > 0) {
+                        groups.push(currentGroup);
+                    }
+                    currentGroup = [current];
+                }
+            }
+            
+            if (currentGroup.length > 0) {
+                groups.push(currentGroup);
+            }
+            
+            return groups;
+        }
+        
+        // Parse the grid structure from grid lines
+        function parseGridStructure(gridLines) {
+            if (gridLines.length === 0) {
+                return {
+                    size: { rows: 0, cols: 0 },
+                    cells: {},
+                    status: 'no_grid_found'
+                };
+            }
+            
+            const rows = gridLines.length;
+            const cols = Math.max(...gridLines.map(line => line.length));
+            
+            const cells = {};
+            let cellId = 1;
+            
+            // Parse each cell in the grid
+            for (let row = 0; row < rows; row++) {
+                const line = gridLines[row].line;
+                
+                for (let col = 0; col < cols; col++) {
+                    const cellChar = line[col] || ' ';
+                    const cellIdStr = `R${row + 1}C${col + 1}`;
+                    
+                    // Determine cell type
+                    let cellType = 'empty';
+                    let cellNumber = null;
+                    
+                    if (cellChar === '■' || cellChar === '▣' || cellChar === '⬛') {
+                        cellType = 'blocked';
+                    } else if (cellChar === '□' || cellChar === '▢' || cellChar === '⬜' || cellChar === ' ') {
+                        cellType = 'empty';
+                    } else if (/[a-zA-Z]/.test(cellChar)) {
+                        cellType = 'filled';
+                    } else if (/\d/.test(cellChar)) {
+                        cellType = 'numbered';
+                        cellNumber = parseInt(cellChar);
+                    }
+                    
+                    cells[cellIdStr] = {
+                        type: cellType,
+                        number: cellNumber,
+                        content: cellChar
+                    };
+                }
+            }
+            
+            console.log('Parsed grid:', { rows, cols, cells: Object.keys(cells).length });
+            
             return {
-                size: { rows: 0, cols: 0 },
-                cells: {},
-                status: 'grid_parsing_not_implemented'
+                size: { rows, cols },
+                cells: cells,
+                status: 'success'
             };
         }
         
@@ -549,12 +695,26 @@
                 } else {
                     const summaryRow = document.createElement('tr');
                     summaryRow.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    
+                    let gridInfo = '';
+                    if (documentStructure.grid.status === 'success') {
+                        const { rows, cols } = documentStructure.grid.size;
+                        const cellCount = Object.keys(documentStructure.grid.cells).length;
+                        const blockedCount = Object.values(documentStructure.grid.cells).filter(cell => cell.type === 'blocked').length;
+                        const numberedCount = Object.values(documentStructure.grid.cells).filter(cell => cell.type === 'numbered').length;
+                        
+                        gridInfo = ` Grid: ${rows}×${cols} (${cellCount} cells, ${blockedCount} blocked, ${numberedCount} numbered).`;
+                    } else if (documentStructure.grid.status === 'no_grid_found') {
+                        gridInfo = ' No grid pattern found in answers document.';
+                    } else if (documentStructure.grid.status === 'error') {
+                        gridInfo = ` Grid parsing error: ${documentStructure.grid.error}.`;
+                    }
+                    
                     summaryRow.innerHTML = `
                         <td colspan="5">
                             <strong>Summary:</strong> 
                             ${documentStructure.clues.horizontal.length} horizontal clues, 
-                            ${documentStructure.clues.vertical.length} vertical clues found.
-                            ${documentStructure.grid.status === 'grid_parsing_not_implemented' ? ' Grid parsing not yet implemented.' : ''}
+                            ${documentStructure.clues.vertical.length} vertical clues found.${gridInfo}
                         </td>
                     `;
                     tbody.appendChild(summaryRow);
