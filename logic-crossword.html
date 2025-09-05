@@ -526,13 +526,13 @@
                         // Clean up garbled content like ";6(" or ";)6(" but preserve answer lengths in parentheses
                         clueText = clueText.replace(/[;!]?\d*[;!]?\(/g, '').replace(/\)[;!]?\d*[;!]?/g, '');
                         
-                        // Restore answer lengths in parentheses if they were removed
-                        if (!clueText.includes('(') && !clueText.includes(')')) {
-                            // Try to find answer length pattern in original text
-                            const answerMatch = clueMatch.match(/\(([^)]+)\)/);
-                            if (answerMatch) {
-                                clueText += ` (${answerMatch[1]})`;
-                            }
+                        // Standardize format to "clue text (#,#)" - ensure answer length is always in parentheses at the end
+                        const answerMatch = clueMatch.match(/\(([^)]+)\)/);
+                        if (answerMatch) {
+                            // Remove any existing answer length from the text
+                            clueText = clueText.replace(/\s*\([^)]+\)\s*$/, '').trim();
+                            // Add the answer length in the standard format
+                            clueText += ` (${answerMatch[1]})`;
                         }
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
@@ -545,7 +545,9 @@
                             /[τ!][0-9]/.test(clueText) || /[0-9][τ!]/.test(clueText) ||
                             clueText.includes('צ:') || clueText.includes('ז5') ||
                             // Skip very short content or content with no Hebrew
-                            clueText.length < 2 || (clueText.match(/[א-ת]/g) || []).length < 1) {
+                            clueText.length < 2 || (clueText.match(/[א-ת]/g) || []).length < 1 ||
+                            // Skip if clue doesn't follow the standard format "clue text (#,#)"
+                            !clueText.match(/\([^)]+\)$/)) {
                             console.log('Skipping invalid content:', clueText);
                             continue;
                         }
