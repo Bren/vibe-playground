@@ -524,7 +524,8 @@
                 
                 // Split by clue numbers - look for patterns like "1. ", "7. ", "19. ", etc.
                 // Handle semicolon-separated format: "1. text (length); 5. text (length);"
-                const clueMatches = sectionText.match(/(\d+\.\s+[^;]*?\([^)]+\)[;.]?)/g);
+                // Also handle clues without parentheses and clean up garbled text
+                const clueMatches = sectionText.match(/(\d+\.\s+[^;]*?(?:\([^)]+\)|[^;]+?)(?=[;.]|$))/g);
                 
                 if (clueMatches) {
                     for (const clueMatch of clueMatches) {
@@ -539,6 +540,9 @@
                         
                         // Remove trailing semicolon or period
                         clueText = clueText.replace(/[;.]$/, '').trim();
+                        
+                        // Clean up garbled content like ";6(" or ";)6("
+                        clueText = clueText.replace(/[;!]?\d*[;!]?\(/g, '').replace(/\)[;!]?\d*[;!]?/g, '');
                         
                         // Skip if this looks like chess notation, garbled content, or invalid clues
                         if (clueText.includes('פ-') || clueText.includes('צ-') || clueText.includes('מ-') || 
