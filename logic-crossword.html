@@ -505,9 +505,10 @@
                 const clues = [];
                 
                 // Split by clue numbers - look for patterns like "1. ", "7. ", "19. ", etc.
-                // Handle semicolon-separated format: "1. text (length); 5. text (length);"
-                // Also handle clues without parentheses and clean up garbled text
-                const clueMatches = sectionText.match(/(\d+\.\s+[^;]*?(?:\([^)]+\)|[^;]+?)(?=[;.]|$))/g);
+                // Handle both semicolon-separated format and space-separated format
+                // For semicolon format: "1. text (length); 5. text (length);"
+                // For space format: "1. text (length) 7. text (length)"
+                const clueMatches = sectionText.match(/(\d+\.\s+[^]*?(?=\d+\.|$))/g);
                 
                 if (clueMatches) {
                     for (const clueMatch of clueMatches) {
@@ -525,6 +526,9 @@
                         
                         // Clean up garbled content like ";6(" or ";)6(" but preserve answer lengths in parentheses
                         clueText = clueText.replace(/[;!]?\d*[;!]?\(/g, '').replace(/\)[;!]?\d*[;!]?/g, '');
+                        
+                        // For space-separated format, remove trailing numbers that are the next clue number
+                        clueText = clueText.replace(/\s+\d+\s*$/, '').trim();
                         
                         // Standardize format to "clue text (#,#)" - ensure answer length is always in parentheses at the end
                         const answerMatch = clueMatch.match(/\(([^)]+)\)/);
