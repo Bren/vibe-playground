@@ -547,62 +547,66 @@
             };
         }
         
-        // Parse solutions from the solution section (format: "1. בוטפליקה 2. טלי 3. קלוני")
+        // Parse solutions from the solution section 
         function parseSolutionsFromText(sectionText, sectionType) {
             const answers = [];
             
             console.log('Parsing solutions from:', sectionType, 'section:', sectionText);
             
-            // For mixed format, we need to look for patterns before and after מאוזן:/מאונך:
-            let textToParse = sectionText;
+            let textToParse = '';
             
             if (sectionType === 'horizontal') {
-                // Look for solutions before מאוזן: and between מאוזן: and מאונך:
-                const beforeMaouzan = sectionText.match(/^(.*?)(?=מאוזן:|$)/s);
-                const afterMaouzan = sectionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
-                
-                if (beforeMaouzan && beforeMaouzan[1].trim()) {
-                    textToParse = beforeMaouzan[1].trim();
-                } else if (afterMaouzan && afterMaouzan[1].trim()) {
-                    textToParse = afterMaouzan[1].trim();
+                // Look for text between מאוזן: and מאונך:
+                const horizontalMatch = sectionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
+                if (horizontalMatch) {
+                    textToParse = horizontalMatch[1].trim();
                 }
             } else if (sectionType === 'vertical') {
-                // Look for solutions after מאונך:
-                const afterMaounach = sectionText.match(/מאונך:\s*(.*?)$/s);
-                if (afterMaounach && afterMaounach[1].trim()) {
-                    textToParse = afterMaounach[1].trim();
+                // Look for text after מאונך:
+                const verticalMatch = sectionText.match(/מאונך:\s*(.*?)$/s);
+                if (verticalMatch) {
+                    textToParse = verticalMatch[1].trim();
                 }
             }
             
             console.log('Text to parse for', sectionType, ':', textToParse);
             
-            // Split by periods followed by numbers to separate individual answers
-            // Format is typically: "1. answer1 2. answer2 3. answer3"
-            const matches = textToParse.match(/(\d+)\.\s*([א-ת\s]+?)(?=\s+\d+\.|$)/g);
-            
-            if (matches) {
-                matches.forEach(match => {
-                    const numberMatch = match.match(/^(\d+)\.\s*(.+)$/);
-                    if (numberMatch) {
-                        const number = parseInt(numberMatch[1]);
-                        let answerText = numberMatch[2].trim();
-                        
-                        // Clean up trailing punctuation and extra spaces
-                        answerText = answerText.replace(/[;.\s]+$/, '').trim();
-                        
-                        if (answerText.length > 0 && /[א-ת]/.test(answerText)) {
-                            const answer = {
-                                number: number,
-                                text: answerText,
-                                type: sectionType
-                            };
-                            
-                            console.log('Extracted solution:', answer);
-                            answers.push(answer);
-                        }
-                    }
-                });
+            if (!textToParse) {
+                console.log('No text found for', sectionType);
+                return answers;
             }
+            
+            // Parse format like: "17. אתניקס 19. רדה 20. אלבינוני 23. ברברה 24. דן חמיצר"
+            // Split by number followed by period, but keep the number
+            const parts = textToParse.split(/(?=\d+\.)/);
+            
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                
+                // Match pattern: "number. Hebrew text" (may contain spaces)
+                const match = part.match(/^(\d+)\.\s*([א-ת][א-ת\s]*?)(?=\s*\d+\.|$)/);
+                if (match) {
+                    const number = parseInt(match[1]);
+                    let answerText = match[2].trim();
+                    
+                    // Clean up extra spaces but preserve Hebrew text
+                    answerText = answerText.replace(/\s+/g, ' ').trim();
+                    
+                    if (answerText.length > 0 && /[א-ת]/.test(answerText)) {
+                        const answer = {
+                            number: number,
+                            text: answerText,
+                            type: sectionType
+                        };
+                        
+                        console.log('Extracted solution:', answer);
+                        answers.push(answer);
+                    }
+                } else {
+                    console.log('No match for part:', part);
+                }
+            });
             
             return answers;
         }
