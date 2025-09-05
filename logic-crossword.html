@@ -427,9 +427,20 @@
             console.log('=== CLUE EXTRACTION DEBUG ===');
             console.log('Full text for analysis:', text);
             
-            // Split text into lines for processing
-            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            // Split text into lines for processing - handle various line break patterns
+            let lines = text.split(/\r?\n/);
+            
+            // If we still have very few lines, try splitting on other patterns
+            if (lines.length < 10) {
+                console.log('Few lines detected, trying alternative splitting...');
+                // Try splitting on periods, colons, or other sentence boundaries
+                lines = text.split(/[\.:;]\s+/);
+            }
+            
+            // Clean up lines
+            lines = lines.map(line => line.trim()).filter(line => line.length > 0);
             console.log('Total lines to process:', lines.length);
+            console.log('First few lines:', lines.slice(0, 5));
             
             let currentSection = null;
             let currentClueNumber = null;
@@ -477,13 +488,18 @@
                     /^(\d+)[\.\)\s]/,
                     /^(\d+)[\.\)]/,
                     /^(\d+)\s/,
-                    /(\d+)[\.\)]\s/
+                    /(\d+)[\.\)]\s/,
+                    /(\d+)\.\s/,  // Match "1. " pattern
+                    /(\d+)\s+[א-ת]/  // Match "1 Hebrew" pattern
                 ];
                 
                 let numberMatch = null;
                 for (const pattern of numberPatterns) {
                     numberMatch = line.match(pattern);
-                    if (numberMatch) break;
+                    if (numberMatch) {
+                        console.log(`Found number match with pattern ${pattern}:`, numberMatch);
+                        break;
+                    }
                 }
                 
                 if (numberMatch) {
