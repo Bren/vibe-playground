@@ -517,8 +517,8 @@
                 return { horizontal: [], vertical: [] };
             }
             
-            // Step 4: Extract horizontal answers (from start to מאונך:)
-            const horizontalText = solutionSection.substring(horizontalStart, מאונךIndex).trim();
+            // Step 4: Extract horizontal answers (from מאוזן: to מאונך:)
+            const horizontalText = solutionSection.substring(מאוזןIndex + 6, מאונךIndex).trim();
             const verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
