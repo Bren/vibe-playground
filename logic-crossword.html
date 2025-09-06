@@ -491,9 +491,9 @@
             }
         }
         
-        // Extract answers from the solution section (פתרון תשבץ הגיון) - SIMPLE VERSION
+        // Extract answers from the solution section (פתרון תשבץ הגיון) - CORRECT VERSION
         function extractAnswers(text) {
-            console.log('=== SIMPLE ANSWER EXTRACTION ===');
+            console.log('=== CORRECT ANSWER EXTRACTION ===');
             
             // Step 1: Find the solution section
             const solutionIndex = text.indexOf('פתרון תשבץ הגיון מס\' 1724');
@@ -506,19 +506,20 @@
             const solutionSection = text.substring(solutionIndex);
             console.log('🔍 DEBUG - Solution section found at index:', solutionIndex);
             
-            // Step 3: Find מאוזן and מאונך sections
-            const horizontalIndex = solutionSection.indexOf('מאוזן:');
-            const verticalIndex = solutionSection.indexOf('מאונך:');
+            // Step 3: Find the actual answer sections
+            // The format is: פתרון תשבץ הגיון מס' 1724 [horizontal answers] מאוזן: [more horizontal] מאונך: [vertical answers]
+            const horizontalStart = solutionSection.indexOf('פתרון תשבץ הגיון מס\' 1724') + 'פתרון תשבץ הגיון מס\' 1724'.length;
+            const מאוזןIndex = solutionSection.indexOf('מאוזן:');
+            const מאונךIndex = solutionSection.indexOf('מאונך:');
             
-            if (horizontalIndex === -1 || verticalIndex === -1) {
+            if (מאוזןIndex === -1 || מאונךIndex === -1) {
                 console.log('❌ Could not find מאוזן or מאונך sections');
                 return { horizontal: [], vertical: [] };
             }
             
-            // Step 4: Extract horizontal answers (from מאוזן: to מאונך:)
-            const horizontalStart = solutionSection.indexOf('מאוזן:');
-            const horizontalText = solutionSection.substring(horizontalStart + 6, verticalIndex).trim();
-            const verticalText = solutionSection.substring(verticalIndex + 6).trim();
+            // Step 4: Extract horizontal answers (from start to מאונך:)
+            const horizontalText = solutionSection.substring(horizontalStart, מאונךIndex).trim();
+            const verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
             console.log('🔍 DEBUG - Vertical section:', verticalText);
