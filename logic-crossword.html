@@ -531,17 +531,28 @@
                 horizontalText.substring(0, horizontalEndIndex + '26. על הפתחים'.length) : 
                 horizontalText;
             
+            // Step 4.6: Extract vertical answers from the horizontal section (they got mixed in)
+            // Look for vertical answers that are in the horizontal section
+            const verticalAnswersInHorizontal = horizontalText.substring(horizontalEndIndex + '26. על הפתחים'.length);
+            const verticalAnswersFromHorizontal = verticalAnswersInHorizontal.trim();
+            
             console.log('🔍 DEBUG - מאונךIndex:', מאונךIndex);
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
             console.log('🔍 DEBUG - Clean horizontal section:', cleanHorizontalText);
+            console.log('🔍 DEBUG - Vertical answers from horizontal:', verticalAnswersFromHorizontal);
             console.log('🔍 DEBUG - Vertical section (raw):', solutionSection.substring(מאונךIndex + 6).trim());
             console.log('🔍 DEBUG - Vertical section (cleaned):', verticalText);
             
             // Step 5: Parse answers
             const horizontalAnswers = parseSimpleAnswers(cleanHorizontalText, 'H');
-            const verticalAnswers = parseSimpleAnswers(verticalText, 'V');
+            const verticalAnswersFromHorizontalParsed = parseSimpleAnswers(verticalAnswersFromHorizontal, 'V');
+            const verticalAnswersFromSectionParsed = parseSimpleAnswers(verticalText, 'V');
+            
+            // Combine vertical answers from both sources
+            const verticalAnswers = [...verticalAnswersFromHorizontalParsed, ...verticalAnswersFromSectionParsed];
             
             console.log(`📊 Extracted ${horizontalAnswers.length} horizontal + ${verticalAnswers.length} vertical answers`);
+            console.log(`📊 Vertical from horizontal: ${verticalAnswersFromHorizontalParsed.length}, from section: ${verticalAnswersFromSectionParsed.length}`);
             
             return {
                 horizontal: horizontalAnswers,
