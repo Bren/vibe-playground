@@ -459,21 +459,24 @@
             });
         }
         
-        // Parse document structure - CLUES ONLY VERSION
+        // Parse document structure - SIMPLE VERSION
         function parseDocumentStructure(cluesText, answersText) {
             try {
                 // Extract clues from the clues document
                 const clues = extractClues(cluesText);
                 
-                // Skip answer extraction for now - just show clues
-                console.log('🔍 CLUES ONLY MODE - Skipping answer extraction');
+                // Extract answers from the answers document
+                const answers = extractAnswers(answersText);
+                
+                // Match clues with answers
+                const matchedClues = matchCluesWithAnswers(clues, answers);
                 
                 // Extract grid from the answers document
                 const grid = extractGrid(answersText);
                 
                 return {
-                    clues: clues, // Use raw clues without answer matching
-                    answers: { horizontal: [], vertical: [] }, // Empty answers
+                    clues: matchedClues,
+                    answers: answers,
                     grid: grid,
                     status: 'success'
                 };
@@ -488,9 +491,9 @@
             }
         }
         
-        // Extract answers from the solution section (פתרון תשבץ הגיון) - FINAL VERSION
+        // Extract answers from the solution section - SIMPLE VERSION
         function extractAnswers(text) {
-            console.log('=== FINAL ANSWER EXTRACTION ===');
+            console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
             // Step 1: Find the solution section
             const solutionIndex = text.indexOf('פתרון תשבץ הגיון מס\' 1724');
@@ -501,145 +504,62 @@
             
             // Step 2: Extract the solution section
             const solutionSection = text.substring(solutionIndex);
-            console.log('🔍 DEBUG - Solution section found at index:', solutionIndex);
+            console.log('🔍 Solution section found at index:', solutionIndex);
             
-            // Step 3: Find מאונך: (this is the key separator)
+            // Step 3: Find מאונך: (this separates horizontal from vertical)
             const מאונךIndex = solutionSection.indexOf('מאונך:');
             if (מאונךIndex === -1) {
                 console.log('❌ Could not find מאונך section');
                 return { horizontal: [], vertical: [] };
             }
             
-            // Step 4: Extract horizontal answers (everything before מאונך:)
+            // Step 4: Extract horizontal and vertical sections
             const horizontalText = solutionSection.substring(0, מאונךIndex).trim();
-            let verticalText = solutionSection.substring(מאונךIndex + 6).trim();
+            const verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
-            // Step 4.1: Find the actual start of vertical answers
-            // Look for the first "1. " pattern in the vertical section
-            const verticalStartIndex = verticalText.indexOf('1. ');
-            if (verticalStartIndex > 0) {
-                verticalText = verticalText.substring(verticalStartIndex);
-            }
+            console.log('🔍 Horizontal section:', horizontalText);
+            console.log('🔍 Vertical section:', verticalText);
             
-            // Step 4.1.5: Also look for other vertical answer patterns in the raw vertical section
-            // The vertical section might start with other numbers like "3. " or "14. "
-            const rawVerticalText = solutionSection.substring(מאונךIndex + 6).trim();
-            const verticalStartPatterns = ['1. בנדנה', '3. לעברי', '14. הומו פבר', '12. ברוך'];
-            let bestStartIndex = -1;
-            let bestPattern = '';
-            
-            for (const pattern of verticalStartPatterns) {
-                const index = rawVerticalText.indexOf(pattern);
-                if (index > 0 && (bestStartIndex === -1 || index < bestStartIndex)) {
-                    bestStartIndex = index;
-                    bestPattern = pattern;
-                }
-            }
-            
-            if (bestStartIndex > 0) {
-                verticalText = rawVerticalText.substring(bestStartIndex);
-                console.log(`🔍 DEBUG - Found vertical start with pattern: ${bestPattern}`);
-            }
-            
-            // Step 4.8: Fix the missing "12. ברוך" prefix for "אגדתי"
-            // The vertical section starts with "אגדתי" but it should be "12. ברוך אגדתי"
-            if (verticalText.startsWith('אגדתי')) {
-                verticalText = '12. ברוך ' + verticalText;
-                console.log('🔍 DEBUG - Fixed missing 12. ברוך prefix for אגדתי');
-            }
-            
-            
-            // Step 4.2: If no pattern found, try to find the start by looking for the first number pattern
-            // Force refresh to clear browser cache
-            if (bestStartIndex === -1) {
-                const numberPattern = verticalText.match(/\d+\.\s*[א-ת]/);
-                if (numberPattern) {
-                    const startIndex = verticalText.indexOf(numberPattern[0]);
-                    if (startIndex > 0) {
-                        verticalText = verticalText.substring(startIndex);
-                        console.log(`🔍 DEBUG - Found vertical start with number pattern: ${numberPattern[0]}`);
-                    }
-                }
-            }
-            
-            // Step 4.5: Clean up horizontal text to remove vertical answers that got mixed in
-            // The horizontal section should end before the vertical answers start
-            const horizontalEndIndex = horizontalText.lastIndexOf('26. על הפתחים');
-            const cleanHorizontalText = horizontalEndIndex > 0 ? 
-                horizontalText.substring(0, horizontalEndIndex + '26. על הפתחים'.length) : 
-                horizontalText;
-            
-            // Step 4.6: Extract vertical answers from the horizontal section (they got mixed in)
-            // Look for vertical answers that are in the horizontal section
-            const verticalAnswersInHorizontal = horizontalText.substring(horizontalEndIndex + '26. על הפתחים'.length);
-            let verticalAnswersFromHorizontal = verticalAnswersInHorizontal.trim();
-            
-            // Step 4.7: Fix the missing "3. לעברי" - it should be in the horizontal section
-            // The horizontal section has: "3. לעברי 4. קרדינל 6. סימה קדמון 7. התכנסות 8. זכריני 12. ברוך   1. בנדנה 2. טבק"
-            // But we're missing "3. לעברי" from the vertical section
-            if (verticalAnswersFromHorizontal.includes('3. לעברי')) {
-                console.log('🔍 DEBUG - Found 3. לעברי in horizontal section');
-            }
-            
-            // Step 4.7.1: Also check if "12. ברוך" is in the horizontal section but "אגדתי" is missing
-            if (verticalAnswersFromHorizontal.includes('12. ברוך') && !verticalText.includes('12. ברוך')) {
-                // Extract "12. ברוך" from horizontal section and add it to vertical section
-                const ברוךMatch = verticalAnswersFromHorizontal.match(/12\.\s*ברוך/);
-                if (ברוךMatch) {
-                    verticalText = ברוךMatch[0] + ' ' + verticalText;
-                    console.log('🔍 DEBUG - Added 12. ברוך to vertical section');
-                }
-            }
-            
-            // Step 4.8: Also check if we need to add "3. לעברי" to the vertical section
-            // The vertical section should start with "3. לעברי" but it's starting with "14. הומו פבר"
-            if (!verticalText.includes('3. לעברי') && verticalAnswersFromHorizontal.includes('3. לעברי')) {
-                // Extract "3. לעברי" from the horizontal section and add it to the vertical section
-                const לעבריMatch = verticalAnswersFromHorizontal.match(/3\.\s*לעברי/);
-                if (לעבריMatch) {
-                    verticalText = לעבריMatch[0] + ' ' + verticalText;
-                    console.log('🔍 DEBUG - Added 3. לעברי to vertical section');
-                }
-            }
-            
-            // Step 4.9: Debug the exact content of vertical answers from horizontal
-            console.log('🔍 DEBUG - Vertical answers from horizontal content:', verticalAnswersFromHorizontal);
-            console.log('🔍 DEBUG - Does it contain 3. לעברי?', verticalAnswersFromHorizontal.includes('3. לעברי'));
-            
-            // Step 4.10: Debug the final vertical text that will be parsed
-            console.log('🔍 DEBUG - Final vertical text to be parsed:', verticalText);
-            console.log('🔍 DEBUG - Does final vertical text contain 3. לעברי?', verticalText.includes('3. לעברי'));
-            
-            console.log('🔍 DEBUG - מאונךIndex:', מאונךIndex);
-            console.log('🔍 DEBUG - Horizontal section:', horizontalText);
-            console.log('🔍 DEBUG - Clean horizontal section:', cleanHorizontalText);
-            console.log('🔍 DEBUG - Vertical answers from horizontal:', verticalAnswersFromHorizontal);
-            console.log('🔍 DEBUG - Vertical section (raw):', solutionSection.substring(מאונךIndex + 6).trim());
-            console.log('🔍 DEBUG - Vertical section (cleaned):', verticalText);
-            
-            // COMPREHENSIVE DEBUG: Let's see the exact structure
-            console.log('🔍 COMPREHENSIVE DEBUG - Full solution section:');
-            console.log(solutionSection);
-            console.log('🔍 COMPREHENSIVE DEBUG - Text around מאונך:');
-            const aroundIndex = Math.max(0, מאונךIndex - 50);
-            const aroundText = solutionSection.substring(aroundIndex, מאונךIndex + 100);
-            console.log(aroundText);
-            
-            // Step 5: Parse answers
-            const horizontalAnswers = parseSimpleAnswers(cleanHorizontalText, 'H');
-            const verticalAnswersFromHorizontalParsed = parseSimpleAnswers(verticalAnswersFromHorizontal, 'V');
-            const verticalAnswersFromSectionParsed = parseSimpleAnswers(verticalText, 'V');
-            
-            // Combine vertical answers from both sources
-            const verticalAnswers = [...verticalAnswersFromHorizontalParsed, ...verticalAnswersFromSectionParsed];
+            // Step 5: Parse answers using simple regex
+            const horizontalAnswers = parseAnswersSimple(horizontalText, 'H');
+            const verticalAnswers = parseAnswersSimple(verticalText, 'V');
             
             console.log(`📊 Extracted ${horizontalAnswers.length} horizontal + ${verticalAnswers.length} vertical answers`);
-            console.log(`📊 Vertical from horizontal: ${verticalAnswersFromHorizontalParsed.length}, from section: ${verticalAnswersFromSectionParsed.length}`);
             
             return {
                 horizontal: horizontalAnswers,
                 vertical: verticalAnswers
             };
+        }
+        
+        // Simple answer parser: find "number. answer" patterns
+        function parseAnswersSimple(text, direction) {
+            console.log(`Parsing ${direction} answers from:`, text);
+            const answers = [];
+            
+            // Find all "number. answer" patterns
+            // This regex captures: number, then everything until the next number or end
+            const regex = /(\d+)\.\s*([^]*?)(?=\s+\d+\.|$)/g;
+            let match;
+            
+            while ((match = regex.exec(text)) !== null) {
+                const number = parseInt(match[1]);
+                let answer = match[2].trim();
+                
+                // Clean up the answer - remove trailing periods and extra text
+                answer = answer.replace(/\.$/, '').trim();
+                
+                if (answer && answer.length > 0) {
+                    answers.push({
+                        number: number,
+                        answer: answer,
+                        direction: direction
+                    });
+                    console.log(`  📝 ${number}${direction}: ${answer}`);
+                }
+            }
+            
+            return answers;
         }
         
         // Parse answers in format: "1. בוטפליקה 5. נספה 9. דו קרב 10. דרך המלך"
