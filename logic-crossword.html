@@ -551,110 +551,40 @@
             return answers;
         }
         
-        // Parse solutions from the solution section 
-        function parseSolutionsFromText(sectionText, sectionType) {
-            const answers = [];
-            
-            console.log('Parsing solutions from:', sectionType, 'section:', sectionText);
-            
-            let textToParse = '';
-            
-            if (sectionType === 'horizontal') {
-                // Look for text between מאוזן: and מאונך:
-                const horizontalMatch = sectionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
-                if (horizontalMatch) {
-                    textToParse = horizontalMatch[1].trim();
-                }
-            } else if (sectionType === 'vertical') {
-                // Look for text after מאונך:
-                const verticalMatch = sectionText.match(/מאונך:\s*(.*?)$/s);
-                if (verticalMatch) {
-                    textToParse = verticalMatch[1].trim();
-                }
-            }
-            
-            console.log('Text to parse for', sectionType, ':', textToParse);
-            
-            if (!textToParse) {
-                console.log('No text found for', sectionType);
-                return answers;
-            }
-            
-            // Parse format like: "17. אתניקס 19. רדה 20. אלבינוני 23. ברברה 24. דן חמיצר"
-            // Split by number followed by period, but keep the number
-            const parts = textToParse.split(/(?=\d+\.)/);
-            
-            parts.forEach(part => {
-                part = part.trim();
-                if (!part) return;
-                
-                // Match pattern: "number. Hebrew text" (may contain spaces)
-                const match = part.match(/^(\d+)\.\s*([א-ת][א-ת\s]*?)(?=\s*\d+\.|$)/);
-                if (match) {
-                    const number = parseInt(match[1]);
-                    let answerText = match[2].trim();
-                    
-                    // Clean up extra spaces but preserve Hebrew text
-                    answerText = answerText.replace(/\s+/g, ' ').trim();
-                    
-                    if (answerText.length > 0 && /[א-ת]/.test(answerText)) {
-                        const answer = {
-                            number: number,
-                            text: answerText,
-                            type: sectionType
-                        };
-                        
-                        console.log('Extracted solution:', answer);
-                        answers.push(answer);
-                    }
-                } else {
-                    console.log('No match for part:', part);
-                }
-            });
-            
-            return answers;
-        }
-        
-        // Match clues with their corresponding answers
+        // Clean up and simplify the matching function
         function matchCluesWithAnswers(clues, answers) {
-            console.log('=== MATCHING CLUES WITH ANSWERS ===');
+            console.log('=== SIMPLE MATCHING ===');
             
-            // Create lookup maps for answers
+            // Create answer lookup maps
             const horizontalAnswerMap = new Map();
             const verticalAnswerMap = new Map();
             
             answers.horizontal.forEach(answer => {
                 horizontalAnswerMap.set(answer.number, answer.text);
+                console.log(`📝 H${answer.number}: ${answer.text}`);
             });
             
             answers.vertical.forEach(answer => {
                 verticalAnswerMap.set(answer.number, answer.text);
+                console.log(`📝 V${answer.number}: ${answer.text}`);
             });
             
-            // Match horizontal clues with answers
-            const matchedHorizontalClues = clues.horizontal.map(clue => {
-                const answer = horizontalAnswerMap.get(clue.number);
-                return {
-                    ...clue,
-                    answer: answer || 'TBD'
-                };
-            });
+            // Match clues with answers
+            const matchedHorizontal = clues.horizontal.map(clue => ({
+                ...clue,
+                answer: horizontalAnswerMap.get(clue.number) || 'TBD'
+            }));
             
-            // Match vertical clues with answers
-            const matchedVerticalClues = clues.vertical.map(clue => {
-                const answer = verticalAnswerMap.get(clue.number);
-                return {
-                    ...clue,
-                    answer: answer || 'TBD'
-                };
-            });
+            const matchedVertical = clues.vertical.map(clue => ({
+                ...clue,
+                answer: verticalAnswerMap.get(clue.number) || 'TBD'
+            }));
             
-            console.log('Matched horizontal clues:', matchedHorizontalClues.length);
-            console.log('Matched vertical clues:', matchedVerticalClues.length);
+            console.log(`🎯 Matched ${matchedHorizontal.length}H + ${matchedVertical.length}V clues`);
             
             return {
-                horizontal: matchedHorizontalClues,
-                vertical: matchedVerticalClues
+                horizontal: matchedHorizontal,
+                vertical: matchedVertical
             };
         }
         
