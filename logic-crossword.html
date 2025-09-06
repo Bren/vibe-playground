@@ -582,6 +582,17 @@
                 console.log('🔍 DEBUG - Found 3. לעברי in horizontal section');
             }
             
+            // Step 4.8: Also check if we need to add "3. לעברי" to the vertical section
+            // The vertical section should start with "3. לעברי" but it's starting with "14. הומו פבר"
+            if (!verticalText.includes('3. לעברי') && verticalAnswersFromHorizontal.includes('3. לעברי')) {
+                // Extract "3. לעברי" from the horizontal section and add it to the vertical section
+                const לעבריMatch = verticalAnswersFromHorizontal.match(/3\.\s*לעברי/);
+                if (לעבריMatch) {
+                    verticalText = לעבריMatch[0] + ' ' + verticalText;
+                    console.log('🔍 DEBUG - Added 3. לעברי to vertical section');
+                }
+            }
+            
             console.log('🔍 DEBUG - מאונךIndex:', מאונךIndex);
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
             console.log('🔍 DEBUG - Clean horizontal section:', cleanHorizontalText);
