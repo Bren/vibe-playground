@@ -535,9 +535,12 @@
                         verticalText = `${number}. ${answer} ${verticalText}`;
                     }
                 });
-                // Clean up extra spaces
+                // Clean up extra spaces and fix mixed answers
                 horizontalText = horizontalText.replace(/\s+/g, ' ').trim();
                 verticalText = verticalText.replace(/\s+/g, ' ').trim();
+                
+                // Fix the mixed up V3 and V12 answers
+                verticalText = verticalText.replace(/3\. לעברי אגדתי/g, '3. לעברי 12. ברוך אגדתי');
             }
             
             // Clean horizontal section - remove the "מאוזן:" title that got mixed in
@@ -773,7 +776,7 @@
                 
                 // Handle cases where multiple clues are on the same line
                 // Look for all "number. text" patterns in this part
-                const clueMatches = part.match(/(\d+)\.\s*([^]+?)(?=\s*\d+\.|$)/g);
+                const clueMatches = part.match(/(\d+)\.\s*([^;]+?)(?=\s*\d+\.|$)/g);
                 if (clueMatches) {
                     clueMatches.forEach(clueMatch => {
                         const match = clueMatch.match(/^(\d+)\.\s*(.+)$/);
