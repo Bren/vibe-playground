@@ -515,7 +515,14 @@
             
             // Step 4: Extract horizontal answers (everything before מאונך:)
             const horizontalText = solutionSection.substring(0, מאונךIndex).trim();
-            const verticalText = solutionSection.substring(מאונךIndex + 6).trim();
+            let verticalText = solutionSection.substring(מאונךIndex + 6).trim();
+            
+            // Step 4.1: Find the actual start of vertical answers
+            // Look for the first "1. " pattern in the vertical section
+            const verticalStartIndex = verticalText.indexOf('1. ');
+            if (verticalStartIndex > 0) {
+                verticalText = verticalText.substring(verticalStartIndex);
+            }
             
             // Step 4.5: Clean up horizontal text to remove vertical answers that got mixed in
             // The horizontal section should end before the vertical answers start
@@ -527,7 +534,8 @@
             console.log('🔍 DEBUG - מאונךIndex:', מאונךIndex);
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
             console.log('🔍 DEBUG - Clean horizontal section:', cleanHorizontalText);
-            console.log('🔍 DEBUG - Vertical section:', verticalText);
+            console.log('🔍 DEBUG - Vertical section (raw):', solutionSection.substring(מאונךIndex + 6).trim());
+            console.log('🔍 DEBUG - Vertical section (cleaned):', verticalText);
             
             // Step 5: Parse answers
             const horizontalAnswers = parseSimpleAnswers(cleanHorizontalText, 'H');
