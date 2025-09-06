@@ -517,6 +517,29 @@
             let horizontalText = solutionSection.substring(0, מאונךIndex).trim();
             let verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
+            // DEBUG: Check if vertical answers are mixed in horizontal section
+            console.log('🔍 Checking for mixed vertical answers in horizontal section...');
+            const mixedVerticalPattern = /(\d+)\.\s*(בנדנה|טבק|לעברי|קרדינל|סימה קדמון|התכנסות|זכריני|ברוך אגדתי)/g;
+            const mixedMatches = horizontalText.match(mixedVerticalPattern);
+            if (mixedMatches) {
+                console.log('🔍 Found mixed vertical answers:', mixedMatches);
+                // Extract these answers and move them to vertical section
+                mixedMatches.forEach(match => {
+                    const numberMatch = match.match(/(\d+)\.\s*(.+)/);
+                    if (numberMatch) {
+                        const number = numberMatch[1];
+                        const answer = numberMatch[2];
+                        // Remove from horizontal text
+                        horizontalText = horizontalText.replace(match, '');
+                        // Add to vertical text
+                        verticalText = `${number}. ${answer} ${verticalText}`;
+                    }
+                });
+                // Clean up extra spaces
+                horizontalText = horizontalText.replace(/\s+/g, ' ').trim();
+                verticalText = verticalText.replace(/\s+/g, ' ').trim();
+            }
+            
             // Clean horizontal section - remove the "מאוזן:" title that got mixed in
             horizontalText = horizontalText.replace(/מאוזן:\s*/g, '').trim();
             
@@ -621,6 +644,9 @@
                 
                 // Clean up the answer - remove trailing periods and extra text
                 answer = answer.replace(/\.$/, '').trim();
+                
+                // Clean up extra spaces
+                answer = answer.replace(/\s+/g, ' ').trim();
                 
                 if (answer && answer.length > 0) {
                     answers.push({
