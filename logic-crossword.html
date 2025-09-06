@@ -503,7 +503,7 @@
                 return { horizontal: [], vertical: [] };
             }
             
-            const horizontalText = solutionMatch[2].trim();
+            const horizontalText = (solutionMatch[1] + solutionMatch[2]).trim();
             const verticalText = solutionMatch[3].trim();
             
             console.log('🔍 DEBUG - Full solution match:', solutionMatch[0]);
