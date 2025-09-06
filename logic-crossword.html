@@ -496,15 +496,15 @@
             console.log('=== CLEAN ANSWER EXTRACTION ===');
             
             // Step 1: Find the solution section (look for פתרון תשבץ הגיון מס' 1724)
-            const solutionMatch = text.match(/פתרון תשבץ הגיון מס' 1724[^]*?מאוזן:\s*(.*?)מאונך:\s*(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
+            const solutionMatch = text.match(/פתרון תשבץ הגיון מס' 1724\s*([^]*?)מאוזן:\s*(.*?)מאונך:\s*(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
             
             if (!solutionMatch) {
                 console.log('❌ No solution section found');
                 return { horizontal: [], vertical: [] };
             }
             
-            const horizontalText = solutionMatch[1].trim();
-            const verticalText = solutionMatch[2].trim();
+            const horizontalText = solutionMatch[2].trim();
+            const verticalText = solutionMatch[3].trim();
             
             console.log('🔍 DEBUG - Full solution match:', solutionMatch[0]);
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
