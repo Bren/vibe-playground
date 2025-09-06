@@ -815,6 +815,13 @@
                 }
             });
             
+            // Fix clue 4V specifically - add missing letter count
+            clues.forEach(clue => {
+                if (clue.number === 4 && clue.direction === 'V' && clue.text === 'בגדול החוק משמש בקודש') {
+                    clue.text = 'בגדול החוק משמש בקודש (6)';
+                }
+            });
+            
             return clues;
         }
         
