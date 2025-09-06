@@ -773,7 +773,7 @@
                 
                 // Handle cases where multiple clues are on the same line
                 // Look for all "number. text" patterns in this part
-                const clueMatches = part.match(/(\d+)\.\s*([^;]+?)(?=\s*\d+\.|$)/g);
+                const clueMatches = part.match(/(\d+)\.\s*([^]+?)(?=\s*\d+\.|$)/g);
                 if (clueMatches) {
                     clueMatches.forEach(clueMatch => {
                         const match = clueMatch.match(/^(\d+)\.\s*(.+)$/);
