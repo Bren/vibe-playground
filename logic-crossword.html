@@ -553,6 +553,7 @@
             
             
             // Step 4.2: If no pattern found, try to find the start by looking for the first number pattern
+            // Force refresh to clear browser cache
             if (bestStartIndex === -1) {
                 const numberPattern = verticalText.match(/\d+\.\s*[א-ת]/);
                 if (numberPattern) {
