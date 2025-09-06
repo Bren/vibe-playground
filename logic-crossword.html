@@ -535,6 +535,70 @@
             
             console.log(`📊 Extracted ${horizontalAnswers.length} horizontal + ${verticalAnswers.length} vertical answers`);
             
+            // AUTOMATED TESTING - Check if we got the expected answers
+            const expectedAnswers = {
+                horizontal: [
+                    {number: 1, answer: 'בוטפליקה'},
+                    {number: 5, answer: 'נספה'},
+                    {number: 9, answer: 'דו קרב'},
+                    {number: 10, answer: 'דרך המלך'},
+                    {number: 11, answer: 'העבריין (ייקנס)'},
+                    {number: 13, answer: 'ייקנס'},
+                    {number: 14, answer: 'האו האו'},
+                    {number: 16, answer: 'מיומנת'},
+                    {number: 18, answer: 'מיאמי'},
+                    {number: 19, answer: 'עזבונות'},
+                    {number: 22, answer: 'פרד אסטר'},
+                    {number: 23, answer: 'אתקנא'},
+                    {number: 25, answer: 'רציף'},
+                    {number: 26, answer: 'על הפתחים'}
+                ],
+                vertical: [
+                    {number: 1, answer: 'בנדנה'},
+                    {number: 2, answer: 'טבק'},
+                    {number: 3, answer: 'לעברי'},
+                    {number: 4, answer: 'קרדינל'},
+                    {number: 6, answer: 'סימה קדמון'},
+                    {number: 7, answer: 'התכנסות'},
+                    {number: 8, answer: 'זכריני'},
+                    {number: 12, answer: 'ברוך אגדתי'},
+                    {number: 14, answer: 'הומו פבר'},
+                    {number: 15, answer: 'אליאסי'},
+                    {number: 17, answer: 'מעורפל'},
+                    {number: 20, answer: 'בן אלף'},
+                    {number: 21, answer: 'תנאים'},
+                    {number: 24, answer: 'קרח'}
+                ]
+            };
+            
+            // Test horizontal answers
+            console.log('🧪 TESTING HORIZONTAL ANSWERS:');
+            let horizontalPassed = 0;
+            expectedAnswers.horizontal.forEach(expected => {
+                const found = horizontalAnswers.find(a => a.number === expected.number);
+                if (found && found.answer === expected.answer) {
+                    console.log(`✅ H${expected.number}: ${expected.answer}`);
+                    horizontalPassed++;
+                } else {
+                    console.log(`❌ H${expected.number}: Expected "${expected.answer}", got "${found ? found.answer : 'NOT FOUND'}"`);
+                }
+            });
+            
+            // Test vertical answers
+            console.log('🧪 TESTING VERTICAL ANSWERS:');
+            let verticalPassed = 0;
+            expectedAnswers.vertical.forEach(expected => {
+                const found = verticalAnswers.find(a => a.number === expected.number);
+                if (found && found.answer === expected.answer) {
+                    console.log(`✅ V${expected.number}: ${expected.answer}`);
+                    verticalPassed++;
+                } else {
+                    console.log(`❌ V${expected.number}: Expected "${expected.answer}", got "${found ? found.answer : 'NOT FOUND'}"`);
+                }
+            });
+            
+            console.log(`🧪 TEST RESULTS: ${horizontalPassed}/${expectedAnswers.horizontal.length} horizontal, ${verticalPassed}/${expectedAnswers.vertical.length} vertical`);
+            
             return {
                 horizontal: horizontalAnswers,
                 vertical: verticalAnswers
