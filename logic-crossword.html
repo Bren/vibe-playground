@@ -517,8 +517,10 @@
                 return { horizontal: [], vertical: [] };
             }
             
-            // Step 4: Extract horizontal answers (from מאוזן: to מאונך:)
-            const horizontalText = solutionSection.substring(מאוזןIndex + 6, מאונךIndex).trim();
+            // Step 4: Extract horizontal answers (combine both parts)
+            const part1 = solutionSection.substring(horizontalStart, מאוזןIndex).trim();
+            const part2 = solutionSection.substring(מאוזןIndex + 6, מאונךIndex).trim();
+            const horizontalText = (part1 + ' ' + part2).trim();
             const verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
             console.log('🔍 DEBUG - Full solution section:', solutionSection);
