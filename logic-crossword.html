@@ -524,6 +524,26 @@
                 verticalText = verticalText.substring(verticalStartIndex);
             }
             
+            // Step 4.2: Look for the actual start of vertical answers
+            // The vertical section should start with "1. בנדנה" but it's getting cut off
+            // Let's look for the pattern that should be there
+            const verticalStartPatterns = ['1. בנדנה', '3. לעברי', '14. הומו פבר'];
+            let bestStartIndex = -1;
+            let bestPattern = '';
+            
+            for (const pattern of verticalStartPatterns) {
+                const index = verticalText.indexOf(pattern);
+                if (index > 0 && (bestStartIndex === -1 || index < bestStartIndex)) {
+                    bestStartIndex = index;
+                    bestPattern = pattern;
+                }
+            }
+            
+            if (bestStartIndex > 0) {
+                verticalText = verticalText.substring(bestStartIndex);
+                console.log(`🔍 DEBUG - Found vertical start with pattern: ${bestPattern}`);
+            }
+            
             // Step 4.5: Clean up horizontal text to remove vertical answers that got mixed in
             // The horizontal section should end before the vertical answers start
             const horizontalEndIndex = horizontalText.lastIndexOf('26. על הפתחים');
