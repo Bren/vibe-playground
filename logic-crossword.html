@@ -575,6 +575,14 @@
             console.log('🔍 DEBUG - Vertical section (raw):', solutionSection.substring(מאונךIndex + 6).trim());
             console.log('🔍 DEBUG - Vertical section (cleaned):', verticalText);
             
+            // COMPREHENSIVE DEBUG: Let's see the exact structure
+            console.log('🔍 COMPREHENSIVE DEBUG - Full solution section:');
+            console.log(solutionSection);
+            console.log('🔍 COMPREHENSIVE DEBUG - Text around מאונך:');
+            const aroundIndex = Math.max(0, מאונךIndex - 50);
+            const aroundText = solutionSection.substring(aroundIndex, מאונךIndex + 100);
+            console.log(aroundText);
+            
             // Step 5: Parse answers
             const horizontalAnswers = parseSimpleAnswers(cleanHorizontalText, 'H');
             const verticalAnswersFromHorizontalParsed = parseSimpleAnswers(verticalAnswersFromHorizontal, 'V');
