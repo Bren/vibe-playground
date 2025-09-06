@@ -515,10 +515,16 @@
             
             // Step 4: Extract horizontal and vertical sections
             let horizontalText = solutionSection.substring(0, מאונךIndex).trim();
-            const verticalText = solutionSection.substring(מאונךIndex + 6).trim();
+            let verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
             // Clean horizontal section - remove the "מאוזן:" title that got mixed in
             horizontalText = horizontalText.replace(/מאוזן:\s*/g, '').trim();
+            
+            // Clean vertical section - remove Sudoku instructions that start with "לוח המשחק"
+            const sudokuIndex = verticalText.indexOf('לוח המשחק');
+            if (sudokuIndex > 0) {
+                verticalText = verticalText.substring(0, sudokuIndex).trim();
+            }
             
             console.log('🔍 Horizontal section:', horizontalText);
             console.log('🔍 Vertical section:', verticalText);
