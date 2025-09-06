@@ -540,34 +540,39 @@
             
             console.log(`Parsing ${direction} answers from:`, text);
             
-            // Split by number-period pattern: "1. text 5. text 9. text"
-            const parts = text.split(/(?=\d+\.)/);
+            // Remove the section header (מאוזן: or מאונך:)
+            let cleanText = text.replace(/^[^א-ת]*/, '').trim();
             
-            parts.forEach(part => {
-                part = part.trim();
-                if (!part) return;
-                
-                // Match: "number. Hebrew text" (until next number or end)
-                const match = part.match(/^(\d+)\.\s*([א-ת][^]*?)(?=\s+\d+\.|$)/);
-                if (match) {
-                    const number = parseInt(match[1]);
-                    let answerText = match[2].trim();
-                    
-                    // Clean up trailing period
-                    answerText = answerText.replace(/\.$/, '').trim();
-                    
-                    if (answerText && /[א-ת]/.test(answerText)) {
-                        answers.push({
-                            number: number,
-                            text: answerText,
-                            direction: direction
-                        });
-                        console.log(`  📝 ${number}${direction}: ${answerText}`);
+            // Find all number.answer patterns
+            const matches = cleanText.match(/(\d+)\.\s*([א-ת][^]*?)(?=\s+\d+\.|$)/g);
+            
+            if (matches) {
+                matches.forEach(match => {
+                    const parts = match.match(/^(\d+)\.\s*(.*)$/);
+                    if (parts) {
+                        const number = parseInt(parts[1]);
+                        let answerText = parts[2].trim();
+                        
+                        // Clean up trailing period and extra text
+                        answerText = answerText.replace(/\.$/, '').trim();
+                        
+                        // Only keep Hebrew text, stop at non-Hebrew characters
+                        const hebrewMatch = answerText.match(/^[א-ת\s\(\)]+/);
+                        if (hebrewMatch) {
+                            answerText = hebrewMatch[0].trim();
+                        }
+                        
+                        if (answerText && /[א-ת]/.test(answerText)) {
+                            answers.push({
+                                number: number,
+                                text: answerText,
+                                direction: direction
+                            });
+                            console.log(`  📝 ${number}${direction}: ${answerText}`);
+                        }
                     }
-                } else {
-                    console.log(`  ❌ No match for part: "${part}"`);
-                }
-            });
+                });
+            }
             
             return answers;
         }
