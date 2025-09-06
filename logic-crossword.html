@@ -312,7 +312,6 @@
                             <tr>
                                 <th>#</th>
                                 <th>H/V</th>
-                                <th>Start Cell</th>
                                 <th>Clue</th>
                                 <th>Answer</th>
                             </tr>
@@ -994,7 +993,7 @@
             
             if (documentStructure.status === 'error') {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td colspan="5">Error: ${documentStructure.error}</td>`;
+                row.innerHTML = `<td colspan="4">Error: ${documentStructure.error}</td>`;
                 tbody.appendChild(row);
                 return;
             }
@@ -1063,7 +1062,6 @@
                         row.innerHTML = `
                             <td style="font-weight: bold; color: white;">${clue.number}</td>
                             <td style="font-weight: bold; color: white;">${clue.direction || 'H'}</td>
-                            <td style="color: white;">TBD</td>
                             <td style="text-align: right; direction: rtl; color: white;">${clue.text}</td>
                             <td style="color: white;">${clue.answer || 'TBD'}</td>
                         `;
@@ -1091,7 +1089,6 @@
                         row.innerHTML = `
                             <td style="font-weight: bold; color: white;">${clue.number}</td>
                             <td style="font-weight: bold; color: white;">${clue.direction || 'V'}</td>
-                            <td style="color: white;">TBD</td>
                             <td style="text-align: right; direction: rtl; color: white;">${clue.text}</td>
                             <td style="color: white;">${clue.answer || 'TBD'}</td>
                         `;
@@ -1102,7 +1099,7 @@
                 // Add summary row
                 if (displayHorizontalClues.length === 0 && displayVerticalClues.length === 0) {
                     const row = document.createElement('tr');
-                    row.innerHTML = '<td colspan="5" style="color: white;">No valid clues found. Check if the document contains אופקי/אנכי sections.</td>';
+                    row.innerHTML = '<td colspan="4" style="color: white;">No valid clues found. Check if the document contains אופקי/אנכי sections.</td>';
                     tbody.appendChild(row);
                 } else {
                     const summaryRow = document.createElement('tr');
@@ -1138,7 +1135,7 @@
                 }
             } else {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="5">Processing...</td>';
+                row.innerHTML = '<td colspan="4">Processing...</td>';
                 tbody.appendChild(row);
             }
         }
