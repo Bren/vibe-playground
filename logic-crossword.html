@@ -459,24 +459,21 @@
             });
         }
         
-        // Parse document structure
+        // Parse document structure - CLUES ONLY VERSION
         function parseDocumentStructure(cluesText, answersText) {
             try {
                 // Extract clues from the clues document
                 const clues = extractClues(cluesText);
                 
-                // Extract answers from the answers document
-                const answers = extractAnswers(answersText);
-                
-                // Match clues with answers
-                const matchedClues = matchCluesWithAnswers(clues, answers);
+                // Skip answer extraction for now - just show clues
+                console.log('🔍 CLUES ONLY MODE - Skipping answer extraction');
                 
                 // Extract grid from the answers document
                 const grid = extractGrid(answersText);
                 
                 return {
-                    clues: matchedClues,
-                    answers: answers,
+                    clues: clues, // Use raw clues without answer matching
+                    answers: { horizontal: [], vertical: [] }, // Empty answers
                     grid: grid,
                     status: 'success'
                 };
