@@ -491,60 +491,64 @@
             }
         }
         
-        // Extract answers from the solution section (פתרון תשבץ הגיון)
+        // Extract answers from the solution section (פתרון תשבץ הגיון) - CLEAN VERSION
         function extractAnswers(text) {
-            console.log('=== ANSWER EXTRACTION DEBUG ===');
-            console.log('Answers text for analysis:', text.substring(0, 1000));
+            console.log('=== CLEAN ANSWER EXTRACTION ===');
             
-            const horizontalAnswers = [];
-            const verticalAnswers = [];
+            // Step 1: Find the solution section
+            const solutionMatch = text.match(/פתרון תשבץ הגיון[^]*?מאוזן:\s*(.*?)מאונך:\s*(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
             
-            // Look for the solution section: "פתרון תשבץ הגיון מס' ####"
-            const solutionMatch = text.match(/פתרון תשבץ הגיון.*?\s+(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
-            
-            if (solutionMatch) {
-                const solutionText = solutionMatch[1].trim();
-                console.log('Found solution section:', solutionText);
-                
-                // Within the solution section, find מאוזן and מאונך subsections
-                // The format appears to be mixed, so let's split differently
-                const horizontalSolutionMatch = solutionText.match(/מאוזן:\s*(.*?)(?=מאונך:|$)/s);
-                const verticalSolutionMatch = solutionText.match(/מאונך:\s*(.*?)$/s);
-                
-                // If the standard format doesn't work, try to parse the mixed format
-                if (!horizontalSolutionMatch && !verticalSolutionMatch) {
-                    console.log('Trying alternative parsing for mixed solution format');
-                    // Parse the entire solution text as one block and separate manually
-                    const allSolutions = solutionText;
-                    const horizontalAnswersFromText = parseSolutionsFromText(allSolutions, 'horizontal');
-                    const verticalAnswersFromText = parseSolutionsFromText(allSolutions, 'vertical');
-                    horizontalAnswers.push(...horizontalAnswersFromText);
-                    verticalAnswers.push(...verticalAnswersFromText);
-                } else {
-                    if (horizontalSolutionMatch) {
-                    const horizontalText = horizontalSolutionMatch[1].trim();
-                    console.log('Horizontal solutions section:', horizontalText);
-                    const horizontalAnswersFromText = parseSolutionsFromText(horizontalText, 'horizontal');
-                    horizontalAnswers.push(...horizontalAnswersFromText);
-                }
-                
-                    if (verticalSolutionMatch) {
-                        const verticalText = verticalSolutionMatch[1].trim();
-                        console.log('Vertical solutions section:', verticalText);
-                        const verticalAnswersFromText = parseSolutionsFromText(verticalText, 'vertical');
-                        verticalAnswers.push(...verticalAnswersFromText);
-                    }
-                }
-            } else {
-                console.log('No solution section found in text');
+            if (!solutionMatch) {
+                console.log('❌ No solution section found');
+                return { horizontal: [], vertical: [] };
             }
             
-            console.log('Final extracted answers: {horizontal:', horizontalAnswers.length, ', vertical:', verticalAnswers.length, '}');
+            const horizontalText = solutionMatch[1].trim();
+            const verticalText = solutionMatch[2].trim();
+            
+            console.log('✅ Found horizontal answers:', horizontalText);
+            console.log('✅ Found vertical answers:', verticalText);
+            
+            // Step 2: Parse answers from each section
+            const horizontalAnswers = parseSimpleAnswers(horizontalText, 'H');
+            const verticalAnswers = parseSimpleAnswers(verticalText, 'V');
+            
+            console.log(`📊 Extracted ${horizontalAnswers.length} horizontal + ${verticalAnswers.length} vertical answers`);
             
             return {
                 horizontal: horizontalAnswers,
                 vertical: verticalAnswers
             };
+        }
+        
+        // Parse answers in simple format: "14. שעורי בית 16. אל אזהר 18. עבודתו"
+        function parseSimpleAnswers(text, direction) {
+            const answers = [];
+            
+            // Split by number-period pattern: "14. text 16. text"
+            const parts = text.split(/(?=\d+\.)/);
+            
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                
+                const match = part.match(/^(\d+)\.\s*([א-ת][^]*?)(?=\s*$)/);
+                if (match) {
+                    const number = parseInt(match[1]);
+                    const answerText = match[2].trim();
+                    
+                    if (answerText && /[א-ת]/.test(answerText)) {
+                        answers.push({
+                            number: number,
+                            text: answerText,
+                            direction: direction
+                        });
+                        console.log(`  📝 ${number}${direction}: ${answerText}`);
+                    }
+                }
+            });
+            
+            return answers;
         }
         
         // Parse solutions from the solution section 
@@ -654,38 +658,55 @@
             };
         }
         
-        // Extract clues from text
+        // Extract clues from text - CLEAN VERSION
         function extractClues(text) {
-            console.log('=== CLUE EXTRACTION DEBUG ===');
-            console.log('Full text for analysis:', text);
+            console.log('=== CLEAN CLUE EXTRACTION ===');
             
-            const horizontalClues = [];
-            const verticalClues = [];
+            // Step 1: Find horizontal and vertical sections
+            const horizontalMatch = text.match(/מאוזן:\s*(.*?)(?=מאונך:|פתרון|$)/s);
+            const verticalMatch = text.match(/מאונך:\s*(.*?)(?=פתרון|$)/s);
             
-            // Find the clue sections and extract clues from the full text
-            // Stop before chess riddle content and answer sections
-            const horizontalMatch = text.match(/(?:אופקי|מאוזן):\s*(.*?)(?=(?:אנכי|מאונך):|פתרון|חידת שחמט|פתרון החידה|$)/s);
-            const verticalMatch = text.match(/(?:אנכי|מאונך):\s*(.*?)(?=פתרון|חידת שחמט|פתרון החידה|$)/s);
+            const horizontalClues = horizontalMatch ? parseSimpleClues(horizontalMatch[1].trim(), 'H') : [];
+            const verticalClues = verticalMatch ? parseSimpleClues(verticalMatch[1].trim(), 'V') : [];
             
-            if (horizontalMatch) {
-                const horizontalText = horizontalMatch[1].trim();
-                console.log('Horizontal section text:', horizontalText);
-                const horizontalCluesFromText = parseCluesFromText(horizontalText, 'horizontal');
-                horizontalClues.push(...horizontalCluesFromText);
-            }
+            console.log(`📊 Extracted ${horizontalClues.length} horizontal + ${verticalClues.length} vertical clues`);
             
-            if (verticalMatch) {
-                const verticalText = verticalMatch[1].trim();
-                console.log('Vertical section text:', verticalText);
-                const verticalCluesFromText = parseCluesFromText(verticalText, 'vertical');
-                verticalClues.push(...verticalCluesFromText);
-            }
+            return {
+                horizontal: horizontalClues,
+                vertical: verticalClues
+            };
+        }
+        
+        // Parse clues in simple format: "14. הלורד נבחן (3,3); 16. text (4);"
+        function parseSimpleClues(text, direction) {
+            const clues = [];
             
-            // Helper function to parse clues from a section of text
-            function parseCluesFromText(sectionText, sectionType) {
-                const clues = [];
+            // Split by semicolon and number pattern
+            const parts = text.split(';');
+            
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
                 
-                // Split by clue numbers - look for patterns like "1. ", "7. ", "19. ", etc.
+                const match = part.match(/^(\d+)\.\s*(.+)$/);
+                if (match) {
+                    const number = parseInt(match[1]);
+                    const clueText = match[2].trim();
+                    
+                    if (clueText && clueText.length > 3) {
+                        clues.push({
+                            number: number,
+                            direction: direction,
+                            text: clueText,
+                            type: direction === 'H' ? 'horizontal' : 'vertical'
+                        });
+                        console.log(`  🧩 ${number}${direction}: ${clueText}`);
+                    }
+                }
+            });
+            
+            return clues;
+        }
                 // Handle both semicolon-separated format and space-separated format
                 // For semicolon format: "1. text (length); 5. text (length);"
                 // For space format: "1. text (length) 7. text (length)"
