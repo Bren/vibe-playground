@@ -771,19 +771,43 @@
                 part = part.trim();
                 if (!part) return;
                 
-                const match = part.match(/^(\d+)\.\s*(.+)$/);
-                if (match) {
-                    const number = parseInt(match[1]);
-                    const clueText = match[2].trim();
-                    
-                    if (clueText && clueText.length > 3) {
-                        clues.push({
-                            number: number,
-                            direction: direction,
-                            text: clueText,
-                            type: direction === 'H' ? 'horizontal' : 'vertical'
-                        });
-                        console.log(`  🧩 ${number}${direction}: ${clueText}`);
+                // Handle cases where multiple clues are on the same line
+                // Look for all "number. text" patterns in this part
+                const clueMatches = part.match(/(\d+)\.\s*([^;]+?)(?=\s*\d+\.|$)/g);
+                if (clueMatches) {
+                    clueMatches.forEach(clueMatch => {
+                        const match = clueMatch.match(/^(\d+)\.\s*(.+)$/);
+                        if (match) {
+                            const number = parseInt(match[1]);
+                            const clueText = match[2].trim();
+                            
+                            if (clueText && clueText.length > 3) {
+                                clues.push({
+                                    number: number,
+                                    direction: direction,
+                                    text: clueText,
+                                    type: direction === 'H' ? 'horizontal' : 'vertical'
+                                });
+                                console.log(`  🧩 ${number}${direction}: ${clueText}`);
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback to original logic for single clues
+                    const match = part.match(/^(\d+)\.\s*(.+)$/);
+                    if (match) {
+                        const number = parseInt(match[1]);
+                        const clueText = match[2].trim();
+                        
+                        if (clueText && clueText.length > 3) {
+                            clues.push({
+                                number: number,
+                                direction: direction,
+                                text: clueText,
+                                type: direction === 'H' ? 'horizontal' : 'vertical'
+                            });
+                            console.log(`  🧩 ${number}${direction}: ${clueText}`);
+                        }
                     }
                 }
             });
