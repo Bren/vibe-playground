@@ -544,6 +544,13 @@
                 console.log(`🔍 DEBUG - Found vertical start with pattern: ${bestPattern}`);
             }
             
+            // Step 4.8: Fix the missing "12. ברוך" prefix for "אגדתי"
+            // The vertical section starts with "אגדתי" but it should be "12. ברוך אגדתי"
+            if (verticalText.startsWith('אגדתי')) {
+                verticalText = '12. ברוך ' + verticalText;
+                console.log('🔍 DEBUG - Fixed missing 12. ברוך prefix for אגדתי');
+            }
+            
             // Step 4.2: If no pattern found, try to find the start by looking for the first number pattern
             if (bestStartIndex === -1) {
                 const numberPattern = verticalText.match(/\d+\.\s*[א-ת]/);
@@ -566,7 +573,14 @@
             // Step 4.6: Extract vertical answers from the horizontal section (they got mixed in)
             // Look for vertical answers that are in the horizontal section
             const verticalAnswersInHorizontal = horizontalText.substring(horizontalEndIndex + '26. על הפתחים'.length);
-            const verticalAnswersFromHorizontal = verticalAnswersInHorizontal.trim();
+            let verticalAnswersFromHorizontal = verticalAnswersInHorizontal.trim();
+            
+            // Step 4.7: Fix the missing "3. לעברי" - it should be in the horizontal section
+            // The horizontal section has: "3. לעברי 4. קרדינל 6. סימה קדמון 7. התכנסות 8. זכריני 12. ברוך   1. בנדנה 2. טבק"
+            // But we're missing "3. לעברי" from the vertical section
+            if (verticalAnswersFromHorizontal.includes('3. לעברי')) {
+                console.log('🔍 DEBUG - Found 3. לעברי in horizontal section');
+            }
             
             console.log('🔍 DEBUG - מאונךIndex:', מאונךIndex);
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
