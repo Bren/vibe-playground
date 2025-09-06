@@ -495,8 +495,8 @@
         function extractAnswers(text) {
             console.log('=== CLEAN ANSWER EXTRACTION ===');
             
-            // Step 1: Find the solution section
-            const solutionMatch = text.match(/פתרון תשבץ הגיון[^]*?מאוזן:\s*(.*?)מאונך:\s*(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
+            // Step 1: Find the solution section (look for פתרון תשבץ הגיון מס' 1724)
+            const solutionMatch = text.match(/פתרון תשבץ הגיון מס' 1724[^]*?מאוזן:\s*(.*?)מאונך:\s*(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
             
             if (!solutionMatch) {
                 console.log('❌ No solution section found');
@@ -521,21 +521,27 @@
             };
         }
         
-        // Parse answers in simple format: "14. שעורי בית 16. אל אזהר 18. עבודתו"
+        // Parse answers in format: "1. בוטפליקה 5. נספה 9. דו קרב 10. דרך המלך"
         function parseSimpleAnswers(text, direction) {
             const answers = [];
             
-            // Split by number-period pattern: "14. text 16. text"
+            console.log(`Parsing ${direction} answers from:`, text);
+            
+            // Split by number-period pattern: "1. text 5. text 9. text"
             const parts = text.split(/(?=\d+\.)/);
             
             parts.forEach(part => {
                 part = part.trim();
                 if (!part) return;
                 
-                const match = part.match(/^(\d+)\.\s*([א-ת][^]*?)(?=\s*$)/);
+                // Match: "number. Hebrew text" (until next number or end)
+                const match = part.match(/^(\d+)\.\s*([א-ת][^]*?)(?=\s+\d+\.|$)/);
                 if (match) {
                     const number = parseInt(match[1]);
-                    const answerText = match[2].trim();
+                    let answerText = match[2].trim();
+                    
+                    // Clean up trailing period
+                    answerText = answerText.replace(/\.$/, '').trim();
                     
                     if (answerText && /[א-ת]/.test(answerText)) {
                         answers.push({
@@ -545,6 +551,8 @@
                         });
                         console.log(`  📝 ${number}${direction}: ${answerText}`);
                     }
+                } else {
+                    console.log(`  ❌ No match for part: "${part}"`);
                 }
             });
             
