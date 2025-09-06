@@ -491,28 +491,38 @@
             }
         }
         
-        // Extract answers from the solution section (פתרון תשבץ הגיון) - CLEAN VERSION
+        // Extract answers from the solution section (פתרון תשבץ הגיון) - SIMPLE VERSION
         function extractAnswers(text) {
-            console.log('=== CLEAN ANSWER EXTRACTION ===');
+            console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
-            // Step 1: Find the solution section (look for פתרון תשבץ הגיון מס' 1724)
-            const solutionMatch = text.match(/פתרון תשבץ הגיון מס' 1724\s*([^]*?)מאוזן:\s*(.*?)מאונך:\s*(.*?)(?=לוח המשחק|מנוי שבועי|$)/s);
-            
-            if (!solutionMatch) {
+            // Step 1: Find the solution section
+            const solutionIndex = text.indexOf('פתרון תשבץ הגיון מס\' 1724');
+            if (solutionIndex === -1) {
                 console.log('❌ No solution section found');
                 return { horizontal: [], vertical: [] };
             }
             
-            const horizontalText = (solutionMatch[1] + solutionMatch[2]).trim();
-            const verticalText = solutionMatch[3].trim();
+            // Step 2: Extract the solution section
+            const solutionSection = text.substring(solutionIndex);
+            console.log('🔍 DEBUG - Solution section found at index:', solutionIndex);
             
-            console.log('🔍 DEBUG - Full solution match:', solutionMatch[0]);
+            // Step 3: Find מאוזן and מאונך sections
+            const horizontalIndex = solutionSection.indexOf('מאוזן:');
+            const verticalIndex = solutionSection.indexOf('מאונך:');
+            
+            if (horizontalIndex === -1 || verticalIndex === -1) {
+                console.log('❌ Could not find מאוזן or מאונך sections');
+                return { horizontal: [], vertical: [] };
+            }
+            
+            // Step 4: Extract horizontal answers (everything from start to מאונך)
+            const horizontalText = solutionSection.substring(0, verticalIndex).trim();
+            const verticalText = solutionSection.substring(verticalIndex).trim();
+            
             console.log('🔍 DEBUG - Horizontal section:', horizontalText);
             console.log('🔍 DEBUG - Vertical section:', verticalText);
-            console.log('✅ Found horizontal answers:', horizontalText);
-            console.log('✅ Found vertical answers:', verticalText);
             
-            // Step 2: Parse answers from each section
+            // Step 5: Parse answers
             const horizontalAnswers = parseSimpleAnswers(horizontalText, 'H');
             const verticalAnswers = parseSimpleAnswers(verticalText, 'V');
             
@@ -1032,3 +1042,4 @@
     </script>
 </body>
 </html>
+
