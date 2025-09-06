@@ -614,13 +614,13 @@
             const verticalAnswerMap = new Map();
             
             answers.horizontal.forEach(answer => {
-                horizontalAnswerMap.set(answer.number, answer.text);
-                console.log(`📝 H${answer.number}: ${answer.text}`);
+                horizontalAnswerMap.set(answer.number, answer.answer);
+                console.log(`📝 H${answer.number}: ${answer.answer}`);
             });
             
             answers.vertical.forEach(answer => {
-                verticalAnswerMap.set(answer.number, answer.text);
-                console.log(`📝 V${answer.number}: ${answer.text}`);
+                verticalAnswerMap.set(answer.number, answer.answer);
+                console.log(`📝 V${answer.number}: ${answer.answer}`);
             });
             
             // Match clues with answers
