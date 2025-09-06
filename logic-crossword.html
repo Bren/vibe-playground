@@ -635,8 +635,8 @@
             
             console.log(`Parsing ${direction} answers from:`, text);
             
-            // Remove the section header (מאוזן: or מאונך:)
-            let cleanText = text.replace(/^[^א-ת]*/, '').trim();
+            // Remove the section header (מאוזן: or מאונך:) and leading periods/spaces
+            let cleanText = text.replace(/^[^א-ת\d]*/, '').trim();
             
             // Find all number.answer patterns
             const matches = cleanText.match(/(\d+)\.\s*([א-ת][^]*?)(?=\s+\d+\.|$)/g);
