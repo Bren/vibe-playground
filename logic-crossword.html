@@ -465,7 +465,7 @@
                 const clues = extractClues(cluesText);
                 
                 // Extract answers from the answers document
-                const answers = extractAnswers(answersText);
+                const answers = extractAnswers(answersText, cluesText);
                 
                 // Match clues with answers
                 const matchedClues = matchCluesWithAnswers(clues, answers);
@@ -491,13 +491,22 @@
         }
         
         // Extract answers from the solution section - SIMPLE VERSION
-        function extractAnswers(text) {
+        function extractAnswers(text, cluesText) {
             console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
-            // Step 1: Find the solution section (look for any crossword number)
-            const solutionMatch = text.match(/פתרון תשבץ הגיון מס\' (\d+)/);
+            // Step 1: Find the crossword number from the clues file
+            const cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
+            if (!cluesMatch) {
+                console.log('❌ Could not find crossword number in clues file');
+                return { horizontal: [], vertical: [] };
+            }
+            const crosswordNumber = cluesMatch[1];
+            console.log(`🔍 Looking for answers to crossword ${crosswordNumber}`);
+            
+            // Step 2: Find the solution section for this crossword number
+            const solutionMatch = text.match(new RegExp(`פתרון תשבץ הגיון מס' ${crosswordNumber}`));
             if (!solutionMatch) {
-                console.log('❌ No solution section found');
+                console.log(`❌ No solution section found for crossword ${crosswordNumber}`);
                 console.log('🔍 Looking for patterns in text...');
                 console.log('🔍 Text contains "פתרון":', text.includes('פתרון'));
                 console.log('🔍 Text contains "תשבץ":', text.includes('תשבץ'));
@@ -506,7 +515,7 @@
                 return { horizontal: [], vertical: [] };
             }
             const solutionIndex = solutionMatch.index;
-            console.log(`🔍 Found solution section for crossword ${solutionMatch[1]} at index: ${solutionIndex}`);
+            console.log(`🔍 Found solution section for crossword ${crosswordNumber} at index: ${solutionIndex}`);
             
             // Step 2: Extract the solution section
             const solutionSection = text.substring(solutionIndex);
