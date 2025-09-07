@@ -494,12 +494,14 @@
         function extractAnswers(text) {
             console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
-            // Step 1: Find the solution section
-            const solutionIndex = text.indexOf('פתרון תשבץ הגיון מס\' 1724');
-            if (solutionIndex === -1) {
+            // Step 1: Find the solution section (look for any crossword number)
+            const solutionMatch = text.match(/פתרון תשבץ הגיון מס\' (\d+)/);
+            if (!solutionMatch) {
                 console.log('❌ No solution section found');
                 return { horizontal: [], vertical: [] };
             }
+            const solutionIndex = solutionMatch.index;
+            console.log(`🔍 Found solution section for crossword ${solutionMatch[1]} at index: ${solutionIndex}`);
             
             // Step 2: Extract the solution section
             const solutionSection = text.substring(solutionIndex);
