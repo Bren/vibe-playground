@@ -498,9 +498,11 @@
             const cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
             if (!cluesMatch) {
                 console.log('❌ Could not find crossword number in clues file');
+                console.log('🔍 Clues text preview:', cluesText.substring(0, 200));
                 return { horizontal: [], vertical: [] };
             }
             const crosswordNumber = cluesMatch[1];
+            console.log(`🔍 Found crossword number: ${crosswordNumber} from clues file`);
             console.log(`🔍 Looking for answers to crossword ${crosswordNumber} in answers file`);
             
             // Step 2: Find the solution section for this crossword number in the answers file
