@@ -503,6 +503,8 @@
             }
             const crosswordNumber = cluesMatch[1];
             console.log(`🔍 Found crossword number: ${crosswordNumber} from clues file`);
+            console.log(`🔍 Full match: ${cluesMatch[0]}`);
+            console.log(`🔍 Clues text contains: ${cluesText.substring(0, 100)}`);
             console.log(`🔍 Looking for answers to crossword ${crosswordNumber} in answers file`);
             
             // Step 2: Find the solution section for this crossword number in the answers file
