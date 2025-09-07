@@ -498,6 +498,11 @@
             const solutionMatch = text.match(/פתרון תשבץ הגיון מס\' (\d+)/);
             if (!solutionMatch) {
                 console.log('❌ No solution section found');
+                console.log('🔍 Looking for patterns in text...');
+                console.log('🔍 Text contains "פתרון":', text.includes('פתרון'));
+                console.log('🔍 Text contains "תשבץ":', text.includes('תשבץ'));
+                console.log('🔍 Text contains "הגיון":', text.includes('הגיון'));
+                console.log('🔍 First 500 chars:', text.substring(0, 500));
                 return { horizontal: [], vertical: [] };
             }
             const solutionIndex = solutionMatch.index;
