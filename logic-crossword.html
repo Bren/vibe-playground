@@ -465,7 +465,7 @@
                 const clues = extractClues(cluesText);
                 
                 // Extract answers from the answers document
-                const answers = extractAnswers(answersText);
+                const answers = extractAnswers(answersText, cluesText);
                 
                 // Match clues with answers
                 const matchedClues = matchCluesWithAnswers(clues, answers);
@@ -491,37 +491,34 @@
         }
         
         // Extract answers from the solution section - SIMPLE VERSION
-        function extractAnswers(text) {
+        function extractAnswers(answersText, cluesText) {
             console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
-            // Step 1: Find the crossword number from this file (the previous crossword)
-            const cluesMatch = text.match(/תשבץ הגיון מס\' (\d+)/);
+            // Step 1: Find the crossword number from the clues file
+            const cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
             if (!cluesMatch) {
-                console.log('❌ Could not find crossword number in file');
+                console.log('❌ Could not find crossword number in clues file');
                 return { horizontal: [], vertical: [] };
             }
-            const currentCrosswordNumber = cluesMatch[1];
+            const crosswordNumber = cluesMatch[1];
+            console.log(`🔍 Looking for answers to crossword ${crosswordNumber} in answers file`);
             
-            // Step 2: Calculate the previous crossword number (answers are for the previous one)
-            const previousCrosswordNumber = parseInt(currentCrosswordNumber) - 1;
-            console.log(`🔍 Current crossword: ${currentCrosswordNumber}, looking for answers to crossword ${previousCrosswordNumber}`);
-            
-            // Step 3: Find the solution section for the previous crossword number
-            const solutionMatch = text.match(new RegExp(`פתרון תשבץ הגיון מס' ${previousCrosswordNumber}`));
+            // Step 2: Find the solution section for this crossword number in the answers file
+            const solutionMatch = answersText.match(new RegExp(`פתרון תשבץ הגיון מס' ${crosswordNumber}`));
             if (!solutionMatch) {
-                console.log(`❌ No solution section found for crossword ${previousCrosswordNumber}`);
-                console.log('🔍 Looking for patterns in text...');
-                console.log('🔍 Text contains "פתרון":', text.includes('פתרון'));
-                console.log('🔍 Text contains "תשבץ":', text.includes('תשבץ'));
-                console.log('🔍 Text contains "הגיון":', text.includes('הגיון'));
-                console.log('🔍 First 500 chars:', text.substring(0, 500));
+                console.log(`❌ No solution section found for crossword ${crosswordNumber}`);
+                console.log('🔍 Looking for patterns in answers text...');
+                console.log('🔍 Answers text contains "פתרון":', answersText.includes('פתרון'));
+                console.log('🔍 Answers text contains "תשבץ":', answersText.includes('תשבץ'));
+                console.log('🔍 Answers text contains "הגיון":', answersText.includes('הגיון'));
+                console.log('🔍 First 500 chars of answers text:', answersText.substring(0, 500));
                 return { horizontal: [], vertical: [] };
             }
             const solutionIndex = solutionMatch.index;
-            console.log(`🔍 Found solution section for crossword ${previousCrosswordNumber} at index: ${solutionIndex}`);
+            console.log(`🔍 Found solution section for crossword ${crosswordNumber} at index: ${solutionIndex}`);
             
             // Step 2: Extract the solution section
-            const solutionSection = text.substring(solutionIndex);
+            const solutionSection = answersText.substring(solutionIndex);
             console.log('🔍 Solution section found at index:', solutionIndex);
             
             // Step 3: Find מאונך: (this separates horizontal from vertical)
