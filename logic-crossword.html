@@ -507,10 +507,11 @@
             console.log(`🔍 Clues text contains: ${cluesText.substring(0, 100)}`);
             console.log(`🔍 Looking for answers to crossword ${crosswordNumber} in answers file`);
             
-            // Step 2: Find the solution section for this crossword number in the answers file
-            const solutionMatch = answersText.match(new RegExp(`פתרון תשבץ הגיון מס' ${crosswordNumber}`));
+            // Step 2: Find any solution section in the answers file (flexible approach)
+            console.log('🔍 Looking for any solution section in answers file...');
+            const solutionMatch = answersText.match(/פתרון תשבץ הגיון מס' (\d+)/);
             if (!solutionMatch) {
-                console.log(`❌ No solution section found for crossword ${crosswordNumber}`);
+                console.log('❌ No solution section found in answers file');
                 console.log('🔍 Looking for patterns in answers text...');
                 console.log('🔍 Answers text contains "פתרון":', answersText.includes('פתרון'));
                 console.log('🔍 Answers text contains "תשבץ":', answersText.includes('תשבץ'));
@@ -518,21 +519,25 @@
                 console.log('🔍 First 500 chars of answers text:', answersText.substring(0, 500));
                 return { horizontal: [], vertical: [] };
             }
-            const solutionIndex = solutionMatch.index;
-            console.log(`🔍 Found solution section for crossword ${crosswordNumber} at index: ${solutionIndex}`);
             
-            // Step 2: Extract the solution section
+            const answersCrosswordNumber = solutionMatch[1];
+            console.log(`🔍 Found solution section for crossword ${answersCrosswordNumber} in answers file`);
+            console.log(`🔍 Clues are for crossword ${crosswordNumber}, answers are for crossword ${answersCrosswordNumber}`);
+            const solutionIndex = solutionMatch.index;
+            console.log(`🔍 Found solution section for crossword ${answersCrosswordNumber} at index: ${solutionIndex}`);
+            
+            // Step 3: Extract the solution section
             const solutionSection = answersText.substring(solutionIndex);
             console.log('🔍 Solution section found at index:', solutionIndex);
             
-            // Step 3: Find מאונך: (this separates horizontal from vertical)
+            // Step 4: Find מאונך: (this separates horizontal from vertical)
             const מאונךIndex = solutionSection.indexOf('מאונך:');
             if (מאונךIndex === -1) {
                 console.log('❌ Could not find מאונך section');
                 return { horizontal: [], vertical: [] };
             }
             
-            // Step 4: Extract horizontal and vertical sections
+            // Step 5: Extract horizontal and vertical sections
             let horizontalText = solutionSection.substring(0, מאונךIndex).trim();
             let verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
