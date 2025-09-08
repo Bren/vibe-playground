@@ -624,6 +624,28 @@
             let horizontalText = solutionSection.substring(0, מאונךIndex).trim();
             let verticalText = solutionSection.substring(מאונךIndex + 6).trim();
             
+            console.log('🔍 Raw horizontal section length:', horizontalText.length);
+            console.log('🔍 Raw vertical section length:', verticalText.length);
+            
+            // Clean up the horizontal section - remove any vertical answers that got mixed in
+            // Look for the pattern where vertical answers start (usually after the last horizontal answer)
+            const horizontalAnswers = horizontalText.match(/\d+\.\s+[^0-9]+/g) || [];
+            console.log('🔍 Found horizontal answers:', horizontalAnswers.length);
+            
+            // Find where the horizontal answers end and vertical answers begin
+            let lastHorizontalIndex = 0;
+            for (let i = horizontalAnswers.length - 1; i >= 0; i--) {
+                const answer = horizontalAnswers[i];
+                const index = horizontalText.lastIndexOf(answer);
+                if (index > lastHorizontalIndex) {
+                    lastHorizontalIndex = index + answer.length;
+                }
+            }
+            
+            // Clean the horizontal section to only include actual horizontal answers
+            horizontalText = horizontalText.substring(0, lastHorizontalIndex).trim();
+            console.log('🔍 Cleaned horizontal section length:', horizontalText.length);
+            
             // DEBUG: Check if vertical answers are mixed in horizontal section
             console.log('🔍 Checking for mixed vertical answers in horizontal section...');
             const mixedVerticalPattern = /(\d+)\.\s*(בנדנה|טבק|לעברי|קרדינל|סימה קדמון|התכנסות|זכריני|ברוך אגדתי)/g;
