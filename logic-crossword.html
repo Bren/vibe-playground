@@ -499,6 +499,15 @@
             console.log('🔍 First 200 chars of clues text:', cluesText.substring(0, 200));
             console.log('🔍 DEBUG: This is the new debugging code - if you see this, the code is running!');
             
+            // Debug: Show character codes around the crossword number
+            const text = cluesText.substring(0, 200);
+            const index = text.indexOf('1562');
+            if (index > 0) {
+                console.log('🔍 Found 1562 at index:', index);
+                console.log('🔍 Characters around 1562:', text.substring(index - 10, index + 10));
+                console.log('🔍 Character codes around 1562:', Array.from(text.substring(index - 10, index + 10)).map(c => c.charCodeAt(0)));
+            }
+            
             // Try multiple regex patterns to find the crossword number
             let cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
             if (!cluesMatch) {
