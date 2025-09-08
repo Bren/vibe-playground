@@ -495,12 +495,27 @@
             console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
             // Step 1: Find the crossword number from the clues file (look for the first occurrence)
-            const cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
+            console.log('🔍 Searching for crossword number in clues file...');
+            console.log('🔍 First 200 chars of clues text:', cluesText.substring(0, 200));
+            
+            // Try multiple regex patterns to find the crossword number
+            let cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
+            if (!cluesMatch) {
+                cluesMatch = cluesText.match(/תשבץ הגיון מס' (\d+)/);
+            }
+            if (!cluesMatch) {
+                cluesMatch = cluesText.match(/תשבץ הגיון מס (\d+)/);
+            }
+            if (!cluesMatch) {
+                cluesMatch = cluesText.match(/מס\' (\d+)/);
+            }
+            
             if (!cluesMatch) {
                 console.log('❌ Could not find crossword number in clues file');
                 console.log('🔍 Clues text preview:', cluesText.substring(0, 200));
                 return { horizontal: [], vertical: [] };
             }
+            
             let crosswordNumber = cluesMatch[1];
             console.log(`🔍 Found crossword number: ${crosswordNumber} from clues file`);
             console.log(`🔍 Full match: ${cluesMatch[0]}`);
