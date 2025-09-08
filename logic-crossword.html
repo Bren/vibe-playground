@@ -646,6 +646,16 @@
             
             // Clean the horizontal section to only include actual horizontal answers
             if (lastHighNumberIndex > 0) {
+                // Get the mixed vertical answers that were removed
+                const removedText = horizontalText.substring(lastHighNumberIndex).trim();
+                console.log('🔍 Removed text (should contain vertical answers):', removedText);
+                
+                // Add the removed vertical answers to the vertical section
+                if (removedText) {
+                    verticalText = removedText + ' ' + verticalText;
+                    console.log('🔍 Added removed vertical answers to vertical section');
+                }
+                
                 horizontalText = horizontalText.substring(0, lastHighNumberIndex).trim();
                 console.log('🔍 Cleaned horizontal section length:', horizontalText.length);
                 console.log('🔍 Cleaned horizontal section:', horizontalText);
