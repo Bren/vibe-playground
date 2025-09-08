@@ -629,13 +629,13 @@
             
             // Clean up the horizontal section - remove any vertical answers that got mixed in
             // Look for the pattern where vertical answers start (usually after the last horizontal answer)
-            const horizontalAnswers = horizontalText.match(/\d+\.\s+[^0-9]+/g) || [];
-            console.log('🔍 Found horizontal answers:', horizontalAnswers.length);
+            const foundHorizontalAnswers = horizontalText.match(/\d+\.\s+[^0-9]+/g) || [];
+            console.log('🔍 Found horizontal answers:', foundHorizontalAnswers.length);
             
             // Find where the horizontal answers end and vertical answers begin
             let lastHorizontalIndex = 0;
-            for (let i = horizontalAnswers.length - 1; i >= 0; i--) {
-                const answer = horizontalAnswers[i];
+            for (let i = foundHorizontalAnswers.length - 1; i >= 0; i--) {
+                const answer = foundHorizontalAnswers[i];
                 const index = horizontalText.lastIndexOf(answer);
                 if (index > lastHorizontalIndex) {
                     lastHorizontalIndex = index + answer.length;
