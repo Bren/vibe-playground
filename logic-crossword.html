@@ -497,6 +497,7 @@
             // Step 1: Find the crossword number from the clues file (look for the first occurrence)
             console.log('🔍 Searching for crossword number in clues file...');
             console.log('🔍 First 200 chars of clues text:', cluesText.substring(0, 200));
+            console.log('🔍 DEBUG: This is the new debugging code - if you see this, the code is running!');
             
             // Try multiple regex patterns to find the crossword number
             let cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
