@@ -516,6 +516,13 @@
                 if (earlyMatch) {
                     console.log(`🔍 Found better match: ${earlyMatch[1]} at index ${earlyMatch.index}`);
                     crosswordNumber = earlyMatch[1];
+                } else {
+                    console.log('🔍 No better match found in first 200 characters, trying first 500...');
+                    const widerMatch = cluesText.substring(0, 500).match(/תשבץ הגיון מס\' (\d+)/);
+                    if (widerMatch) {
+                        console.log(`🔍 Found better match: ${widerMatch[1]} at index ${widerMatch.index}`);
+                        crosswordNumber = widerMatch[1];
+                    }
                 }
             }
             
