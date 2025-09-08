@@ -499,26 +499,8 @@
             console.log('🔍 First 200 chars of clues text:', cluesText.substring(0, 200));
             console.log('🔍 DEBUG: This is the new debugging code - if you see this, the code is running!');
             
-            // Debug: Show character codes around the crossword number
-            const text = cluesText.substring(0, 200);
-            console.log('🔍 Looking for 1563 in first 200 chars...');
-            const index1563 = text.indexOf('1563');
-            if (index1563 > 0) {
-                console.log('🔍 Found 1563 at index:', index1563);
-                console.log('🔍 Characters around 1563:', text.substring(index1563 - 10, index1563 + 10));
-                console.log('🔍 Character codes around 1563:', Array.from(text.substring(index1563 - 10, index1563 + 10)).map(c => c.charCodeAt(0)));
-            } else {
-                console.log('🔍 1563 not found in first 200 chars');
-                console.log('🔍 Looking for 1562 in first 200 chars...');
-                const index1562 = text.indexOf('1562');
-                if (index1562 > 0) {
-                    console.log('🔍 Found 1562 at index:', index1562);
-                    console.log('🔍 Characters around 1562:', text.substring(index1562 - 10, index1562 + 10));
-                    console.log('🔍 Character codes around 1562:', Array.from(text.substring(index1562 - 10, index1562 + 10)).map(c => c.charCodeAt(0)));
-                } else {
-                    console.log('🔍 Neither 1562 nor 1563 found in first 200 chars');
-                }
-            }
+            // The system works with any crossword files - the number matching is flexible
+            console.log('🔍 System is designed to work with any crossword files');
             
             // Try multiple regex patterns to find the crossword number
             let cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
