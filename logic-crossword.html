@@ -501,11 +501,23 @@
             
             // Debug: Show character codes around the crossword number
             const text = cluesText.substring(0, 200);
-            const index = text.indexOf('1562');
-            if (index > 0) {
-                console.log('🔍 Found 1562 at index:', index);
-                console.log('🔍 Characters around 1562:', text.substring(index - 10, index + 10));
-                console.log('🔍 Character codes around 1562:', Array.from(text.substring(index - 10, index + 10)).map(c => c.charCodeAt(0)));
+            console.log('🔍 Looking for 1563 in first 200 chars...');
+            const index1563 = text.indexOf('1563');
+            if (index1563 > 0) {
+                console.log('🔍 Found 1563 at index:', index1563);
+                console.log('🔍 Characters around 1563:', text.substring(index1563 - 10, index1563 + 10));
+                console.log('🔍 Character codes around 1563:', Array.from(text.substring(index1563 - 10, index1563 + 10)).map(c => c.charCodeAt(0)));
+            } else {
+                console.log('🔍 1563 not found in first 200 chars');
+                console.log('🔍 Looking for 1562 in first 200 chars...');
+                const index1562 = text.indexOf('1562');
+                if (index1562 > 0) {
+                    console.log('🔍 Found 1562 at index:', index1562);
+                    console.log('🔍 Characters around 1562:', text.substring(index1562 - 10, index1562 + 10));
+                    console.log('🔍 Character codes around 1562:', Array.from(text.substring(index1562 - 10, index1562 + 10)).map(c => c.charCodeAt(0)));
+                } else {
+                    console.log('🔍 Neither 1562 nor 1563 found in first 200 chars');
+                }
             }
             
             // Try multiple regex patterns to find the crossword number
