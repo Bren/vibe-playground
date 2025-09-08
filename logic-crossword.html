@@ -628,23 +628,41 @@
             console.log('🔍 Raw vertical section length:', verticalText.length);
             
             // Clean up the horizontal section - remove any vertical answers that got mixed in
-            // Look for the pattern where vertical answers start (usually after the last horizontal answer)
-            const foundHorizontalAnswers = horizontalText.match(/\d+\.\s+[^0-9]+/g) || [];
-            console.log('🔍 Found horizontal answers:', foundHorizontalAnswers.length);
+            // The issue is that vertical answers are mixed in after the horizontal answers
+            // We need to find where the horizontal answers end and vertical answers begin
             
-            // Find where the horizontal answers end and vertical answers begin
+            // Look for the pattern where we have horizontal answers followed by vertical answers
+            // Horizontal answers typically go: 1, 5, 9, 10, 11, 13, 15, 17, 19, 20, 23, 24, 26, 27
+            // Vertical answers typically go: 1, 2, 3, 4, 6, 7, 8, 12, 14, 16, 18, 21, 22, 25
+            
+            // Find the last horizontal answer (should be 27 or similar high number)
+            const horizontalAnswerPattern = /(\d+)\.\s+([^0-9]+)/g;
+            let match;
+            let lastHorizontalAnswer = 0;
             let lastHorizontalIndex = 0;
-            for (let i = foundHorizontalAnswers.length - 1; i >= 0; i--) {
-                const answer = foundHorizontalAnswers[i];
-                const index = horizontalText.lastIndexOf(answer);
-                if (index > lastHorizontalIndex) {
-                    lastHorizontalIndex = index + answer.length;
+            
+            while ((match = horizontalAnswerPattern.exec(horizontalText)) !== null) {
+                const answerNumber = parseInt(match[1]);
+                const answerText = match[2];
+                const matchIndex = match.index;
+                
+                // If this is a horizontal answer (high number like 27, 26, 24, 23, etc.)
+                if (answerNumber > 20) {
+                    lastHorizontalAnswer = answerNumber;
+                    lastHorizontalIndex = matchIndex + match[0].length;
+                }
+                // If we find a low number (1, 2, 3, etc.) after a high number, we've hit vertical answers
+                else if (answerNumber <= 8 && lastHorizontalAnswer > 20) {
+                    console.log(`🔍 Found vertical answer ${answerNumber} after horizontal answer ${lastHorizontalAnswer} - cutting here`);
+                    break;
                 }
             }
             
             // Clean the horizontal section to only include actual horizontal answers
-            horizontalText = horizontalText.substring(0, lastHorizontalIndex).trim();
-            console.log('🔍 Cleaned horizontal section length:', horizontalText.length);
+            if (lastHorizontalIndex > 0) {
+                horizontalText = horizontalText.substring(0, lastHorizontalIndex).trim();
+                console.log('🔍 Cleaned horizontal section length:', horizontalText.length);
+            }
             
             // DEBUG: Check if vertical answers are mixed in horizontal section
             console.log('🔍 Checking for mixed vertical answers in horizontal section...');
