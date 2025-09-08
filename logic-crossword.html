@@ -501,12 +501,23 @@
                 console.log('🔍 Clues text preview:', cluesText.substring(0, 200));
                 return { horizontal: [], vertical: [] };
             }
-            const crosswordNumber = cluesMatch[1];
+            let crosswordNumber = cluesMatch[1];
             console.log(`🔍 Found crossword number: ${crosswordNumber} from clues file`);
             console.log(`🔍 Full match: ${cluesMatch[0]}`);
             console.log(`🔍 Match index: ${cluesMatch.index}`);
             console.log(`🔍 Clues text contains: ${cluesText.substring(0, 100)}`);
             console.log(`🔍 Looking for answers to crossword ${crosswordNumber} in answers file`);
+            
+            // Check if we found the right match (should be near the beginning)
+            if (cluesMatch.index > 100) {
+                console.log('⚠️ WARNING: Crossword number found at index', cluesMatch.index, 'which seems too far from the beginning');
+                console.log('🔍 Looking for a better match near the beginning...');
+                const earlyMatch = cluesText.substring(0, 200).match(/תשבץ הגיון מס\' (\d+)/);
+                if (earlyMatch) {
+                    console.log(`🔍 Found better match: ${earlyMatch[1]} at index ${earlyMatch.index}`);
+                    crosswordNumber = earlyMatch[1];
+                }
+            }
             
             // Step 2: Find any solution section in the answers file (flexible approach)
             console.log('🔍 Looking for any solution section in answers file...');
