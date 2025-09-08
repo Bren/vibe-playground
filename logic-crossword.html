@@ -494,7 +494,7 @@
         function extractAnswers(answersText, cluesText) {
             console.log('=== SIMPLE ANSWER EXTRACTION ===');
             
-            // Step 1: Find the crossword number from the clues file
+            // Step 1: Find the crossword number from the clues file (look for the first occurrence)
             const cluesMatch = cluesText.match(/תשבץ הגיון מס\' (\d+)/);
             if (!cluesMatch) {
                 console.log('❌ Could not find crossword number in clues file');
@@ -504,6 +504,7 @@
             const crosswordNumber = cluesMatch[1];
             console.log(`🔍 Found crossword number: ${crosswordNumber} from clues file`);
             console.log(`🔍 Full match: ${cluesMatch[0]}`);
+            console.log(`🔍 Match index: ${cluesMatch.index}`);
             console.log(`🔍 Clues text contains: ${cluesText.substring(0, 100)}`);
             console.log(`🔍 Looking for answers to crossword ${crosswordNumber} in answers file`);
             
@@ -532,8 +533,11 @@
             
             // Step 4: Find מאונך: (this separates horizontal from vertical)
             const מאונךIndex = solutionSection.indexOf('מאונך:');
+            console.log(`🔍 Looking for מאונך: separator...`);
+            console.log(`🔍 מאונך: found at index: ${מאונךIndex}`);
             if (מאונךIndex === -1) {
                 console.log('❌ Could not find מאונך section');
+                console.log('🔍 Solution section preview:', solutionSection.substring(0, 500));
                 return { horizontal: [], vertical: [] };
             }
             
