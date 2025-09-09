@@ -199,6 +199,8 @@
             
             <div class="controls">
                 <button class="btn" onclick="exportForGame()">Export for Game</button>
+                <button class="btn secondary" onclick="loadFromGoogleSheets()">Load from Google Sheets</button>
+                <button class="btn secondary" onclick="addToGoogleSheets()">Add to Google Sheets</button>
             </div>
             
             <div class="export-info" id="exportInfo" style="display: none;">
@@ -403,6 +405,77 @@
             });
         }
         
+        // Google Sheets configuration
+        const GOOGLE_SHEETS_CONFIG = {
+            sheetId: '1GgoGvCzW74vSqoaQeQmeGYEdNvLMY64iklDjCTYYOcY',
+            sheetName: 'Sheet1', // You can change this to your actual sheet name
+            // Note: For security, credentials should be loaded from a secure backend service
+            // or environment variables, not hardcoded in the frontend
+        };
+
+        // Load data from Google Sheets
+        async function loadFromGoogleSheets() {
+            try {
+                // For now, we'll simulate loading data since we need proper authentication
+                // In a real implementation, you'd need a backend service to handle the API calls
+                
+                // Simulate the data structure that would come from Google Sheets
+                const mockSheetData = {
+                    source: 'Google Sheets (Simulated)',
+                    celebrities: [
+                        'בר רפאלי', 'הרצל', 'אמיר אוחנה', 'אורנה בנאי', 'אסתר חיות',
+                        'נטע ברזילי', 'ערן זהבי', 'מנסור עבאס', 'אביב גפן', 'גילה אלמגור'
+                    ],
+                    timestamp: new Date().toISOString(),
+                    note: 'This is simulated data. To connect to real Google Sheets, you need a backend service with proper authentication.'
+                };
+                
+                // Show the data in the export area
+                document.getElementById('exportData').value = JSON.stringify(mockSheetData, null, 2);
+                document.getElementById('exportInfo').style.display = 'block';
+                
+                alert(`Simulated loading from Google Sheets! Check the export area for details.`);
+                
+                // TODO: Implement real Google Sheets API integration with backend service
+                console.log('Google Sheets integration requires backend service for security');
+                
+            } catch (error) {
+                console.error('Error loading from Google Sheets:', error);
+                alert('Error loading from Google Sheets: ' + error.message);
+            }
+        }
+
+        // Add current celebrity to Google Sheets
+        async function addToGoogleSheets() {
+            if (!currentCelebrity) {
+                alert('Please select a celebrity first!');
+                return;
+            }
+
+            const celebrity = celebrities[currentCelebrity];
+            const newRow = [celebrity.name, celebrity.photo, celebrity.alternatives.join(', ')];
+
+            try {
+                // For now, we'll show the data that would be added
+                // In a real implementation, you'd need a backend service to handle the authentication
+                const addData = {
+                    celebrity: celebrity.name,
+                    photo: celebrity.photo,
+                    alternatives: celebrity.alternatives,
+                    action: 'add_to_sheet',
+                    row: newRow
+                };
+
+                document.getElementById('exportData').value = JSON.stringify(addData, null, 2);
+                document.getElementById('exportInfo').style.display = 'block';
+                
+                alert('Celebrity data prepared for Google Sheets! (Note: Direct browser-to-sheets writing requires a backend service)');
+            } catch (error) {
+                console.error('Error preparing for Google Sheets:', error);
+                alert('Error preparing for Google Sheets: ' + error.message);
+            }
+        }
+
         // Initialize when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             generateCelebrityButtons();
