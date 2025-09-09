@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Pixel Options - drorbren.com</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" href="favicon.ico">
@@ -199,8 +202,13 @@
             
             <div class="controls">
                 <button class="btn" onclick="exportForGame()">Export for Game</button>
-                <button class="btn secondary" onclick="loadFromGoogleSheets()">Load from Google Sheets</button>
+                <button class="btn secondary" onclick="loadFromGoogleSheets()">Refresh from Google Sheets</button>
                 <button class="btn secondary" onclick="addToGoogleSheets()">Add to Google Sheets</button>
+            </div>
+            
+            <div class="filter-info" id="filterInfo" style="display: none; margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                <h4>📊 Filter Results:</h4>
+                <p id="filterStats"></p>
             </div>
             
             <div class="export-info" id="exportInfo" style="display: none;">
@@ -221,131 +229,102 @@
     </div>
     
     <script>
-        // List of celebrities already in your Google Sheets (from the spreadsheet you shared)
-        // Includes all variations, nicknames, and alternative spellings
-        const existingCelebrities = [
-            // בר רפאלי
-            'בר רפאלי', 'בר רפאל', 'בר רפאל', 'רפאלי', 'רפאל',
-            
-            // הרצל
-            'הרצל', 'תיאודור הרצל', 'בנימין זאב הרצל',
-            
-            // אמיר אוחנה
-            'אמיר אוחנה', 'אוחנה', 'אמיר',
-            
-            // אורנה בנאי
-            'אורנה בנאי', 'בנאי', 'אורנה',
-            
-            // אסתר חיות
-            'אסתר חיות', 'חיות', 'אסתר', 'השופטת חיות',
-            
-            // נטע ברזילי
-            'נטע ברזילי', 'ברזילי', 'נטע', 'נטע ברזילי',
-            
-            // ערן זהבי
-            'ערן זהבי', 'זהבי', 'ערן',
-            
-            // מנסור עבאס
-            'מנסור עבאס', 'עבאס', 'מנסור',
-            
-            // אביב גפן
-            'אביב גפן', 'גפן', 'אביב',
-            
-            // גילה אלמגור
-            'גילה אלמגור', 'אלמגור', 'גילה',
-            
-            // איילה חסון
-            'איילה חסון', 'חסון', 'איילה',
-            
-            // אבי מעוז
-            'אבי מעוז', 'מעוז', 'אבי',
-            
-            // ריהאנה
-            'ריהאנה', 'ריהנה', 'Rihanna',
-            
-            // וונדרוומן
-            'וונדרוומן', 'Wonder Woman', 'וונדר וומן',
-            
-            // אופרה ווינפרי
-            'אופרה ווינפרי', 'אופרה וינפרי', 'ווינפרי', 'וינפרי', 'אופרה', 'Oprah',
-            
-            // יוקו אונו
-            'יוקו אונו', 'אונו', 'יוקו', 'Yoko Ono',
-            
-            // רביד פלוטניק
-            'רביד פלוטניק', 'פלוטניק', 'רביד',
-            
-            // גלית גוטמן
-            'גלית גוטמן', 'גוטמן', 'גלית',
-            
-            // בצלאל סמוטריץ'
-            'בצלאל סמוטריץ\'', 'סמוטריץ\'', 'בצלאל', 'סמוטריץ',
-            
-            // אלי אוחנה
-            'אלי אוחנה', 'אלי',
-            
-            // נעמי קמפבל
-            'נעמי קמפבל', 'קמפבל', 'נעמי', 'Naomi Campbell',
-            
-            // בועז שרעבי
-            'בועז שרעבי', 'שרעבי', 'בועז',
-            
-            // טינה טרנר
-            'טינה טרנר', 'טרנר', 'טינה', 'Tina Turner',
-            
-            // ברי סחרוף
-            'ברי סחרוף', 'סחרוף', 'ברי', 'Berry Sakharof',
-            
-            // טונה
-            'טונה', 'Tuna',
-            
-            // ביונסה
-            'ביונסה', 'Beyoncé', 'Beyonce',
-            
-            // אורלי לוי-אבקסיס
-            'אורלי לוי-אבקסיס', 'לוי-אבקסיס', 'אורלי', 'לוי אבקסיס',
-            
-            // ליאו מסי
-            'ליאו מסי', 'מסי', 'ליאו', 'Lionel Messi', 'Messi',
-            
-            // אום כולתום
-            'אום כולתום', 'כולתום', 'Umm Kulthum',
-            
-            // קובי שבתאי
-            'קובי שבתאי', 'שבתאי', 'קובי'
-        ];
+        // This will be populated from Google Sheets data
+        let existingCelebrities = [];
+        let allExistingNames = new Set(); // All names and nicknames from Google Sheets
 
         // Celebrity data with reference photos and basic templates (only NEW ones not in your list)
         const celebrities = {
-            einstein: {
+            // TEST: Einstein (should be filtered out)
+            einstein_test: {
                 name: 'אלברט אינשטיין',
-                alternatives: ['אלברט איינשטיין', 'אינשטיין', 'איינשטיין', 'Albert Einstein', 'Einstein'],
+                alternatives: ['אינשטיין', 'אלברט', 'Albert Einstein', 'Einstein'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Albert_Einstein_Head.jpg'
             },
-            monroe: {
-                name: 'מרילין מונרו',
-                alternatives: ['מונרו', 'מרילין', 'Marilyn Monroe', 'Monroe', 'מרילין מונרו'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Marilyn_Monroe_1952.jpg/800px-Marilyn_Monroe_1952.jpg'
+            // International celebrities
+            gandhi: {
+                name: 'מהטמה גנדי',
+                alternatives: ['גנדי', 'מהטמה', 'Mahatma Gandhi', 'Gandhi'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mahatma-Gandhi%2C_studio%2C_1931.jpg/800px-Mahatma-Gandhi%2C_studio%2C_1931.jpg'
             },
-            chaplin: {
-                name: 'צ\'ארלי צ\'פלין',
-                alternatives: ['צ\'פלין', 'צ\'ארלי', 'Charlie Chaplin', 'Chaplin', 'צ\'רלי צ\'פלין'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Charlie_Chaplin_portrait.jpg/800px-Charlie_Chaplin_portrait.jpg'
+            mandela: {
+                name: 'נלסון מנדלה',
+                alternatives: ['מנדלה', 'נלסון', 'Nelson Mandela', 'Mandela'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nelson_Mandela_1994.jpg/800px-Nelson_Mandela_1994.jpg'
             },
-            lincoln: {
-                name: 'אברהם לינקולן',
-                alternatives: ['לינקולן', 'אברהם', 'Abraham Lincoln', 'Lincoln', 'אברהם לינקולן'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Abraham_Lincoln_O-77_matte_collodion_print.jpg/800px-Abraham_Lincoln_O-77_matte_collodion_print.jpg'
+            mother_teresa: {
+                name: 'אם תרזה',
+                alternatives: ['תרזה', 'אם', 'Mother Teresa', 'Teresa'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Mother_Teresa_1.jpg/800px-Mother_Teresa_1.jpg'
             },
-            kahlo: {
-                name: 'פרידה קאלו',
-                alternatives: ['קאלו', 'פרידה', 'Frida Kahlo', 'Kahlo', 'פרידה קהלו'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg/800px-Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg'
+            da_vinci: {
+                name: 'לאונרדו דה וינצ\'י',
+                alternatives: ['דה וינצ\'י', 'לאונרדו', 'Leonardo da Vinci', 'da Vinci'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Leonardo_self.jpg/800px-Leonardo_self.jpg'
             },
-            peres: {
-                name: 'שמעון פרס',
-                alternatives: ['פרס', 'שמעון', 'Shimon Peres', 'Peres', 'שמעון פרס'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Shimon_Peres_2014.jpg/800px-Shimon_Peres_2014.jpg'
+            mozart: {
+                name: 'וולפגנג אמדאוס מוצרט',
+                alternatives: ['מוצרט', 'וולפגנג', 'Wolfgang Amadeus Mozart', 'Mozart'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Wolfgang-amadeus-mozart_1.jpg/800px-Wolfgang-amadeus-mozart_1.jpg'
+            },
+            shakespeare: {
+                name: 'ויליאם שייקספיר',
+                alternatives: ['שייקספיר', 'ויליאם', 'William Shakespeare', 'Shakespeare'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Shakespeare.jpg/800px-Shakespeare.jpg'
+            },
+            // Modern celebrities
+            elon_musk: {
+                name: 'אילון מאסק',
+                alternatives: ['מאסק', 'אילון', 'Elon Musk', 'Musk'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/800px-Elon_Musk_Royal_Society_%28crop2%29.jpg'
+            },
+            steve_jobs: {
+                name: 'סטיב ג\'ובס',
+                alternatives: ['ג\'ובס', 'סטיב', 'Steve Jobs', 'Jobs'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg/800px-Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg'
+            },
+            bill_gates: {
+                name: 'ביל גייטס',
+                alternatives: ['גייטס', 'ביל', 'Bill Gates', 'Gates'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Bill_Gates_2018.jpg/800px-Bill_Gates_2018.jpg'
+            },
+            // Entertainment
+            elvis: {
+                name: 'אלביס פרסלי',
+                alternatives: ['פרסלי', 'אלביס', 'Elvis Presley', 'Elvis'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Elvis_Presley_1969.jpg/800px-Elvis_Presley_1969.jpg'
+            },
+            michael_jackson: {
+                name: 'מייקל ג\'קסון',
+                alternatives: ['ג\'קסון', 'מייקל', 'Michael Jackson', 'Jackson'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Michael_Jackson_in_1988.jpg/800px-Michael_Jackson_in_1988.jpg'
+            },
+            madonna: {
+                name: 'מדונה',
+                alternatives: ['Madonna', 'מדונה'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Madonna_-_Rebel_Heart_Tour_2015_-_Stockholm_%2823058147220%29_%28cropped%29.jpg/800px-Madonna_-_Rebel_Heart_Tour_2015_-_Stockholm_%2823058147220%29_%28cropped%29.jpg'
+            },
+            // Sports
+            muhammad_ali: {
+                name: 'מוחמד עלי',
+                alternatives: ['עלי', 'מוחמד', 'Muhammad Ali', 'Ali'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Muhammad_Ali_NYWTS.jpg/800px-Muhammad_Ali_NYWTS.jpg'
+            },
+            pele: {
+                name: 'פלה',
+                alternatives: ['Pele', 'פלה'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Pele_con_brasil_%28cropped%29.jpg/800px-Pele_con_brasil_%28cropped%29.jpg'
+            },
+            // Science
+            newton: {
+                name: 'אייזק ניוטון',
+                alternatives: ['ניוטון', 'אייזק', 'Isaac Newton', 'Newton'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Portrait_of_Sir_Isaac_Newton%2C_1689.jpg/800px-Portrait_of_Sir_Isaac_Newton%2C_1689.jpg'
+            },
+            darwin: {
+                name: 'צ\'ארלס דרווין',
+                alternatives: ['דרווין', 'צ\'ארלס', 'Charles Darwin', 'Darwin'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Charles_Darwin_seated_crop.jpg/800px-Charles_Darwin_seated_crop.jpg'
             }
         };
         
@@ -418,23 +397,56 @@
             // or environment variables, not hardcoded in the frontend
         };
 
-        // Load data from Google Sheets
+        // Load data from Google Sheets and build comprehensive name list
         async function loadFromGoogleSheets() {
             try {
                 const response = await fetch('/api/celebrities');
                 const data = await response.json();
                 
                 if (data.success) {
+                    existingCelebrities = data.celebrities;
+                    allExistingNames.clear();
+                    
+                    // Build comprehensive list of all names and nicknames
+                    existingCelebrities.forEach(celebrity => {
+                        // Add main name
+                        const mainName = celebrity.name.toLowerCase().trim();
+                        allExistingNames.add(mainName);
+                        
+                        // Add nicknames if they exist
+                        if (celebrity.nicknames) {
+                            const nicknames = celebrity.nicknames.split(',').map(n => n.trim());
+                            nicknames.forEach(nickname => {
+                                if (nickname) {
+                                    allExistingNames.add(nickname.toLowerCase().trim());
+                                }
+                            });
+                        }
+                        
+                        // Debug: Check if Einstein is being added
+                        if (celebrity.name.includes('אינשטיין')) {
+                            console.log('🔍 Found Einstein in Google Sheets:', celebrity.name);
+                            console.log('🔍 Nicknames:', celebrity.nicknames);
+                        }
+                    });
+                    
+                    console.log('📊 Built name database with', allExistingNames.size, 'total names');
+                    console.log('🔍 Checking if Einstein is in database:', allExistingNames.has('אלברט אינשטיין'));
+                    
+                    // Filter suggested celebrities to remove any that already exist
+                    filterSuggestedCelebrities();
+                    
                     // Show the data in the export area
                     document.getElementById('exportData').value = JSON.stringify({
                         source: 'Google Sheets (Live Data)',
                         celebrities: data.celebrities,
                         count: data.count,
+                        totalNames: allExistingNames.size,
                         timestamp: new Date().toISOString()
                     }, null, 2);
                     document.getElementById('exportInfo').style.display = 'block';
                     
-                    alert(`✅ Loaded ${data.count} celebrities from Google Sheets!`);
+                    alert(`✅ Loaded ${data.count} celebrities from Google Sheets!\n📊 Total unique names/nicknames: ${allExistingNames.size}`);
                 } else {
                     throw new Error(data.error || 'Failed to load data');
                 }
@@ -443,6 +455,91 @@
                 console.error('Error loading from Google Sheets:', error);
                 alert('❌ Error loading from Google Sheets: ' + error.message);
             }
+        }
+        
+        // Filter suggested celebrities to remove duplicates
+        function filterSuggestedCelebrities() {
+            const originalCount = Object.keys(celebrities).length;
+            const filteredCelebrities = {};
+            const duplicates = [];
+            
+            console.log('🔍 Starting filter process...');
+            console.log('📊 Total existing names:', allExistingNames.size);
+            console.log('📝 Original celebrities to check:', originalCount);
+            
+            Object.keys(celebrities).forEach(celebrityId => {
+                const celebrity = celebrities[celebrityId];
+                let isDuplicate = false;
+                let duplicateReason = '';
+                
+                console.log(`Checking: ${celebrity.name}`);
+                
+                // Check if main name exists
+                const mainNameLower = celebrity.name.toLowerCase().trim();
+                if (allExistingNames.has(mainNameLower)) {
+                    isDuplicate = true;
+                    duplicateReason = `Main name "${celebrity.name}" already exists`;
+                    console.log(`❌ DUPLICATE: ${duplicateReason}`);
+                }
+                
+                // Check if any alternatives exist
+                if (!isDuplicate && celebrity.alternatives) {
+                    for (const alt of celebrity.alternatives) {
+                        const altLower = alt.toLowerCase().trim();
+                        if (allExistingNames.has(altLower)) {
+                            isDuplicate = true;
+                            duplicateReason = `Alternative name "${alt}" already exists`;
+                            console.log(`❌ DUPLICATE: ${duplicateReason}`);
+                            break;
+                        }
+                    }
+                }
+                
+                // Only add if not a duplicate
+                if (!isDuplicate) {
+                    filteredCelebrities[celebrityId] = celebrity;
+                    console.log(`✅ KEEPING: ${celebrity.name}`);
+                } else {
+                    duplicates.push({ name: celebrity.name, reason: duplicateReason });
+                }
+            });
+            
+            // Update the celebrities object with filtered results
+            Object.keys(celebrities).forEach(key => delete celebrities[key]);
+            Object.assign(celebrities, filteredCelebrities);
+            
+            // Show filter statistics
+            showFilterStats(originalCount, Object.keys(filteredCelebrities).length, duplicates);
+            
+            // Regenerate buttons
+            generateCelebrityButtons();
+            
+            console.log(`🎯 Filter complete: ${Object.keys(filteredCelebrities).length} remaining out of ${originalCount} original`);
+        }
+        
+        // Show filter statistics
+        function showFilterStats(original, remaining, duplicates) {
+            const filterInfo = document.getElementById('filterInfo');
+            const filterStats = document.getElementById('filterStats');
+            
+            filterStats.innerHTML = `
+                <strong>Original suggestions:</strong> ${original}<br>
+                <strong>After filtering:</strong> ${remaining}<br>
+                <strong>Filtered out:</strong> ${original - remaining}<br>
+                <strong>Total existing names/nicknames:</strong> ${allExistingNames.size}
+            `;
+            
+            if (duplicates.length > 0) {
+                filterStats.innerHTML += `<br><br><strong>Duplicates found:</strong><br>`;
+                duplicates.slice(0, 5).forEach(dup => {
+                    filterStats.innerHTML += `• ${dup.name} (${dup.reason})<br>`;
+                });
+                if (duplicates.length > 5) {
+                    filterStats.innerHTML += `• ... and ${duplicates.length - 5} more`;
+                }
+            }
+            
+            filterInfo.style.display = 'block';
         }
 
         // Add current celebrity to Google Sheets
@@ -493,8 +590,14 @@
         }
 
         // Initialize when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            generateCelebrityButtons();
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Page loaded, starting initialization...');
+            console.log('📝 Initial celebrities count:', Object.keys(celebrities).length);
+            
+            // First load data from Google Sheets to filter suggestions
+            await loadFromGoogleSheets();
+            
+            console.log('✅ Initialization complete');
         });
     </script>
 </body>
