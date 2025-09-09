@@ -416,32 +416,27 @@
         // Load data from Google Sheets
         async function loadFromGoogleSheets() {
             try {
-                // For now, we'll simulate loading data since we need proper authentication
-                // In a real implementation, you'd need a backend service to handle the API calls
+                const response = await fetch('/api/celebrities');
+                const data = await response.json();
                 
-                // Simulate the data structure that would come from Google Sheets
-                const mockSheetData = {
-                    source: 'Google Sheets (Simulated)',
-                    celebrities: [
-                        'בר רפאלי', 'הרצל', 'אמיר אוחנה', 'אורנה בנאי', 'אסתר חיות',
-                        'נטע ברזילי', 'ערן זהבי', 'מנסור עבאס', 'אביב גפן', 'גילה אלמגור'
-                    ],
-                    timestamp: new Date().toISOString(),
-                    note: 'This is simulated data. To connect to real Google Sheets, you need a backend service with proper authentication.'
-                };
-                
-                // Show the data in the export area
-                document.getElementById('exportData').value = JSON.stringify(mockSheetData, null, 2);
-                document.getElementById('exportInfo').style.display = 'block';
-                
-                alert(`Simulated loading from Google Sheets! Check the export area for details.`);
-                
-                // TODO: Implement real Google Sheets API integration with backend service
-                console.log('Google Sheets integration requires backend service for security');
+                if (data.success) {
+                    // Show the data in the export area
+                    document.getElementById('exportData').value = JSON.stringify({
+                        source: 'Google Sheets (Live Data)',
+                        celebrities: data.celebrities,
+                        count: data.count,
+                        timestamp: new Date().toISOString()
+                    }, null, 2);
+                    document.getElementById('exportInfo').style.display = 'block';
+                    
+                    alert(`✅ Loaded ${data.count} celebrities from Google Sheets!`);
+                } else {
+                    throw new Error(data.error || 'Failed to load data');
+                }
                 
             } catch (error) {
                 console.error('Error loading from Google Sheets:', error);
-                alert('Error loading from Google Sheets: ' + error.message);
+                alert('❌ Error loading from Google Sheets: ' + error.message);
             }
         }
 
@@ -453,26 +448,42 @@
             }
 
             const celebrity = celebrities[currentCelebrity];
-            const newRow = [celebrity.name, celebrity.photo, celebrity.alternatives.join(', ')];
 
             try {
-                // For now, we'll show the data that would be added
-                // In a real implementation, you'd need a backend service to handle the authentication
-                const addData = {
-                    celebrity: celebrity.name,
-                    photo: celebrity.photo,
-                    alternatives: celebrity.alternatives,
-                    action: 'add_to_sheet',
-                    row: newRow
-                };
+                const response = await fetch('/api/celebrities', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: celebrity.name,
+                        photo: celebrity.photo,
+                        alternatives: celebrity.alternatives
+                    })
+                });
 
-                document.getElementById('exportData').value = JSON.stringify(addData, null, 2);
-                document.getElementById('exportInfo').style.display = 'block';
+                const data = await response.json();
                 
-                alert('Celebrity data prepared for Google Sheets! (Note: Direct browser-to-sheets writing requires a backend service)');
+                if (data.success) {
+                    // Show the added data
+                    document.getElementById('exportData').value = JSON.stringify({
+                        action: 'Added to Google Sheets',
+                        celebrity: celebrity.name,
+                        photo: celebrity.photo,
+                        alternatives: celebrity.alternatives,
+                        result: data,
+                        timestamp: new Date().toISOString()
+                    }, null, 2);
+                    document.getElementById('exportInfo').style.display = 'block';
+                    
+                    alert(`✅ Successfully added "${celebrity.name}" to Google Sheets!`);
+                } else {
+                    throw new Error(data.error || 'Failed to add celebrity');
+                }
+                
             } catch (error) {
-                console.error('Error preparing for Google Sheets:', error);
-                alert('Error preparing for Google Sheets: ' + error.message);
+                console.error('Error adding to Google Sheets:', error);
+                alert('❌ Error adding to Google Sheets: ' + error.message);
             }
         }
 
