@@ -22,6 +22,11 @@ async function initializeSheets() {
         // Load credentials from the JSON file
         const credentials = require('./google-sheets-credentials.json');
         
+        // Fix the private key format - ensure it has proper line breaks
+        if (credentials.private_key) {
+            credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+        }
+        
         const auth = new google.auth.GoogleAuth({
             credentials: credentials,
             scopes: ['https://www.googleapis.com/auth/spreadsheets']
