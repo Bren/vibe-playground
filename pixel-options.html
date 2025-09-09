@@ -263,18 +263,104 @@
     
     <script>
         // List of celebrities already in your Google Sheets (from the spreadsheet you shared)
+        // Includes all variations, nicknames, and alternative spellings
         const existingCelebrities = [
-            'בר רפאלי', 'הרצל', 'אמיר אוחנה', 'אורנה בנאי', 'אסתר חיות', 'נטע ברזילי', 'ערן זהבי', 
-            'מנסור עבאס', 'אביב גפן', 'גילה אלמגור', 'איילה חסון', 'אבי מעוז', 'ריהאנה', 'וונדרוומן',
-            'אופרה ווינפרי', 'יוקו אונו', 'רביד פלוטניק', 'גלית גוטמן', 'בצלאל סמוטריץ\'', 'אלי אוחנה',
-            'נעמי קמפבל', 'בועז שרעבי', 'טינה טרנר', 'ברי סחרוף', 'טונה', 'ביונסה', 'אורלי לוי-אבקסיס',
-            'ליאו מסי', 'אום כולתום', 'קובי שבתאי'
+            // בר רפאלי
+            'בר רפאלי', 'בר רפאל', 'בר רפאל', 'רפאלי', 'רפאל',
+            
+            // הרצל
+            'הרצל', 'תיאודור הרצל', 'בנימין זאב הרצל',
+            
+            // אמיר אוחנה
+            'אמיר אוחנה', 'אוחנה', 'אמיר',
+            
+            // אורנה בנאי
+            'אורנה בנאי', 'בנאי', 'אורנה',
+            
+            // אסתר חיות
+            'אסתר חיות', 'חיות', 'אסתר', 'השופטת חיות',
+            
+            // נטע ברזילי
+            'נטע ברזילי', 'ברזילי', 'נטע', 'נטע ברזילי',
+            
+            // ערן זהבי
+            'ערן זהבי', 'זהבי', 'ערן',
+            
+            // מנסור עבאס
+            'מנסור עבאס', 'עבאס', 'מנסור',
+            
+            // אביב גפן
+            'אביב גפן', 'גפן', 'אביב',
+            
+            // גילה אלמגור
+            'גילה אלמגור', 'אלמגור', 'גילה',
+            
+            // איילה חסון
+            'איילה חסון', 'חסון', 'איילה',
+            
+            // אבי מעוז
+            'אבי מעוז', 'מעוז', 'אבי',
+            
+            // ריהאנה
+            'ריהאנה', 'ריהנה', 'Rihanna',
+            
+            // וונדרוומן
+            'וונדרוומן', 'Wonder Woman', 'וונדר וומן',
+            
+            // אופרה ווינפרי
+            'אופרה ווינפרי', 'אופרה וינפרי', 'ווינפרי', 'וינפרי', 'אופרה', 'Oprah',
+            
+            // יוקו אונו
+            'יוקו אונו', 'אונו', 'יוקו', 'Yoko Ono',
+            
+            // רביד פלוטניק
+            'רביד פלוטניק', 'פלוטניק', 'רביד',
+            
+            // גלית גוטמן
+            'גלית גוטמן', 'גוטמן', 'גלית',
+            
+            // בצלאל סמוטריץ'
+            'בצלאל סמוטריץ\'', 'סמוטריץ\'', 'בצלאל', 'סמוטריץ',
+            
+            // אלי אוחנה
+            'אלי אוחנה', 'אלי',
+            
+            // נעמי קמפבל
+            'נעמי קמפבל', 'קמפבל', 'נעמי', 'Naomi Campbell',
+            
+            // בועז שרעבי
+            'בועז שרעבי', 'שרעבי', 'בועז',
+            
+            // טינה טרנר
+            'טינה טרנר', 'טרנר', 'טינה', 'Tina Turner',
+            
+            // ברי סחרוף
+            'ברי סחרוף', 'סחרוף', 'ברי', 'Berry Sakharof',
+            
+            // טונה
+            'טונה', 'Tuna',
+            
+            // ביונסה
+            'ביונסה', 'Beyoncé', 'Beyonce',
+            
+            // אורלי לוי-אבקסיס
+            'אורלי לוי-אבקסיס', 'לוי-אבקסיס', 'אורלי', 'לוי אבקסיס',
+            
+            // ליאו מסי
+            'ליאו מסי', 'מסי', 'ליאו', 'Lionel Messi', 'Messi',
+            
+            // אום כולתום
+            'אום כולתום', 'כולתום', 'Umm Kulthum',
+            
+            // קובי שבתאי
+            'קובי שבתאי', 'שבתאי', 'קובי'
         ];
 
         // Celebrity data with reference photos and basic templates (only NEW ones not in your list)
         const celebrities = {
             einstein: {
                 name: 'אלברט איינשטיין',
+                alternatives: ['אלברט אינשטיין', 'אינשטיין', 'איינשטיין', 'Albert Einstein', 'Einstein'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Albert_Einstein_Head.jpg',
                 template: [
                     '0000000000000000',
@@ -297,6 +383,7 @@
             },
             monroe: {
                 name: 'מרילין מונרו',
+                alternatives: ['מונרו', 'מרילין', 'Marilyn Monroe', 'Monroe', 'מרילין מונרו'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Marilyn_Monroe_1952.jpg/800px-Marilyn_Monroe_1952.jpg',
                 template: [
                     '0000000000000000',
@@ -319,6 +406,7 @@
             },
             chaplin: {
                 name: 'צ\'ארלי צ\'פלין',
+                alternatives: ['צ\'פלין', 'צ\'ארלי', 'Charlie Chaplin', 'Chaplin', 'צ\'רלי צ\'פלין'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Charlie_Chaplin_portrait.jpg/800px-Charlie_Chaplin_portrait.jpg',
                 template: [
                     '0000000000000000',
@@ -341,6 +429,7 @@
             },
             lincoln: {
                 name: 'אברהם לינקולן',
+                alternatives: ['לינקולן', 'אברהם', 'Abraham Lincoln', 'Lincoln', 'אברהם לינקולן'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Abraham_Lincoln_O-77_matte_collodion_print.jpg/800px-Abraham_Lincoln_O-77_matte_collodion_print.jpg',
                 template: [
                     '0000000000000000',
@@ -363,6 +452,7 @@
             },
             kahlo: {
                 name: 'פרידה קאלו',
+                alternatives: ['קאלו', 'פרידה', 'Frida Kahlo', 'Kahlo', 'פרידה קהלו'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg/800px-Frida_Kahlo%2C_by_Guillermo_Kahlo.jpg',
                 template: [
                     '0000000000000000',
@@ -470,6 +560,7 @@
             
             const exportData = {
                 celebrity: celebrities[currentCelebrity].name,
+                alternatives: celebrities[currentCelebrity].alternatives,
                 celebrityId: currentCelebrity,
                 pixelData: pixelData,
                 gridSize: 16,
