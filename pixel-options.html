@@ -211,13 +211,12 @@
             <p>Create pixelated versions of famous people for your guessing game!</p>
             
             <div class="celebrity-selector">
-                <h3>Choose a Celebrity:</h3>
-                <div class="celebrity-options">
-                    <button class="celebrity-btn" onclick="selectCelebrity('einstein')">אלברט איינשטיין</button>
-                    <button class="celebrity-btn" onclick="selectCelebrity('monroe')">מרילין מונרו</button>
-                    <button class="celebrity-btn" onclick="selectCelebrity('chaplin')">צ'ארלי צ'פלין</button>
-                    <button class="celebrity-btn" onclick="selectCelebrity('lincoln')">אברהם לינקולן</button>
-                    <button class="celebrity-btn" onclick="selectCelebrity('kahlo')">פרידה קאלו</button>
+                <h3>Choose a Celebrity (New Options Only):</h3>
+                <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
+                    These celebrities are NOT in your existing list yet
+                </p>
+                <div class="celebrity-options" id="celebrityOptions">
+                    <!-- Celebrity buttons will be generated dynamically -->
                 </div>
             </div>
             
@@ -263,7 +262,16 @@
     </div>
     
     <script>
-        // Celebrity data with reference photos and basic templates
+        // List of celebrities already in your Google Sheets (from the spreadsheet you shared)
+        const existingCelebrities = [
+            'בר רפאלי', 'הרצל', 'אמיר אוחנה', 'אורנה בנאי', 'אסתר חיות', 'נטע ברזילי', 'ערן זהבי', 
+            'מנסור עבאס', 'אביב גפן', 'גילה אלמגור', 'איילה חסון', 'אבי מעוז', 'ריהאנה', 'וונדרוומן',
+            'אופרה ווינפרי', 'יוקו אונו', 'רביד פלוטניק', 'גלית גוטמן', 'בצלאל סמוטריץ\'', 'אלי אוחנה',
+            'נעמי קמפבל', 'בועז שרעבי', 'טינה טרנר', 'ברי סחרוף', 'טונה', 'ביונסה', 'אורלי לוי-אבקסיס',
+            'ליאו מסי', 'אום כולתום', 'קובי שבתאי'
+        ];
+
+        // Celebrity data with reference photos and basic templates (only NEW ones not in your list)
         const celebrities = {
             einstein: {
                 name: 'אלברט איינשטיין',
@@ -524,9 +532,25 @@
             }
         }
         
+        // Generate celebrity buttons dynamically
+        function generateCelebrityButtons() {
+            const container = document.getElementById('celebrityOptions');
+            container.innerHTML = '';
+            
+            Object.keys(celebrities).forEach(celebrityId => {
+                const celebrity = celebrities[celebrityId];
+                const button = document.createElement('button');
+                button.className = 'celebrity-btn';
+                button.textContent = celebrity.name;
+                button.onclick = () => selectCelebrity(celebrityId);
+                container.appendChild(button);
+            });
+        }
+        
         // Initialize the grid when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             initializeGrid();
+            generateCelebrityButtons();
             loadProgress();
         });
     </script>
