@@ -431,7 +431,7 @@
         // Load data from Google Sheets and build comprehensive name list
         async function loadFromGoogleSheets() {
             try {
-                const response = await fetch('/api/celebrities');
+                const response = await fetch('/.netlify/functions/celebrities');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -583,7 +583,7 @@
             const celebrity = celebrities[currentCelebrity];
 
             try {
-                const response = await fetch('/api/celebrities', {
+                const response = await fetch('/.netlify/functions/add-celebrity', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
