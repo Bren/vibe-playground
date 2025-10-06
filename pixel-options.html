@@ -198,6 +198,37 @@
                 <div class="reference-photo">
                     <img id="referenceImage" src="" alt="Reference photo" style="max-width: 200px; border-radius: 10px; margin: 10px;">
                 </div>
+                
+                <!-- Pixel Art Generation Section -->
+                <div class="pixel-art-section" style="margin-top: 2rem;">
+                    <h4>🎨 Pixel Art Generator</h4>
+                    <div class="pixel-controls" style="margin: 1rem 0;">
+                        <label for="pixelSize">Pixel Size:</label>
+                        <input type="range" id="pixelSize" min="4" max="20" value="8" style="margin: 0 1rem;">
+                        <span id="pixelSizeValue">8px</span>
+                        
+                        <label for="pixelColors" style="margin-left: 2rem;">Colors:</label>
+                        <select id="pixelColors" style="margin-left: 0.5rem;">
+                            <option value="16">16 colors</option>
+                            <option value="32" selected>32 colors</option>
+                            <option value="64">64 colors</option>
+                            <option value="128">128 colors</option>
+                        </select>
+                        
+                        <button class="btn" onclick="generatePixelArt()" style="margin-left: 2rem;">Generate Pixel Art</button>
+                    </div>
+                    
+                    <div class="pixel-art-output" id="pixelArtOutput" style="display: none;">
+                        <h5>Generated Pixel Art:</h5>
+                        <div class="pixel-canvas-container" style="background: white; padding: 20px; border-radius: 10px; display: inline-block;">
+                            <canvas id="pixelCanvas" style="border: 1px solid #ccc; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;"></canvas>
+                        </div>
+                        <div class="pixel-actions" style="margin-top: 1rem;">
+                            <button class="btn" onclick="downloadPixelArt()">Download PNG</button>
+                            <button class="btn secondary" onclick="copyPixelArtData()">Copy Pixel Data</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="controls">
@@ -587,6 +618,154 @@
                 console.error('Error adding to Google Sheets:', error);
                 alert('❌ Error adding to Google Sheets: ' + error.message);
             }
+        }
+
+        // Pixel Art Generation Functions
+        
+        // Update pixel size display
+        document.getElementById('pixelSize').addEventListener('input', function() {
+            document.getElementById('pixelSizeValue').textContent = this.value + 'px';
+        });
+        
+        // Generate pixel art from the reference image
+        function generatePixelArt() {
+            if (!currentCelebrity) {
+                alert('Please select a celebrity first!');
+                return;
+            }
+            
+            const referenceImg = document.getElementById('referenceImage');
+            const canvas = document.getElementById('pixelCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const pixelSize = parseInt(document.getElementById('pixelSize').value);
+            const colorCount = parseInt(document.getElementById('pixelColors').value);
+            
+            // Create a new image with CORS handling
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = function() {
+                try {
+                    // Calculate dimensions (keep aspect ratio, max 128x128 for pixel art)
+                    const maxSize = 128;
+                    let width = img.naturalWidth;
+                    let height = img.naturalHeight;
+                    
+                    if (width > height) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    } else {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+                    
+                    // Set canvas size
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw image to canvas
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Get image data
+                    const imageData = ctx.getImageData(0, 0, width, height);
+                    const data = imageData.data;
+                    
+                    // Create pixelated version
+                    const pixelatedData = ctx.createImageData(width, height);
+                    
+                    for (let y = 0; y < height; y += pixelSize) {
+                        for (let x = 0; x < width; x += pixelSize) {
+                            // Sample color from center of pixel block
+                            const centerX = Math.min(x + Math.floor(pixelSize / 2), width - 1);
+                            const centerY = Math.min(y + Math.floor(pixelSize / 2), height - 1);
+                            const pixelIndex = (centerY * width + centerX) * 4;
+                            
+                            const r = data[pixelIndex];
+                            const g = data[pixelIndex + 1];
+                            const b = data[pixelIndex + 2];
+                            const a = data[pixelIndex + 3];
+                            
+                            // Apply color quantization
+                            const quantizedColor = quantizeColor(r, g, b, colorCount);
+                            
+                            // Fill the pixel block
+                            for (let py = y; py < Math.min(y + pixelSize, height); py++) {
+                                for (let px = x; px < Math.min(x + pixelSize, width); px++) {
+                                    const blockIndex = (py * width + px) * 4;
+                                    pixelatedData.data[blockIndex] = quantizedColor.r;
+                                    pixelatedData.data[blockIndex + 1] = quantizedColor.g;
+                                    pixelatedData.data[blockIndex + 2] = quantizedColor.b;
+                                    pixelatedData.data[blockIndex + 3] = a;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Draw pixelated image
+                    ctx.putImageData(pixelatedData, 0, 0);
+                    
+                    // Show the output
+                    document.getElementById('pixelArtOutput').style.display = 'block';
+                    
+                    console.log('🎨 Pixel art generated successfully!');
+                } catch (error) {
+                    console.error('Error generating pixel art:', error);
+                    alert('Error generating pixel art. Please try a different image or check console for details.');
+                }
+            };
+            
+            img.onerror = function() {
+                console.error('Failed to load image for pixel art generation');
+                alert('Failed to load image. Please try again or select a different celebrity.');
+            };
+            
+            // Load the image
+            img.src = referenceImg.src;
+        }
+        
+        // Color quantization function
+        function quantizeColor(r, g, b, colorCount) {
+            const step = Math.floor(255 / (colorCount - 1));
+            return {
+                r: Math.round(r / step) * step,
+                g: Math.round(g / step) * step,
+                b: Math.round(b / step) * step
+            };
+        }
+        
+        // Download pixel art as PNG
+        function downloadPixelArt() {
+            const canvas = document.getElementById('pixelCanvas');
+            const link = document.createElement('a');
+            link.download = `${celebrities[currentCelebrity].name.replace(/[^a-zA-Z0-9]/g, '_')}_pixel_art.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Copy pixel art data
+        function copyPixelArtData() {
+            const canvas = document.getElementById('pixelCanvas');
+            const pixelSize = document.getElementById('pixelSize').value;
+            const colorCount = document.getElementById('pixelColors').value;
+            
+            const pixelData = {
+                celebrity: celebrities[currentCelebrity].name,
+                celebrityId: currentCelebrity,
+                pixelSize: parseInt(pixelSize),
+                colorCount: parseInt(colorCount),
+                dimensions: {
+                    width: canvas.width,
+                    height: canvas.height
+                },
+                imageData: canvas.toDataURL(),
+                timestamp: new Date().toISOString()
+            };
+            
+            document.getElementById('exportData').value = JSON.stringify(pixelData, null, 2);
+            document.getElementById('exportInfo').style.display = 'block';
+            
+            alert('Pixel art data copied to export area!');
         }
 
         // Initialize when the page loads
