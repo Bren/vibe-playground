@@ -65,6 +65,192 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
+        /* Celebrity Cards */
+        .celebrities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 2rem;
+        }
+        
+        .celebrity-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .celebrity-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .celebrity-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .celebrity-card-info {
+            padding: 15px;
+        }
+        
+        .celebrity-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .celebrity-score {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+        
+        .modal-close:hover {
+            opacity: 0.7;
+        }
+        
+        .modal-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .modal-subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        /* Date Picker */
+        .date-picker {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .date-picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .date-picker-month {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .date-picker-nav {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .date-picker-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .date-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .date-picker-day-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 8px;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        .date-picker-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+        
+        .date-picker-day:hover:not(.disabled):not(.empty) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .date-picker-day.disabled {
+            background: rgba(255, 0, 0, 0.2);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .date-picker-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+        
+        .date-picker-day.today {
+            border: 2px solid #4CAF50;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
         .celebrity-selector {
             margin: 2rem 0;
         }
@@ -180,165 +366,83 @@
         <h1>Pixel Options</h1>
         
         <div class="content">
-            <h2>Celebrity Pixel Art Creator</h2>
-            <p>Create pixelated versions of famous people for your guessing game!</p>
+            <h2>Celebrity Scheduler</h2>
+            <p>Schedule famous people for daily features - click on a celebrity to assign them a date!</p>
             
-            <div class="celebrity-selector">
-                <!-- Recognizability Overview -->
-                <div class="recognizability-overview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 15px 0;">🎯 Celebrity Recognizability Analysis</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 2em; font-weight: bold;" id="totalCelebrities">17</div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">Total Celebrities</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 2em; font-weight: bold;" id="avgRecognizability">--</div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">Average Score</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 2em; font-weight: bold;" id="topTierCount">--</div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">A+ Grade (90+)</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 2em; font-weight: bold;" id="highRecognitionCount">--</div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">High Recognition (80+)</div>
-                        </div>
-                    </div>
-                </div>
+            <div id="loadingMessage" class="loading">
+                Loading celebrities...
+            </div>
+            
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            
+            <div id="celebritiesContainer" class="celebrities-grid" style="display: none;">
+                <!-- Celebrity cards will be generated here -->
+            </div>
+        </div>
+        
+        <!-- Date Picker Modal -->
+        <div id="datePickerModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+                <h2 class="modal-title">Add to Date</h2>
+                <p class="modal-subtitle" id="modalCelebrityName">Select a date for this celebrity</p>
                 
-                <h3>Choose a Celebrity (Sorted by Recognizability):</h3>
-                <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
-                    Celebrities are sorted by visual recognizability score (highest first)
-                </p>
-                <div class="celebrity-options" id="celebrityOptions">
-                    <!-- Celebrity buttons will be generated dynamically -->
-                </div>
-            </div>
-            
-            <div class="current-celebrity" id="currentCelebrity" style="display: none;">
-                <h3 id="celebrityName">Selected Celebrity</h3>
-                
-                <!-- Recognizability Score Section -->
-                <div class="recognizability-section" style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #007bff;">
-                    <h4 style="margin: 0 0 10px 0; color: #333;">🎯 Visual Recognizability Score</h4>
-                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-                        <div style="font-size: 1.2em; font-weight: bold;">
-                            Score: <span id="recognizabilityScore" style="color: #007bff;">--/100</span>
-                        </div>
-                        <div style="font-size: 1.1em;">
-                            Grade: <span id="recognizabilityGrade" style="font-weight: bold; color: #007bff;">--</span>
-                        </div>
+                <div class="date-picker">
+                    <div class="date-picker-header">
+                        <button class="date-picker-nav" onclick="previousMonth()">◀ Previous</button>
+                        <div class="date-picker-month" id="currentMonthYear"></div>
+                        <button class="date-picker-nav" onclick="nextMonth()">Next ▶</button>
                     </div>
-                    <details style="margin-top: 10px;">
-                        <summary style="cursor: pointer; font-weight: bold; color: #555;">📊 View Detailed Breakdown</summary>
-                        <ul id="recognizabilityFactors" style="margin: 10px 0 0 20px; color: #666;">
-                            <!-- Factors will be populated by JavaScript -->
-                        </ul>
-                    </details>
+                    <div class="date-picker-grid" id="datePicker Grid"></div>
                 </div>
-                
-                <div class="reference-photo">
-                    <img id="referenceImage" src="" alt="Reference photo" style="max-width: 200px; border-radius: 10px; margin: 10px;">
-                </div>
-                
-                <!-- Pixel Art Generation Section -->
-                <div class="pixel-art-section" style="margin-top: 2rem;">
-                    <h4>🎨 Pixel Art Generator</h4>
-                    <div class="pixel-controls" style="margin: 1rem 0;">
-                        <label for="pixelSize">Pixel Size:</label>
-                        <input type="range" id="pixelSize" min="4" max="20" value="8" style="margin: 0 1rem;">
-                        <span id="pixelSizeValue">8px</span>
-                        
-                        <label for="pixelColors" style="margin-left: 2rem;">Colors:</label>
-                        <select id="pixelColors" style="margin-left: 0.5rem;">
-                            <option value="16">16 colors</option>
-                            <option value="32" selected>32 colors</option>
-                            <option value="64">64 colors</option>
-                            <option value="128">128 colors</option>
-                        </select>
-                        
-                        <button class="btn" onclick="generatePixelArt()" style="margin-left: 2rem;">Generate Pixel Art</button>
-                    </div>
-                    
-                    <div class="pixel-art-output" id="pixelArtOutput" style="display: none;">
-                        <h5>Generated Pixel Art:</h5>
-                        <div class="pixel-canvas-container" style="background: white; padding: 20px; border-radius: 10px; display: inline-block;">
-                            <canvas id="pixelCanvas" style="border: 1px solid #ccc; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;"></canvas>
-                        </div>
-                        <div class="pixel-actions" style="margin-top: 1rem;">
-                            <button class="btn" onclick="downloadPixelArt()">Download PNG</button>
-                            <button class="btn secondary" onclick="copyPixelArtData()">Copy Pixel Data</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="controls">
-                <button class="btn" onclick="exportForGame()">Export for Game</button>
-                <button class="btn secondary" onclick="loadFromGoogleSheets()">Refresh from Google Sheets</button>
-                <button class="btn secondary" onclick="addToGoogleSheets()">Add to Google Sheets</button>
-            </div>
-            
-            <div class="filter-info" id="filterInfo" style="display: none; margin: 1rem 0; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 5px;">
-                <h4>📊 Filter Results:</h4>
-                <p id="filterStats"></p>
-            </div>
-            
-            <div class="export-info" id="exportInfo" style="display: none;">
-                <h3>Export Data:</h3>
-                <textarea id="exportData" readonly style="width: 100%; height: 100px; background: rgba(0,0,0,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; padding: 10px; font-family: monospace;"></textarea>
-                <button class="btn" onclick="copyToClipboard()">Copy to Clipboard</button>
-            </div>
-            
-            <div class="info">
-                <h3>How to use:</h3>
-                <ul>
-                    <li><strong>Select a celebrity</strong> from the options above</li>
-                    <li><strong>View the reference photo</strong> to see the person</li>
-                    <li><strong>Export for Game</strong> - Get the celebrity data in game format</li>
-                </ul>
             </div>
         </div>
     </div>
-    
-    <script>
-        // This will be populated from Google Sheets data
-        let existingCelebrities = [];
-        let allExistingNames = new Set(); // All names and nicknames from Google Sheets
 
-        // Celebrity data with reference photos and basic templates (only NEW ones not in your list)
+    <script>
+        // Configuration
+        const SHEET_ID = '1GgoGvCzW74vSqoaQeQmeGYEdNvLMY64iklDjCTYYOcY';
+        const SHEET_NAME = 'Published';
+        
+        // State
+        let allCelebrities = [];
+        let displayedCelebrities = [];
+        let occupiedDates = new Map(); // date -> celebrity
+        let shownCelebrityIds = new Set();
+        let selectedCelebrity = null;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        
+        // Celebrity database (hardcoded for now)
         const celebrities = {
-            // TEST: Einstein (should be filtered out)
-            einstein_test: {
+            einstein: {
                 name: 'אלברט אינשטיין',
-                alternatives: ['אינשטיין', 'אלברט', 'Albert Einstein', 'Einstein'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/d/d3/Albert_Einstein_Head.jpg'
+                alternatives: ['אלברט', 'אינשטיין', 'א. אינשטיין'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_-_restoration.jpg/800px-Einstein_1921_by_F_Schmutzer_-_restoration.jpg'
             },
-            // International celebrities
             gandhi: {
                 name: 'מהטמה גנדי',
-                alternatives: ['גנדי', 'מהטמה', 'Mahatma Gandhi', 'Gandhi'],
+                alternatives: ['גנדי', 'מהטמה', 'גאנדי'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mahatma-Gandhi%2C_studio%2C_1931.jpg/800px-Mahatma-Gandhi%2C_studio%2C_1931.jpg'
             },
             mandela: {
                 name: 'נלסון מנדלה',
-                alternatives: ['מנדלה', 'נלסון', 'Nelson Mandela', 'Mandela'],
+                alternatives: ['מנדלה', 'נלסון'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nelson_Mandela_1994.jpg/800px-Nelson_Mandela_1994.jpg'
             },
             mother_teresa: {
                 name: 'אם תרזה',
-                alternatives: ['תרזה', 'אם', 'Mother Teresa', 'Teresa'],
-                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Mother_Teresa_1.jpg/800px-Mother_Teresa_1.jpg'
+                alternatives: ['תרזה', 'האם תרזה', 'Mother Teresa'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Mother_Teresa.jpg/800px-Mother_Teresa.jpg'
             },
-            da_vinci: {
+            leonardo: {
                 name: 'לאונרדו דה וינצ\'י',
-                alternatives: ['דה וינצ\'י', 'לאונרדו', 'Leonardo da Vinci', 'da Vinci'],
+                alternatives: ['לאונרדו', 'דה וינצ\'י', 'Da Vinci'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Leonardo_self.jpg/800px-Leonardo_self.jpg'
             },
             mozart: {
                 name: 'וולפגנג אמדאוס מוצרט',
-                alternatives: ['מוצרט', 'וולפגנג', 'Wolfgang Amadeus Mozart', 'Mozart'],
+                alternatives: ['מוצרט', 'וולפגנג', 'Mozart'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Wolfgang-amadeus-mozart_1.jpg/800px-Wolfgang-amadeus-mozart_1.jpg'
             },
             shakespeare: {
@@ -346,7 +450,6 @@
                 alternatives: ['שייקספיר', 'ויליאם', 'William Shakespeare', 'Shakespeare'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Shakespeare.jpg/800px-Shakespeare.jpg'
             },
-            // Modern celebrities
             elon_musk: {
                 name: 'אילון מאסק',
                 alternatives: ['מאסק', 'אילון', 'Elon Musk', 'Musk'],
@@ -362,7 +465,6 @@
                 alternatives: ['גייטס', 'ביל', 'Bill Gates', 'Gates'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Bill_Gates_2018.jpg/800px-Bill_Gates_2018.jpg'
             },
-            // Entertainment
             elvis: {
                 name: 'אלביס פרסלי',
                 alternatives: ['פרסלי', 'אלביס', 'Elvis Presley', 'Elvis'],
@@ -378,7 +480,6 @@
                 alternatives: ['Madonna', 'מדונה'],
                 photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Madonna_-_Rebel_Heart_Tour_2015_-_Stockholm_%2823058147220%29_%28cropped%29.jpg/800px-Madonna_-_Rebel_Heart_Tour_2015_-_Stockholm_%2823058147220%29_%28cropped%29.jpg'
             },
-            // Sports
             muhammad_ali: {
                 name: 'מוחמד עלי',
                 alternatives: ['עלי', 'מוחמד', 'Muhammad Ali', 'Ali'],
@@ -389,7 +490,6 @@
                 alternatives: ['Pele', 'פלה'],
                 photo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGNhZjUwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI2NCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuS9peS4lDwvdGV4dD48L3N2Zz4='
             },
-            // Science
             newton: {
                 name: 'אייזק ניוטון',
                 alternatives: ['ניוטון', 'אייזק', 'Isaac Newton', 'Newton'],
@@ -402,646 +502,277 @@
             }
         };
         
-        let currentCelebrity = null;
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing Celebrity Scheduler...');
+            await loadOccupiedDates();
+            await show5NewCelebrities();
+        });
         
-        // Recognizability scoring system
-        function calculateRecognizabilityScore(celebrityId, celebrity) {
-            let score = 0;
-            const factors = [];
-            
-            // 1. Iconic Features Score (0-30 points)
-            const iconicFeatures = {
-                // Distinctive facial hair
-                'einstein': 25, // Wild hair
-                'muhammad_ali': 20, // Boxing champion look
-                'elvis': 25, // Sideburns and hair
-                'michael_jackson': 25, // Unique style evolution
-                'madonna': 20, // Ever-changing iconic looks
-                'steve_jobs': 25, // Black turtleneck + glasses
-                'bill_gates': 15, // Glasses + tech look
-                'newton': 20, // Long white hair
-                'darwin': 20, // White beard
-                'shakespeare': 15, // Elizabethan look
-                // Sports icons
-                'pele': 20, // Football legend
-                // Historical figures
-                'gandhi': 25, // Round glasses + simple clothes
-                'mandela': 25, // Wise elder statesman
-                'mother_teresa': 25, // Nun's habit
-                'leonardo': 20, // Renaissance master
-                'mozart': 20, // Classical composer look
-                'elon_musk': 15 // Modern tech billionaire
-            };
-            
-            score += iconicFeatures[celebrityId] || 10;
-            factors.push(`Iconic features: ${iconicFeatures[celebrityId] || 10}/30`);
-            
-            // 2. Cultural Impact Score (0-25 points)
-            const culturalImpact = {
-                'einstein': 25, // Most famous scientist
-                'gandhi': 25, // Peace movement icon
-                'mandela': 25, // Anti-apartheid hero
-                'mother_teresa': 25, // Humanitarian icon
-                'michael_jackson': 25, // King of Pop
-                'elvis': 25, // King of Rock
-                'madonna': 20, // Queen of Pop
-                'steve_jobs': 20, // Tech revolution
-                'bill_gates': 20, // Microsoft founder
-                'elon_musk': 20, // Modern innovator
-                'leonardo': 25, // Renaissance genius
-                'mozart': 25, // Musical genius
-                'shakespeare': 25, // Literary genius
-                'newton': 25, // Physics genius
-                'darwin': 25, // Evolution theory
-                'muhammad_ali': 25, // Greatest boxer
-                'pele': 25 // Greatest footballer
-            };
-            
-            score += culturalImpact[celebrityId] || 10;
-            factors.push(`Cultural impact: ${culturalImpact[celebrityId] || 10}/25`);
-            
-            // 3. Visual Distinctiveness Score (0-20 points)
-            const visualDistinctiveness = {
-                'einstein': 20, // Wild white hair
-                'gandhi': 20, // Glasses + simple attire
-                'muhammad_ali': 18, // Athletic build + confident look
-                'elvis': 18, // Sideburns + pompadour
-                'michael_jackson': 20, // Unique style
-                'madonna': 18, // Fashion icon
-                'steve_jobs': 15, // Black turtleneck
-                'bill_gates': 12, // Standard tech look
-                'newton': 15, // Long white hair
-                'darwin': 15, // White beard
-                'leonardo': 12, // Renaissance portrait
-                'mozart': 15, // Classical period look
-                'shakespeare': 12, // Elizabethan
-                'pele': 15, // Football uniform
-                'elon_musk': 12, // Modern businessman
-                'mother_teresa': 20, // Nun's habit
-                'mandela': 18 // Wise elder look
-            };
-            
-            score += visualDistinctiveness[celebrityId] || 8;
-            factors.push(`Visual distinctiveness: ${visualDistinctiveness[celebrityId] || 8}/20`);
-            
-            // 4. Name Recognition Score (0-15 points)
-            const nameRecognition = {
-                'einstein': 15, // Einstein = genius
-                'gandhi': 15, // Gandhi = peace
-                'mandela': 15, // Mandela = freedom
-                'mother_teresa': 15, // Mother Teresa = charity
-                'leonardo': 15, // Leonardo da Vinci
-                'mozart': 15, // Mozart = classical music
-                'shakespeare': 15, // Shakespeare = literature
-                'newton': 15, // Newton = gravity
-                'darwin': 15, // Darwin = evolution
-                'michael_jackson': 15, // Michael Jackson = pop
-                'elvis': 15, // Elvis = rock
-                'madonna': 15, // Madonna = pop icon
-                'steve_jobs': 12, // Steve Jobs = Apple
-                'bill_gates': 12, // Bill Gates = Microsoft
-                'elon_musk': 12, // Elon Musk = Tesla/SpaceX
-                'muhammad_ali': 15, // Muhammad Ali = boxing
-                'pele': 15 // Pele = football
-            };
-            
-            score += nameRecognition[celebrityId] || 8;
-            factors.push(`Name recognition: ${nameRecognition[celebrityId] || 8}/15`);
-            
-            // 5. Pixel Art Suitability Score (0-10 points)
-            const pixelArtSuitability = {
-                'einstein': 10, // Wild hair perfect for pixels
-                'gandhi': 9, // Simple features, distinctive glasses
-                'mandela': 8, // Wise face, good contrast
-                'mother_teresa': 9, // Simple habit, distinctive look
-                'leonardo': 7, // Historical portrait style
-                'mozart': 8, // Classical period features
-                'shakespeare': 7, // Elizabethan style
-                'newton': 8, // Long hair, distinctive features
-                'darwin': 8, // Beard, good for pixels
-                'michael_jackson': 9, // Distinctive features
-                'elvis': 9, // Sideburns, good for pixels
-                'madonna': 8, // Fashion changes, but distinctive
-                'steve_jobs': 8, // Glasses, turtleneck
-                'bill_gates': 7, // Glasses, standard look
-                'elon_musk': 7, // Modern features
-                'muhammad_ali': 9, // Athletic features, confident look
-                'pele': 8 // Athletic features
-            };
-            
-            score += pixelArtSuitability[celebrityId] || 6;
-            factors.push(`Pixel art suitability: ${pixelArtSuitability[celebrityId] || 6}/10`);
-            
-            return {
-                score: Math.min(score, 100), // Cap at 100
-                factors: factors,
-                grade: getRecognizabilityGrade(score)
-            };
-        }
-        
-        function getRecognizabilityGrade(score) {
-            if (score >= 90) return { grade: 'A+', color: '#4CAF50', description: 'Extremely recognizable' };
-            if (score >= 80) return { grade: 'A', color: '#8BC34A', description: 'Very recognizable' };
-            if (score >= 70) return { grade: 'B+', color: '#CDDC39', description: 'Highly recognizable' };
-            if (score >= 60) return { grade: 'B', color: '#FFEB3B', description: 'Well recognizable' };
-            if (score >= 50) return { grade: 'C+', color: '#FFC107', description: 'Moderately recognizable' };
-            if (score >= 40) return { grade: 'C', color: '#FF9800', description: 'Somewhat recognizable' };
-            return { grade: 'D', color: '#FF5722', description: 'Less recognizable' };
-        }
-        
-        // Select a celebrity
-        function selectCelebrity(celebrityId) {
-            currentCelebrity = celebrityId;
-            const celebrity = celebrities[celebrityId];
-            
-            // Calculate recognizability score
-            const recognizability = calculateRecognizabilityScore(celebrityId, celebrity);
-            
-            // Update UI
-            document.getElementById('celebrityName').textContent = celebrity.name;
-            document.getElementById('referenceImage').src = celebrity.photo;
-            document.getElementById('currentCelebrity').style.display = 'block';
-            
-            // Update recognizability display
-            updateRecognizabilityDisplay(recognizability);
-            
-            // Update button states
-            document.querySelectorAll('.celebrity-btn').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            event.target.classList.add('selected');
-        }
-        
-        function updateRecognizabilityDisplay(recognizability) {
-            const scoreElement = document.getElementById('recognizabilityScore');
-            const gradeElement = document.getElementById('recognizabilityGrade');
-            const factorsElement = document.getElementById('recognizabilityFactors');
-            
-            if (scoreElement) {
-                scoreElement.textContent = `${recognizability.score}/100`;
-                scoreElement.style.color = recognizability.grade.color;
-            }
-            
-            if (gradeElement) {
-                gradeElement.textContent = recognizability.grade.grade;
-                gradeElement.style.color = recognizability.grade.color;
-                gradeElement.title = recognizability.grade.description;
-            }
-            
-            if (factorsElement) {
-                factorsElement.innerHTML = recognizability.factors.map(factor => 
-                    `<li>${factor}</li>`
-                ).join('');
-            }
-        }
-        
-        // Export data for the game
-        function exportForGame() {
-            if (!currentCelebrity) {
-                alert('Please select a celebrity first!');
-                return;
-            }
-            
-            const celebrity = celebrities[currentCelebrity];
-            const recognizability = calculateRecognizabilityScore(currentCelebrity, celebrity);
-            
-            const exportData = {
-                celebrity: celebrity.name,
-                alternatives: celebrity.alternatives,
-                celebrityId: currentCelebrity,
-                photo: celebrity.photo,
-                recognizability: {
-                    score: recognizability.score,
-                    grade: recognizability.grade.grade,
-                    description: recognizability.grade.description,
-                    factors: recognizability.factors
-                },
-                timestamp: new Date().toISOString()
-            };
-            
-            document.getElementById('exportData').value = JSON.stringify(exportData, null, 2);
-            document.getElementById('exportInfo').style.display = 'block';
-        }
-        
-        // Copy to clipboard
-        function copyToClipboard() {
-            const exportData = document.getElementById('exportData');
-            exportData.select();
-            document.execCommand('copy');
-            alert('Data copied to clipboard!');
-        }
-        
-        // Generate celebrity buttons dynamically with recognizability scores
-        function generateCelebrityButtons() {
-            const container = document.getElementById('celebrityOptions');
-            container.innerHTML = '';
-            
-            // Calculate scores for all celebrities and sort by recognizability
-            const celebritiesWithScores = Object.keys(celebrities).map(celebrityId => {
-                const celebrity = celebrities[celebrityId];
-                const recognizability = calculateRecognizabilityScore(celebrityId, celebrity);
-                return { celebrityId, celebrity, recognizability };
-            }).sort((a, b) => b.recognizability.score - a.recognizability.score);
-            
-            // Update overview statistics
-            updateRecognizabilityOverview(celebritiesWithScores);
-            
-            celebritiesWithScores.forEach(({ celebrityId, celebrity, recognizability }) => {
-                const button = document.createElement('button');
-                button.className = 'celebrity-btn';
-                button.onclick = () => selectCelebrity(celebrityId);
-                
-                // Create button content with score
-                button.innerHTML = `
-                    <div class="celebrity-btn-content" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <span class="celebrity-name">${celebrity.name}</span>
-                        <span class="recognizability-badge" style="
-                            background-color: ${recognizability.grade.color};
-                            color: white;
-                            padding: 2px 6px;
-                            border-radius: 12px;
-                            font-size: 0.8em;
-                            font-weight: bold;
-                            margin-left: 8px;
-                        ">${recognizability.score}/100</span>
-                    </div>
-                `;
-                
-                container.appendChild(button);
-            });
-        }
-        
-        // Update recognizability overview statistics
-        function updateRecognizabilityOverview(celebritiesWithScores) {
-            const totalCelebrities = celebritiesWithScores.length;
-            const avgScore = Math.round(celebritiesWithScores.reduce((sum, c) => sum + c.recognizability.score, 0) / totalCelebrities);
-            const topTierCount = celebritiesWithScores.filter(c => c.recognizability.score >= 90).length;
-            const highRecognitionCount = celebritiesWithScores.filter(c => c.recognizability.score >= 80).length;
-            
-            document.getElementById('totalCelebrities').textContent = totalCelebrities;
-            document.getElementById('avgRecognizability').textContent = avgScore;
-            document.getElementById('topTierCount').textContent = topTierCount;
-            document.getElementById('highRecognitionCount').textContent = highRecognitionCount;
-        }
-        
-        // Google Sheets configuration
-        const GOOGLE_SHEETS_CONFIG = {
-            sheetId: '1GgoGvCzW74vSqoaQeQmeGYEdNvLMY64iklDjCTYYOcY',
-            sheetName: 'Sheet1', // You can change this to your actual sheet name
-            // Note: For security, credentials should be loaded from a secure backend service
-            // or environment variables, not hardcoded in the frontend
-        };
-
-        // Load data from Google Sheets and build comprehensive name list
-        async function loadFromGoogleSheets() {
+        // Load occupied dates from Google Sheets
+        async function loadOccupiedDates() {
             try {
+                console.log('📅 Loading occupied dates from Google Sheets...');
                 const response = await fetch('/.netlify/functions/celebrities');
                 const data = await response.json();
                 
-                if (data.success) {
-                    existingCelebrities = data.celebrities;
-                    allExistingNames.clear();
-                    
-                    // Build comprehensive list of all names and nicknames
-                    existingCelebrities.forEach(celebrity => {
-                        // Add main name
-                        const mainName = celebrity.name.toLowerCase().trim();
-                        allExistingNames.add(mainName);
-                        
-                        // Add nicknames if they exist
-                        if (celebrity.nicknames) {
-                            const nicknames = celebrity.nicknames.split(',').map(n => n.trim());
-                            nicknames.forEach(nickname => {
-                                if (nickname) {
-                                    allExistingNames.add(nickname.toLowerCase().trim());
-                                }
-                            });
-                        }
-                        
-                        // Debug: Check if Einstein is being added
-                        if (celebrity.name.includes('אינשטיין')) {
-                            console.log('🔍 Found Einstein in Google Sheets:', celebrity.name);
-                            console.log('🔍 Nicknames:', celebrity.nicknames);
+                if (data.success && data.celebrities) {
+                    occupiedDates.clear();
+                    data.celebrities.forEach(celeb => {
+                        if (celeb.publishDate) {
+                            // Parse DD/MM/YYYY format
+                            const parts = celeb.publishDate.split('/');
+                            if (parts.length === 3) {
+                                const day = parts[0];
+                                const month = parts[1];
+                                const year = parts[2];
+                                const dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                                occupiedDates.set(dateKey, celeb.name);
+                            }
                         }
                     });
-                    
-                    console.log('📊 Built name database with', allExistingNames.size, 'total names');
-                    console.log('🔍 Checking if Einstein is in database:', allExistingNames.has('אלברט אינשטיין'));
-                    
-                    // Filter suggested celebrities to remove any that already exist
-                    filterSuggestedCelebrities();
-                    
-                    // Show the data in the export area
-                    document.getElementById('exportData').value = JSON.stringify({
-                        source: 'Google Sheets (Live Data)',
-                        celebrities: data.celebrities,
-                        count: data.count,
-                        totalNames: allExistingNames.size,
-                        timestamp: new Date().toISOString()
-                    }, null, 2);
-                    document.getElementById('exportInfo').style.display = 'block';
-                    
-                    alert(`✅ Loaded ${data.count} celebrities from Google Sheets!\n📊 Total unique names/nicknames: ${allExistingNames.size}`);
-                } else {
-                    throw new Error(data.error || 'Failed to load data');
+                    console.log(`✅ Loaded ${occupiedDates.size} occupied dates`);
                 }
-                
             } catch (error) {
-                console.error('Error loading from Google Sheets:', error);
-                alert('❌ Error loading from Google Sheets: ' + error.message);
+                console.error('Error loading occupied dates:', error);
+                showError('Failed to load occupied dates: ' + error.message);
             }
         }
         
-        // Filter suggested celebrities to remove duplicates
-        function filterSuggestedCelebrities() {
-            const originalCount = Object.keys(celebrities).length;
-            const filteredCelebrities = {};
-            const duplicates = [];
+        // Show 5 new celebrities that haven't been shown before
+        async function show5NewCelebrities() {
+            try {
+                // Get all celebrity IDs
+                const allCelebIds = Object.keys(celebrities);
+                
+                // Filter out already shown ones
+                const availableCelebs = allCelebIds.filter(id => !shownCelebrityIds.has(id));
+                
+                // If we don't have enough, start over
+                if (availableCelebs.length < 5) {
+                    console.log('♻️ Not enough unshown celebrities, resetting pool...');
+                    shownCelebrityIds.clear();
+                    return show5NewCelebrities();
+                }
+                
+                // Randomly select 5
+                const selected = [];
+                const availableCopy = [...availableCelebs];
+                for (let i = 0; i < 5 && availableCopy.length > 0; i++) {
+                    const randomIndex = Math.floor(Math.random() * availableCopy.length);
+                    const celebId = availableCopy.splice(randomIndex, 1)[0];
+                    selected.push(celebId);
+                    shownCelebrityIds.add(celebId);
+                }
+                
+                displayedCelebrities = selected;
+                renderCelebrities();
+                
+                console.log(`✅ Showing 5 celebrities:`, selected);
+            } catch (error) {
+                console.error('Error showing celebrities:', error);
+                showError('Failed to load celebrities: ' + error.message);
+            }
+        }
+        
+        // Render celebrity cards
+        function renderCelebrities() {
+            const container = document.getElementById('celebritiesContainer');
+            container.innerHTML = '';
+            container.style.display = 'grid';
+            document.getElementById('loadingMessage').style.display = 'none';
             
-            console.log('🔍 Starting filter process...');
-            console.log('📊 Total existing names:', allExistingNames.size);
-            console.log('📝 Original celebrities to check:', originalCount);
+            displayedCelebrities.forEach(celebId => {
+                const celeb = celebrities[celebId];
+                const card = document.createElement('div');
+                card.className = 'celebrity-card';
+                card.onclick = () => openDatePicker(celebId);
+                
+                card.innerHTML = `
+                    <img src="${celeb.photo}" alt="${celeb.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNjY3ZWVhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI2NCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjwvdGV4dD48L3N2Zz4='">
+                    <div class="celebrity-card-info">
+                        <div class="celebrity-name">${celeb.name}</div>
+                        <div class="celebrity-score">Click to schedule</div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        // Open date picker modal
+        function openDatePicker(celebId) {
+            selectedCelebrity = celebId;
+            const celeb = celebrities[celebId];
             
-            Object.keys(celebrities).forEach(celebrityId => {
-                const celebrity = celebrities[celebrityId];
-                let isDuplicate = false;
-                let duplicateReason = '';
-                
-                console.log(`Checking: ${celebrity.name}`);
-                
-                // Check if main name exists
-                const mainNameLower = celebrity.name.toLowerCase().trim();
-                if (allExistingNames.has(mainNameLower)) {
-                    isDuplicate = true;
-                    duplicateReason = `Main name "${celebrity.name}" already exists`;
-                    console.log(`❌ DUPLICATE: ${duplicateReason}`);
-                }
-                
-                // Check if any alternatives exist
-                if (!isDuplicate && celebrity.alternatives) {
-                    for (const alt of celebrity.alternatives) {
-                        const altLower = alt.toLowerCase().trim();
-                        if (allExistingNames.has(altLower)) {
-                            isDuplicate = true;
-                            duplicateReason = `Alternative name "${alt}" already exists`;
-                            console.log(`❌ DUPLICATE: ${duplicateReason}`);
-                            break;
-                        }
-                    }
-                }
-                
-                // Only add if not a duplicate
-                if (!isDuplicate) {
-                    filteredCelebrities[celebrityId] = celebrity;
-                    console.log(`✅ KEEPING: ${celebrity.name}`);
-                } else {
-                    duplicates.push({ name: celebrity.name, reason: duplicateReason });
-                }
+            document.getElementById('modalCelebrityName').textContent = `Select a date for ${celeb.name}`;
+            document.getElementById('datePickerModal').style.display = 'block';
+            
+            renderDatePicker();
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('datePickerModal').style.display = 'none';
+            selectedCelebrity = null;
+        }
+        
+        // Navigate months
+        function previousMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderDatePicker();
+        }
+        
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderDatePicker();
+        }
+        
+        // Render date picker calendar
+        function renderDatePicker() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            document.getElementById('currentMonthYear').textContent = 
+                `${monthNames[currentMonth]} ${currentYear}`;
+            
+            const grid = document.getElementById('datePickerGrid');
+            grid.innerHTML = '';
+            
+            // Day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'date-picker-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
             });
             
-            // Update the celebrities object with filtered results
-            Object.keys(celebrities).forEach(key => delete celebrities[key]);
-            Object.assign(celebrities, filteredCelebrities);
+            // Get first day of month and total days
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             
-            // Show filter statistics
-            showFilterStats(originalCount, Object.keys(filteredCelebrities).length, duplicates);
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'date-picker-day empty';
+                grid.appendChild(emptyDay);
+            }
             
-            // Regenerate buttons
-            generateCelebrityButtons();
-            
-            console.log(`🎯 Filter complete: ${Object.keys(filteredCelebrities).length} remaining out of ${originalCount} original`);
+            // Day cells
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'date-picker-day';
+                dayCell.textContent = day;
+                
+                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Check if date is occupied
+                if (occupiedDates.has(dateKey)) {
+                    dayCell.classList.add('disabled');
+                    dayCell.title = `Occupied by ${occupiedDates.get(dateKey)}`;
+                } else {
+                    dayCell.onclick = () => selectDate(day);
+                }
+                
+                // Mark today
+                if (currentYear === today.getFullYear() && 
+                    currentMonth === today.getMonth() && 
+                    day === today.getDate()) {
+                    dayCell.classList.add('today');
+                }
+                
+                grid.appendChild(dayCell);
+            }
         }
         
-        // Show filter statistics
-        function showFilterStats(original, remaining, duplicates) {
-            const filterInfo = document.getElementById('filterInfo');
-            const filterStats = document.getElementById('filterStats');
+        // Select a date and add celebrity to Google Sheets
+        async function selectDate(day) {
+            if (!selectedCelebrity) return;
             
-            filterStats.innerHTML = `
-                <strong>Original suggestions:</strong> ${original}<br>
-                <strong>After filtering:</strong> ${remaining}<br>
-                <strong>Filtered out:</strong> ${original - remaining}<br>
-                <strong>Total existing names/nicknames:</strong> ${allExistingNames.size}
-            `;
+            const celeb = celebrities[selectedCelebrity];
+            const publishDate = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
             
-            if (duplicates.length > 0) {
-                filterStats.innerHTML += `<br><br><strong>Duplicates found:</strong><br>`;
-                duplicates.slice(0, 5).forEach(dup => {
-                    filterStats.innerHTML += `• ${dup.name} (${dup.reason})<br>`;
-                });
-                if (duplicates.length > 5) {
-                    filterStats.innerHTML += `• ... and ${duplicates.length - 5} more`;
-                }
-            }
-            
-            filterInfo.style.display = 'block';
-        }
-
-        // Add current celebrity to Google Sheets
-        async function addToGoogleSheets() {
-            if (!currentCelebrity) {
-                alert('Please select a celebrity first!');
-                return;
-            }
-
-            const celebrity = celebrities[currentCelebrity];
-
             try {
+                console.log(`📅 Adding ${celeb.name} to ${publishDate}...`);
+                
+                // Add to Google Sheets
                 const response = await fetch('/.netlify/functions/add-celebrity', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: celebrity.name,
-                        photo: celebrity.photo,
-                        alternatives: celebrity.alternatives
+                        name: celeb.name,
+                        publishDate: publishDate,
+                        photo: celeb.photo,
+                        alternatives: celeb.alternatives
                     })
                 });
-
+                
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Show the added data
-                    document.getElementById('exportData').value = JSON.stringify({
-                        action: 'Added to Google Sheets',
-                        celebrity: celebrity.name,
-                        photo: celebrity.photo,
-                        alternatives: celebrity.alternatives,
-                        result: data,
-                        timestamp: new Date().toISOString()
-                    }, null, 2);
-                    document.getElementById('exportInfo').style.display = 'block';
+                    console.log(`✅ Successfully added ${celeb.name} to ${publishDate}`);
                     
-                    alert(`✅ Successfully added "${celebrity.name}" to Google Sheets!`);
+                    // Update occupied dates
+                    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    occupiedDates.set(dateKey, celeb.name);
+                    
+                    // Remove from displayed celebrities and add a new one
+                    displayedCelebrities = displayedCelebrities.filter(id => id !== selectedCelebrity);
+                    
+                    // Add a new celebrity
+                    const availableCelebs = Object.keys(celebrities).filter(id => 
+                        !shownCelebrityIds.has(id) && !displayedCelebrities.includes(id)
+                    );
+                    
+                    if (availableCelebs.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * availableCelebs.length);
+                        const newCelebId = availableCelebs[randomIndex];
+                        displayedCelebrities.push(newCelebId);
+                        shownCelebrityIds.add(newCelebId);
+                    } else if (displayedCelebrities.length === 0) {
+                        // All celebrities scheduled, start over
+                        shownCelebrityIds.clear();
+                        await show5NewCelebrities();
+                    }
+                    
+                    renderCelebrities();
+                    closeModal();
                 } else {
-                    throw new Error(data.error || 'Failed to add celebrity');
+                    showError('Failed to add celebrity: ' + (data.error || 'Unknown error'));
                 }
-                
             } catch (error) {
-                console.error('Error adding to Google Sheets:', error);
-                alert('❌ Error adding to Google Sheets: ' + error.message);
+                console.error('Error adding celebrity:', error);
+                showError('Failed to add celebrity: ' + error.message);
             }
         }
-
-        // Pixel Art Generation Functions
         
-        // Update pixel size display
-        document.getElementById('pixelSize').addEventListener('input', function() {
-            document.getElementById('pixelSizeValue').textContent = this.value + 'px';
-        });
+        // Show error message
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
         
-        // Generate pixel art from the reference image
-        function generatePixelArt() {
-            if (!currentCelebrity) {
-                alert('Please select a celebrity first!');
-                return;
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('datePickerModal');
+            if (event.target === modal) {
+                closeModal();
             }
-            
-            const referenceImg = document.getElementById('referenceImage');
-            const canvas = document.getElementById('pixelCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            const pixelSize = parseInt(document.getElementById('pixelSize').value);
-            const colorCount = parseInt(document.getElementById('pixelColors').value);
-            
-            // Create a new image with CORS handling
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
-            img.onload = function() {
-                try {
-                    // Calculate dimensions (keep aspect ratio, max 128x128 for pixel art)
-                    const maxSize = 128;
-                    let width = img.naturalWidth;
-                    let height = img.naturalHeight;
-                    
-                    if (width > height) {
-                        height = (height * maxSize) / width;
-                        width = maxSize;
-                    } else {
-                        width = (width * maxSize) / height;
-                        height = maxSize;
-                    }
-                    
-                    // Set canvas size
-                    canvas.width = width;
-                    canvas.height = height;
-                    
-                    // Draw image to canvas
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Get image data
-                    const imageData = ctx.getImageData(0, 0, width, height);
-                    const data = imageData.data;
-                    
-                    // Create pixelated version
-                    const pixelatedData = ctx.createImageData(width, height);
-                    
-                    for (let y = 0; y < height; y += pixelSize) {
-                        for (let x = 0; x < width; x += pixelSize) {
-                            // Sample color from center of pixel block
-                            const centerX = Math.min(x + Math.floor(pixelSize / 2), width - 1);
-                            const centerY = Math.min(y + Math.floor(pixelSize / 2), height - 1);
-                            const pixelIndex = (centerY * width + centerX) * 4;
-                            
-                            const r = data[pixelIndex];
-                            const g = data[pixelIndex + 1];
-                            const b = data[pixelIndex + 2];
-                            const a = data[pixelIndex + 3];
-                            
-                            // Apply color quantization
-                            const quantizedColor = quantizeColor(r, g, b, colorCount);
-                            
-                            // Fill the pixel block
-                            for (let py = y; py < Math.min(y + pixelSize, height); py++) {
-                                for (let px = x; px < Math.min(x + pixelSize, width); px++) {
-                                    const blockIndex = (py * width + px) * 4;
-                                    pixelatedData.data[blockIndex] = quantizedColor.r;
-                                    pixelatedData.data[blockIndex + 1] = quantizedColor.g;
-                                    pixelatedData.data[blockIndex + 2] = quantizedColor.b;
-                                    pixelatedData.data[blockIndex + 3] = a;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Draw pixelated image
-                    ctx.putImageData(pixelatedData, 0, 0);
-                    
-                    // Show the output
-                    document.getElementById('pixelArtOutput').style.display = 'block';
-                    
-                    console.log('🎨 Pixel art generated successfully!');
-                } catch (error) {
-                    console.error('Error generating pixel art:', error);
-                    alert('Error generating pixel art. Please try a different image or check console for details.');
-                }
-            };
-            
-            img.onerror = function() {
-                console.error('Failed to load image for pixel art generation');
-                alert('Failed to load image. Please try again or select a different celebrity.');
-            };
-            
-            // Load the image
-            img.src = referenceImg.src;
         }
-        
-        // Color quantization function
-        function quantizeColor(r, g, b, colorCount) {
-            const step = Math.floor(255 / (colorCount - 1));
-            return {
-                r: Math.round(r / step) * step,
-                g: Math.round(g / step) * step,
-                b: Math.round(b / step) * step
-            };
-        }
-        
-        // Download pixel art as PNG
-        function downloadPixelArt() {
-            const canvas = document.getElementById('pixelCanvas');
-            const link = document.createElement('a');
-            link.download = `${celebrities[currentCelebrity].name.replace(/[^a-zA-Z0-9]/g, '_')}_pixel_art.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-        
-        // Copy pixel art data
-        function copyPixelArtData() {
-            const canvas = document.getElementById('pixelCanvas');
-            const pixelSize = document.getElementById('pixelSize').value;
-            const colorCount = document.getElementById('pixelColors').value;
-            
-            const pixelData = {
-                celebrity: celebrities[currentCelebrity].name,
-                celebrityId: currentCelebrity,
-                pixelSize: parseInt(pixelSize),
-                colorCount: parseInt(colorCount),
-                dimensions: {
-                    width: canvas.width,
-                    height: canvas.height
-                },
-                imageData: canvas.toDataURL(),
-                timestamp: new Date().toISOString()
-            };
-            
-            document.getElementById('exportData').value = JSON.stringify(pixelData, null, 2);
-            document.getElementById('exportInfo').style.display = 'block';
-            
-            alert('Pixel art data copied to export area!');
-        }
-
-        // Initialize when the page loads
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 Page loaded, starting initialization...');
-            console.log('📝 Initial celebrities count:', Object.keys(celebrities).length);
-            
-            // First load data from Google Sheets to filter suggestions
-            await loadFromGoogleSheets();
-            
-            console.log('✅ Initialization complete');
-        });
     </script>
 </body>
 </html>

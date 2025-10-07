@@ -27,7 +27,7 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { name, photo, alternatives } = JSON.parse(event.body);
+        const { name, photo, alternatives, publishDate } = JSON.parse(event.body);
         
         if (!name) {
             return {
@@ -69,16 +69,22 @@ exports.handler = async (event, context) => {
 
         const sheets = google.sheets({ version: 'v4', auth });
         
-        // Get current date in DD/MM/YYYY format
-        const today = new Date();
-        const publishDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+        // Use provided publishDate or default to today in DD/MM/YYYY format
+        let finalPublishDate = publishDate;
+        if (!finalPublishDate) {
+            const today = new Date();
+            finalPublishDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+        }
         
-        // Add the new row with the correct structure: Name, Publish date, Gender, Nationality, Status, Photo URL
-        const values = [[name, publishDate, '', '', '', photo || '']];
+        // Prepare nicknames column (column G)
+        const nicknamesStr = alternatives && Array.isArray(alternatives) ? alternatives.join(', ') : '';
+        
+        // Add the new row with the correct structure: Name, Publish date, Gender, Nationality, Status, Photo URL, Nicknames
+        const values = [[name, finalPublishDate, '', '', '', photo || '', nicknamesStr]];
         
         const response = await sheets.spreadsheets.values.append({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:F`,
+            range: `${SHEET_NAME}!A:G`,
             valueInputOption: 'RAW',
             resource: {
                 values: values
@@ -97,8 +103,9 @@ exports.handler = async (event, context) => {
                 updatedRows: response.data.updates?.updatedRows || 1,
                 data: {
                     name: name,
-                    publishDate: publishDate,
-                    photo: photo || ''
+                    publishDate: finalPublishDate,
+                    photo: photo || '',
+                    alternatives: alternatives || []
                 }
             })
         };
