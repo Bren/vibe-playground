@@ -407,7 +407,7 @@
         // State
         let allCelebrities = [];
         let displayedCelebrities = [];
-        let occupiedDates = new Map(); // date -> celebrity
+        window.occupiedDates = new Map(); // date -> celebrity (global for debugging)
         let existingCelebrityNames = new Set(); // All names and nicknames from Google Sheets
         let shownCelebrityIds = new Set();
         let selectedCelebrity = null;
@@ -518,7 +518,7 @@
                 const data = await response.json();
                 
                 if (data.success && data.celebrities) {
-                    occupiedDates.clear();
+                    window.occupiedDates.clear();
                     existingCelebrityNames.clear();
                     
                     data.celebrities.forEach(celeb => {
@@ -530,8 +530,10 @@
                                 const month = parts[1];
                                 const year = parts[2];
                                 const dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                                occupiedDates.set(dateKey, celeb.name);
-                                console.log(`📅 Marking ${dateKey} as occupied by ${celeb.name}`);
+                                window.occupiedDates.set(dateKey, celeb.name);
+                                console.log(`📅 Marking ${dateKey} as occupied by ${celeb.name} (original: ${celeb.publishDate})`);
+                            } else {
+                                console.log(`⚠️ Invalid date format: ${celeb.publishDate}`);
                             }
                         }
                         
@@ -551,11 +553,11 @@
                         }
                     });
                     
-                    console.log(`✅ Loaded ${occupiedDates.size} occupied dates`);
+                    console.log(`✅ Loaded ${window.occupiedDates.size} occupied dates`);
                     console.log(`✅ Loaded ${existingCelebrityNames.size} existing celebrity names/nicknames`);
                     
                     // Debug: Show some occupied dates
-                    const occupiedArray = Array.from(occupiedDates.entries()).slice(0, 10);
+                    const occupiedArray = Array.from(window.occupiedDates.entries()).slice(0, 10);
                     console.log('📅 Sample occupied dates:', occupiedArray);
                 }
             } catch (error) {
@@ -755,10 +757,10 @@
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 // Check if date is occupied
-                if (occupiedDates.has(dateKey)) {
+                if (window.occupiedDates.has(dateKey)) {
                     dayCell.classList.add('disabled');
-                    dayCell.title = `Occupied by ${occupiedDates.get(dateKey)}`;
-                    console.log(`🚫 Date ${dateKey} is occupied by ${occupiedDates.get(dateKey)}`);
+                    dayCell.title = `Occupied by ${window.occupiedDates.get(dateKey)}`;
+                    console.log(`🚫 Date ${dateKey} is occupied by ${window.occupiedDates.get(dateKey)}`);
                 } else {
                     dayCell.onclick = () => selectDate(day);
                     console.log(`✅ Date ${dateKey} is available`);
@@ -804,7 +806,7 @@
                     
                     // Update occupied dates
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    occupiedDates.set(dateKey, celeb.name);
+                    window.occupiedDates.set(dateKey, celeb.name);
                     
                     // Add to existing names database
                     existingCelebrityNames.add(normalizeName(celeb.name));
