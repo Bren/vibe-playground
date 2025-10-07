@@ -408,6 +408,7 @@
         let allCelebrities = [];
         let displayedCelebrities = [];
         let occupiedDates = new Map(); // date -> celebrity
+        let existingCelebrityNames = new Set(); // All names and nicknames from Google Sheets
         let shownCelebrityIds = new Set();
         let selectedCelebrity = null;
         let currentMonth = new Date().getMonth();
@@ -509,18 +510,20 @@
             await show5NewCelebrities();
         });
         
-        // Load occupied dates from Google Sheets
+        // Load occupied dates and existing celebrity names from Google Sheets
         async function loadOccupiedDates() {
             try {
-                console.log('📅 Loading occupied dates from Google Sheets...');
+                console.log('📅 Loading occupied dates and existing celebrities from Google Sheets...');
                 const response = await fetch('/.netlify/functions/celebrities');
                 const data = await response.json();
                 
                 if (data.success && data.celebrities) {
                     occupiedDates.clear();
+                    existingCelebrityNames.clear();
+                    
                     data.celebrities.forEach(celeb => {
+                        // Store occupied dates
                         if (celeb.publishDate) {
-                            // Parse DD/MM/YYYY format
                             const parts = celeb.publishDate.split('/');
                             if (parts.length === 3) {
                                 const day = parts[0];
@@ -530,8 +533,25 @@
                                 occupiedDates.set(dateKey, celeb.name);
                             }
                         }
+                        
+                        // Store all names and nicknames (normalized for comparison)
+                        if (celeb.name) {
+                            existingCelebrityNames.add(normalizeName(celeb.name));
+                        }
+                        
+                        // Add nicknames/alternatives
+                        if (celeb.nicknames) {
+                            const nicknames = celeb.nicknames.split(',').map(n => n.trim());
+                            nicknames.forEach(nickname => {
+                                if (nickname) {
+                                    existingCelebrityNames.add(normalizeName(nickname));
+                                }
+                            });
+                        }
                     });
+                    
                     console.log(`✅ Loaded ${occupiedDates.size} occupied dates`);
+                    console.log(`✅ Loaded ${existingCelebrityNames.size} existing celebrity names/nicknames`);
                 }
             } catch (error) {
                 console.error('Error loading occupied dates:', error);
@@ -539,19 +559,72 @@
             }
         }
         
-        // Show 5 new celebrities that haven't been shown before
+        // Normalize name for comparison (remove spaces, lowercase, remove special chars)
+        function normalizeName(name) {
+            return name.toLowerCase()
+                .replace(/\s+/g, '')
+                .replace(/[^\w\u0590-\u05FF]/g, ''); // Keep alphanumeric and Hebrew chars
+        }
+        
+        // Check if a celebrity is already in the database
+        function isCelebrityInDatabase(celebId) {
+            const celeb = celebrities[celebId];
+            if (!celeb) return false;
+            
+            // Check main name
+            if (existingCelebrityNames.has(normalizeName(celeb.name))) {
+                console.log(`❌ DUPLICATE: "${celeb.name}" already exists in database`);
+                return true;
+            }
+            
+            // Check alternatives
+            if (celeb.alternatives && Array.isArray(celeb.alternatives)) {
+                for (const alt of celeb.alternatives) {
+                    if (existingCelebrityNames.has(normalizeName(alt))) {
+                        console.log(`❌ DUPLICATE: Alternative "${alt}" of "${celeb.name}" already exists in database`);
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // Show 5 new celebrities that haven't been shown before AND aren't in the database
         async function show5NewCelebrities() {
             try {
                 // Get all celebrity IDs
                 const allCelebIds = Object.keys(celebrities);
                 
-                // Filter out already shown ones
-                const availableCelebs = allCelebIds.filter(id => !shownCelebrityIds.has(id));
+                // Filter out already shown ones AND ones already in database
+                const availableCelebs = allCelebIds.filter(id => 
+                    !shownCelebrityIds.has(id) && !isCelebrityInDatabase(id)
+                );
                 
-                // If we don't have enough, start over
+                console.log(`📊 Total celebrities: ${allCelebIds.length}`);
+                console.log(`📊 Already in database: ${allCelebIds.length - allCelebIds.filter(id => !isCelebrityInDatabase(id)).length}`);
+                console.log(`📊 Available to show: ${availableCelebs.length}`);
+                
+                // If we don't have enough available, reset the shown pool but keep filtering duplicates
                 if (availableCelebs.length < 5) {
-                    console.log('♻️ Not enough unshown celebrities, resetting pool...');
+                    console.log('♻️ Not enough unshown celebrities, resetting shown pool...');
                     shownCelebrityIds.clear();
+                    
+                    // Re-filter without the shown constraint
+                    const availableAfterReset = allCelebIds.filter(id => !isCelebrityInDatabase(id));
+                    
+                    if (availableAfterReset.length < 5) {
+                        showError(`⚠️ Only ${availableAfterReset.length} celebrities not yet in database. All others are already scheduled!`);
+                        
+                        // Show what we have
+                        if (availableAfterReset.length > 0) {
+                            displayedCelebrities = availableAfterReset;
+                            availableAfterReset.forEach(id => shownCelebrityIds.add(id));
+                            renderCelebrities();
+                        }
+                        return;
+                    }
+                    
                     return show5NewCelebrities();
                 }
                 
@@ -568,7 +641,7 @@
                 displayedCelebrities = selected;
                 renderCelebrities();
                 
-                console.log(`✅ Showing 5 celebrities:`, selected);
+                console.log(`✅ Showing 5 new celebrities:`, selected);
             } catch (error) {
                 console.error('Error showing celebrities:', error);
                 showError('Failed to load celebrities: ' + error.message);
@@ -726,12 +799,22 @@
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     occupiedDates.set(dateKey, celeb.name);
                     
+                    // Add to existing names database
+                    existingCelebrityNames.add(normalizeName(celeb.name));
+                    if (celeb.alternatives) {
+                        celeb.alternatives.forEach(alt => {
+                            existingCelebrityNames.add(normalizeName(alt));
+                        });
+                    }
+                    
                     // Remove from displayed celebrities and add a new one
                     displayedCelebrities = displayedCelebrities.filter(id => id !== selectedCelebrity);
                     
-                    // Add a new celebrity
+                    // Add a new celebrity (excluding duplicates)
                     const availableCelebs = Object.keys(celebrities).filter(id => 
-                        !shownCelebrityIds.has(id) && !displayedCelebrities.includes(id)
+                        !shownCelebrityIds.has(id) && 
+                        !displayedCelebrities.includes(id) &&
+                        !isCelebrityInDatabase(id) // Check against database
                     );
                     
                     if (availableCelebs.length > 0) {
@@ -739,8 +822,10 @@
                         const newCelebId = availableCelebs[randomIndex];
                         displayedCelebrities.push(newCelebId);
                         shownCelebrityIds.add(newCelebId);
+                        console.log(`➕ Added new celebrity: ${newCelebId}`);
                     } else if (displayedCelebrities.length === 0) {
-                        // All celebrities scheduled, start over
+                        // All celebrities scheduled, reload
+                        console.log('🎉 All available celebrities have been scheduled!');
                         shownCelebrityIds.clear();
                         await show5NewCelebrities();
                     }
