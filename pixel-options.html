@@ -531,6 +531,7 @@
                                 const year = parts[2];
                                 const dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                                 occupiedDates.set(dateKey, celeb.name);
+                                console.log(`📅 Marking ${dateKey} as occupied by ${celeb.name}`);
                             }
                         }
                         
@@ -552,6 +553,10 @@
                     
                     console.log(`✅ Loaded ${occupiedDates.size} occupied dates`);
                     console.log(`✅ Loaded ${existingCelebrityNames.size} existing celebrity names/nicknames`);
+                    
+                    // Debug: Show some occupied dates
+                    const occupiedArray = Array.from(occupiedDates.entries()).slice(0, 10);
+                    console.log('📅 Sample occupied dates:', occupiedArray);
                 }
             } catch (error) {
                 console.error('Error loading occupied dates:', error);
@@ -753,8 +758,10 @@
                 if (occupiedDates.has(dateKey)) {
                     dayCell.classList.add('disabled');
                     dayCell.title = `Occupied by ${occupiedDates.get(dateKey)}`;
+                    console.log(`🚫 Date ${dateKey} is occupied by ${occupiedDates.get(dateKey)}`);
                 } else {
                     dayCell.onclick = () => selectDate(day);
+                    console.log(`✅ Date ${dateKey} is available`);
                 }
                 
                 // Mark today
