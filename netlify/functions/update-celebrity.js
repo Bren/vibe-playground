@@ -43,23 +43,39 @@ exports.handler = async (event, context) => {
         });
 
         const sheets = google.sheets({ version: 'v4', auth });
-        
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:G`,
-        });
 
-        const rows = response.data.values || [];
-        const celebrities = rows.slice(1).map((row, index) => ({
-            rowIndex: index + 2, // +2 because we skip header (row 1) and arrays are 0-indexed
-            name: row[0] || '',
-            publishDate: row[1] || '',
-            gender: row[2] || '',
-            nationality: row[3] || '',
-            status: row[4] || '',
-            photo: row[5] || '',
-            nicknames: row[6] || ''
-        })).filter(celebrity => celebrity.publishDate); // Filter by publishDate instead of name
+        if (event.httpMethod !== 'POST') {
+            return {
+                statusCode: 405,
+                headers,
+                body: JSON.stringify({ error: 'Method not allowed' })
+            };
+        }
+
+        const body = JSON.parse(event.body);
+        const { name, publishDate, photo, alternatives, rowIndex } = body;
+
+        if (!name || !publishDate || !rowIndex) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ error: 'Missing required fields: name, publishDate, rowIndex' })
+            };
+        }
+
+        // Prepare the data for the specific row
+        const nicknamesStr = alternatives && Array.isArray(alternatives) ? alternatives.join(', ') : '';
+        const values = [[name, publishDate, '', '', '', photo || '', nicknamesStr]];
+        
+        // Update the specific row instead of appending
+        const response = await sheets.spreadsheets.values.update({
+            spreadsheetId: SHEET_ID,
+            range: `${SHEET_NAME}!A${rowIndex}:G${rowIndex}`,
+            valueInputOption: 'RAW',
+            resource: {
+                values: values
+            }
+        });
 
         return {
             statusCode: 200,
@@ -69,13 +85,14 @@ exports.handler = async (event, context) => {
             },
             body: JSON.stringify({
                 success: true,
-                celebrities: celebrities,
-                count: celebrities.length
+                message: `Successfully updated row ${rowIndex} with ${name}`,
+                updatedRow: rowIndex,
+                updatedAt: new Date().toISOString()
             })
         };
 
     } catch (error) {
-        console.error('Error fetching celebrities:', error);
+        console.error('Error updating celebrity:', error);
         return {
             statusCode: 500,
             headers: {

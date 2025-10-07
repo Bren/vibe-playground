@@ -229,6 +229,21 @@
             opacity: 0.5;
         }
         
+        .date-picker-day.available {
+            background: rgba(76, 175, 80, 0.2);
+            cursor: pointer;
+        }
+        
+        .date-picker-day.available:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        
+        .date-picker-day.not-in-sheet {
+            background: rgba(158, 158, 158, 0.2);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
         .date-picker-day.empty {
             background: transparent;
             cursor: default;
@@ -378,8 +393,8 @@
             <div id="celebritiesContainer" class="celebrities-grid" style="display: none;">
                 <!-- Celebrity cards will be generated here -->
             </div>
-        </div>
-        
+            </div>
+            
         <!-- Date Picker Modal -->
         <div id="datePickerModal" class="modal">
             <div class="modal-content">
@@ -394,11 +409,11 @@
                         <button class="date-picker-nav" onclick="nextMonth()">Next ▶</button>
                     </div>
                     <div class="date-picker-grid" id="datePickerGrid"></div>
-                </div>
+            </div>
             </div>
         </div>
     </div>
-
+    
     <script>
         // Configuration
         const SHEET_ID = '1GgoGvCzW74vSqoaQeQmeGYEdNvLMY64iklDjCTYYOcY';
@@ -522,7 +537,7 @@
                     existingCelebrityNames.clear();
                     
                     data.celebrities.forEach(celeb => {
-                        // Store occupied dates
+                        // Store all dates from the sheet (both occupied and available)
                         if (celeb.publishDate) {
                             const parts = celeb.publishDate.split('/');
                             if (parts.length === 3) {
@@ -530,15 +545,33 @@
                                 const month = parts[1];
                                 const year = parts[2];
                                 const dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                                window.occupiedDates.set(dateKey, celeb.name);
-                                console.log(`📅 Marking ${dateKey} as occupied by ${celeb.name} (original: ${celeb.publishDate})`);
+                                
+                                if (celeb.name && celeb.name.trim()) {
+                                    // Date has a celebrity assigned
+                                    window.occupiedDates.set(dateKey, {
+                                        name: celeb.name,
+                                        rowIndex: celeb.rowIndex,
+                                        photo: celeb.photo,
+                                        nicknames: celeb.nicknames
+                                    });
+                                    console.log(`📅 Marking ${dateKey} as occupied by ${celeb.name} (row ${celeb.rowIndex})`);
+                                } else {
+                                    // Date exists in sheet but no celebrity assigned
+                                    window.occupiedDates.set(dateKey, {
+                                        name: null,
+                                        rowIndex: celeb.rowIndex,
+                                        photo: null,
+                                        nicknames: null
+                                    });
+                                    console.log(`📅 Marking ${dateKey} as available (row ${celeb.rowIndex})`);
+                                }
                             } else {
                                 console.log(`⚠️ Invalid date format: ${celeb.publishDate}`);
                             }
                         }
                         
                         // Store all names and nicknames (normalized for comparison)
-                        if (celeb.name) {
+                        if (celeb.name && celeb.name.trim()) {
                             existingCelebrityNames.add(normalizeName(celeb.name));
                         }
                         
@@ -756,14 +789,26 @@
                 
                 const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
-                // Check if date is occupied
+                // Check if date exists in the sheet
                 if (window.occupiedDates.has(dateKey)) {
-                    dayCell.classList.add('disabled');
-                    dayCell.title = `Occupied by ${window.occupiedDates.get(dateKey)}`;
-                    console.log(`🚫 Date ${dateKey} is occupied by ${window.occupiedDates.get(dateKey)}`);
+                    const dateInfo = window.occupiedDates.get(dateKey);
+                    if (dateInfo.name) {
+                        // Date has a celebrity assigned
+                        dayCell.classList.add('disabled');
+                        dayCell.title = `Occupied by ${dateInfo.name}`;
+                        console.log(`🚫 Date ${dateKey} is occupied by ${dateInfo.name} (row ${dateInfo.rowIndex})`);
+                    } else {
+                        // Date exists in sheet but is available
+                        dayCell.classList.add('available');
+                        dayCell.title = `Available - click to assign`;
+                        dayCell.onclick = () => selectDate(day, dateInfo.rowIndex);
+                        console.log(`✅ Date ${dateKey} is available (row ${dateInfo.rowIndex})`);
+                    }
                 } else {
-                    dayCell.onclick = () => selectDate(day);
-                    console.log(`✅ Date ${dateKey} is available`);
+                    // Date doesn't exist in sheet at all
+                    dayCell.classList.add('not-in-sheet');
+                    dayCell.title = `Date not in sheet`;
+                    console.log(`❌ Date ${dateKey} not found in sheet`);
                 }
                 
                 // Mark today
@@ -778,35 +823,41 @@
         }
         
         // Select a date and add celebrity to Google Sheets
-        async function selectDate(day) {
-            if (!selectedCelebrity) return;
+        async function selectDate(day, rowIndex) {
+            if (!selectedCelebrity || !rowIndex) return;
             
             const celeb = celebrities[selectedCelebrity];
             const publishDate = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
             
             try {
-                console.log(`📅 Adding ${celeb.name} to ${publishDate}...`);
+                console.log(`📅 Updating row ${rowIndex} with ${celeb.name} for ${publishDate}...`);
                 
-                // Add to Google Sheets
-                const response = await fetch('/.netlify/functions/add-celebrity', {
+                // Update existing row in Google Sheets
+                const response = await fetch('/.netlify/functions/update-celebrity', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         name: celeb.name,
                         publishDate: publishDate,
                         photo: celeb.photo,
-                        alternatives: celeb.alternatives
+                        alternatives: celeb.alternatives,
+                        rowIndex: rowIndex
                     })
                 });
-                
+
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log(`✅ Successfully added ${celeb.name} to ${publishDate}`);
+                    console.log(`✅ Successfully updated row ${rowIndex} with ${celeb.name} for ${publishDate}`);
                     
-                    // Update occupied dates
+                    // Update occupied dates with new info
                     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    window.occupiedDates.set(dateKey, celeb.name);
+                    window.occupiedDates.set(dateKey, {
+                        name: celeb.name,
+                        rowIndex: rowIndex,
+                        photo: celeb.photo,
+                        nicknames: celeb.alternatives ? celeb.alternatives.join(', ') : ''
+                    });
                     
                     // Add to existing names database
                     existingCelebrityNames.add(normalizeName(celeb.name));

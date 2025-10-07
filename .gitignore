@@ -1,1 +1,5 @@
 google-sheets-credentials.json
+.vercel
+
+# Local Netlify folder
+.netlify
