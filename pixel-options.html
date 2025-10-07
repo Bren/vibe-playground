@@ -823,11 +823,14 @@
                         displayedCelebrities.push(newCelebId);
                         shownCelebrityIds.add(newCelebId);
                         console.log(`➕ Added new celebrity: ${newCelebId}`);
-                    } else if (displayedCelebrities.length === 0) {
-                        // All celebrities scheduled, reload
-                        console.log('🎉 All available celebrities have been scheduled!');
-                        shownCelebrityIds.clear();
-                        await show5NewCelebrities();
+                    } else {
+                        console.log(`⚠️ No more unique celebrities available to add. Showing ${displayedCelebrities.length} remaining.`);
+                        if (displayedCelebrities.length === 0) {
+                            // All celebrities scheduled, reload
+                            console.log('🎉 All available celebrities have been scheduled!');
+                            shownCelebrityIds.clear();
+                            await show5NewCelebrities();
+                        }
                     }
                     
                     renderCelebrities();
