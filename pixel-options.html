@@ -184,9 +184,32 @@
             <p>Create pixelated versions of famous people for your guessing game!</p>
             
             <div class="celebrity-selector">
-                <h3>Choose a Celebrity (New Options Only):</h3>
+                <!-- Recognizability Overview -->
+                <div class="recognizability-overview" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0;">🎯 Celebrity Recognizability Analysis</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;" id="totalCelebrities">17</div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Total Celebrities</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;" id="avgRecognizability">--</div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Average Score</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;" id="topTierCount">--</div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">A+ Grade (90+)</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2em; font-weight: bold;" id="highRecognitionCount">--</div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">High Recognition (80+)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>Choose a Celebrity (Sorted by Recognizability):</h3>
                 <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
-                    These celebrities are NOT in your existing list yet
+                    Celebrities are sorted by visual recognizability score (highest first)
                 </p>
                 <div class="celebrity-options" id="celebrityOptions">
                     <!-- Celebrity buttons will be generated dynamically -->
@@ -195,6 +218,26 @@
             
             <div class="current-celebrity" id="currentCelebrity" style="display: none;">
                 <h3 id="celebrityName">Selected Celebrity</h3>
+                
+                <!-- Recognizability Score Section -->
+                <div class="recognizability-section" style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 15px 0; border-left: 4px solid #007bff;">
+                    <h4 style="margin: 0 0 10px 0; color: #333;">🎯 Visual Recognizability Score</h4>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                        <div style="font-size: 1.2em; font-weight: bold;">
+                            Score: <span id="recognizabilityScore" style="color: #007bff;">--/100</span>
+                        </div>
+                        <div style="font-size: 1.1em;">
+                            Grade: <span id="recognizabilityGrade" style="font-weight: bold; color: #007bff;">--</span>
+                        </div>
+                    </div>
+                    <details style="margin-top: 10px;">
+                        <summary style="cursor: pointer; font-weight: bold; color: #555;">📊 View Detailed Breakdown</summary>
+                        <ul id="recognizabilityFactors" style="margin: 10px 0 0 20px; color: #666;">
+                            <!-- Factors will be populated by JavaScript -->
+                        </ul>
+                    </details>
+                </div>
+                
                 <div class="reference-photo">
                     <img id="referenceImage" src="" alt="Reference photo" style="max-width: 200px; border-radius: 10px; margin: 10px;">
                 </div>
@@ -361,21 +404,195 @@
         
         let currentCelebrity = null;
         
+        // Recognizability scoring system
+        function calculateRecognizabilityScore(celebrityId, celebrity) {
+            let score = 0;
+            const factors = [];
+            
+            // 1. Iconic Features Score (0-30 points)
+            const iconicFeatures = {
+                // Distinctive facial hair
+                'einstein': 25, // Wild hair
+                'muhammad_ali': 20, // Boxing champion look
+                'elvis': 25, // Sideburns and hair
+                'michael_jackson': 25, // Unique style evolution
+                'madonna': 20, // Ever-changing iconic looks
+                'steve_jobs': 25, // Black turtleneck + glasses
+                'bill_gates': 15, // Glasses + tech look
+                'newton': 20, // Long white hair
+                'darwin': 20, // White beard
+                'shakespeare': 15, // Elizabethan look
+                // Sports icons
+                'pele': 20, // Football legend
+                // Historical figures
+                'gandhi': 25, // Round glasses + simple clothes
+                'mandela': 25, // Wise elder statesman
+                'mother_teresa': 25, // Nun's habit
+                'leonardo': 20, // Renaissance master
+                'mozart': 20, // Classical composer look
+                'elon_musk': 15 // Modern tech billionaire
+            };
+            
+            score += iconicFeatures[celebrityId] || 10;
+            factors.push(`Iconic features: ${iconicFeatures[celebrityId] || 10}/30`);
+            
+            // 2. Cultural Impact Score (0-25 points)
+            const culturalImpact = {
+                'einstein': 25, // Most famous scientist
+                'gandhi': 25, // Peace movement icon
+                'mandela': 25, // Anti-apartheid hero
+                'mother_teresa': 25, // Humanitarian icon
+                'michael_jackson': 25, // King of Pop
+                'elvis': 25, // King of Rock
+                'madonna': 20, // Queen of Pop
+                'steve_jobs': 20, // Tech revolution
+                'bill_gates': 20, // Microsoft founder
+                'elon_musk': 20, // Modern innovator
+                'leonardo': 25, // Renaissance genius
+                'mozart': 25, // Musical genius
+                'shakespeare': 25, // Literary genius
+                'newton': 25, // Physics genius
+                'darwin': 25, // Evolution theory
+                'muhammad_ali': 25, // Greatest boxer
+                'pele': 25 // Greatest footballer
+            };
+            
+            score += culturalImpact[celebrityId] || 10;
+            factors.push(`Cultural impact: ${culturalImpact[celebrityId] || 10}/25`);
+            
+            // 3. Visual Distinctiveness Score (0-20 points)
+            const visualDistinctiveness = {
+                'einstein': 20, // Wild white hair
+                'gandhi': 20, // Glasses + simple attire
+                'muhammad_ali': 18, // Athletic build + confident look
+                'elvis': 18, // Sideburns + pompadour
+                'michael_jackson': 20, // Unique style
+                'madonna': 18, // Fashion icon
+                'steve_jobs': 15, // Black turtleneck
+                'bill_gates': 12, // Standard tech look
+                'newton': 15, // Long white hair
+                'darwin': 15, // White beard
+                'leonardo': 12, // Renaissance portrait
+                'mozart': 15, // Classical period look
+                'shakespeare': 12, // Elizabethan
+                'pele': 15, // Football uniform
+                'elon_musk': 12, // Modern businessman
+                'mother_teresa': 20, // Nun's habit
+                'mandela': 18 // Wise elder look
+            };
+            
+            score += visualDistinctiveness[celebrityId] || 8;
+            factors.push(`Visual distinctiveness: ${visualDistinctiveness[celebrityId] || 8}/20`);
+            
+            // 4. Name Recognition Score (0-15 points)
+            const nameRecognition = {
+                'einstein': 15, // Einstein = genius
+                'gandhi': 15, // Gandhi = peace
+                'mandela': 15, // Mandela = freedom
+                'mother_teresa': 15, // Mother Teresa = charity
+                'leonardo': 15, // Leonardo da Vinci
+                'mozart': 15, // Mozart = classical music
+                'shakespeare': 15, // Shakespeare = literature
+                'newton': 15, // Newton = gravity
+                'darwin': 15, // Darwin = evolution
+                'michael_jackson': 15, // Michael Jackson = pop
+                'elvis': 15, // Elvis = rock
+                'madonna': 15, // Madonna = pop icon
+                'steve_jobs': 12, // Steve Jobs = Apple
+                'bill_gates': 12, // Bill Gates = Microsoft
+                'elon_musk': 12, // Elon Musk = Tesla/SpaceX
+                'muhammad_ali': 15, // Muhammad Ali = boxing
+                'pele': 15 // Pele = football
+            };
+            
+            score += nameRecognition[celebrityId] || 8;
+            factors.push(`Name recognition: ${nameRecognition[celebrityId] || 8}/15`);
+            
+            // 5. Pixel Art Suitability Score (0-10 points)
+            const pixelArtSuitability = {
+                'einstein': 10, // Wild hair perfect for pixels
+                'gandhi': 9, // Simple features, distinctive glasses
+                'mandela': 8, // Wise face, good contrast
+                'mother_teresa': 9, // Simple habit, distinctive look
+                'leonardo': 7, // Historical portrait style
+                'mozart': 8, // Classical period features
+                'shakespeare': 7, // Elizabethan style
+                'newton': 8, // Long hair, distinctive features
+                'darwin': 8, // Beard, good for pixels
+                'michael_jackson': 9, // Distinctive features
+                'elvis': 9, // Sideburns, good for pixels
+                'madonna': 8, // Fashion changes, but distinctive
+                'steve_jobs': 8, // Glasses, turtleneck
+                'bill_gates': 7, // Glasses, standard look
+                'elon_musk': 7, // Modern features
+                'muhammad_ali': 9, // Athletic features, confident look
+                'pele': 8 // Athletic features
+            };
+            
+            score += pixelArtSuitability[celebrityId] || 6;
+            factors.push(`Pixel art suitability: ${pixelArtSuitability[celebrityId] || 6}/10`);
+            
+            return {
+                score: Math.min(score, 100), // Cap at 100
+                factors: factors,
+                grade: getRecognizabilityGrade(score)
+            };
+        }
+        
+        function getRecognizabilityGrade(score) {
+            if (score >= 90) return { grade: 'A+', color: '#4CAF50', description: 'Extremely recognizable' };
+            if (score >= 80) return { grade: 'A', color: '#8BC34A', description: 'Very recognizable' };
+            if (score >= 70) return { grade: 'B+', color: '#CDDC39', description: 'Highly recognizable' };
+            if (score >= 60) return { grade: 'B', color: '#FFEB3B', description: 'Well recognizable' };
+            if (score >= 50) return { grade: 'C+', color: '#FFC107', description: 'Moderately recognizable' };
+            if (score >= 40) return { grade: 'C', color: '#FF9800', description: 'Somewhat recognizable' };
+            return { grade: 'D', color: '#FF5722', description: 'Less recognizable' };
+        }
+        
         // Select a celebrity
         function selectCelebrity(celebrityId) {
             currentCelebrity = celebrityId;
             const celebrity = celebrities[celebrityId];
+            
+            // Calculate recognizability score
+            const recognizability = calculateRecognizabilityScore(celebrityId, celebrity);
             
             // Update UI
             document.getElementById('celebrityName').textContent = celebrity.name;
             document.getElementById('referenceImage').src = celebrity.photo;
             document.getElementById('currentCelebrity').style.display = 'block';
             
+            // Update recognizability display
+            updateRecognizabilityDisplay(recognizability);
+            
             // Update button states
             document.querySelectorAll('.celebrity-btn').forEach(btn => {
                 btn.classList.remove('selected');
             });
             event.target.classList.add('selected');
+        }
+        
+        function updateRecognizabilityDisplay(recognizability) {
+            const scoreElement = document.getElementById('recognizabilityScore');
+            const gradeElement = document.getElementById('recognizabilityGrade');
+            const factorsElement = document.getElementById('recognizabilityFactors');
+            
+            if (scoreElement) {
+                scoreElement.textContent = `${recognizability.score}/100`;
+                scoreElement.style.color = recognizability.grade.color;
+            }
+            
+            if (gradeElement) {
+                gradeElement.textContent = recognizability.grade.grade;
+                gradeElement.style.color = recognizability.grade.color;
+                gradeElement.title = recognizability.grade.description;
+            }
+            
+            if (factorsElement) {
+                factorsElement.innerHTML = recognizability.factors.map(factor => 
+                    `<li>${factor}</li>`
+                ).join('');
+            }
         }
         
         // Export data for the game
@@ -385,11 +602,20 @@
                 return;
             }
             
+            const celebrity = celebrities[currentCelebrity];
+            const recognizability = calculateRecognizabilityScore(currentCelebrity, celebrity);
+            
             const exportData = {
-                celebrity: celebrities[currentCelebrity].name,
-                alternatives: celebrities[currentCelebrity].alternatives,
+                celebrity: celebrity.name,
+                alternatives: celebrity.alternatives,
                 celebrityId: currentCelebrity,
-                photo: celebrities[currentCelebrity].photo,
+                photo: celebrity.photo,
+                recognizability: {
+                    score: recognizability.score,
+                    grade: recognizability.grade.grade,
+                    description: recognizability.grade.description,
+                    factors: recognizability.factors
+                },
                 timestamp: new Date().toISOString()
             };
             
@@ -405,19 +631,57 @@
             alert('Data copied to clipboard!');
         }
         
-        // Generate celebrity buttons dynamically
+        // Generate celebrity buttons dynamically with recognizability scores
         function generateCelebrityButtons() {
             const container = document.getElementById('celebrityOptions');
             container.innerHTML = '';
             
-            Object.keys(celebrities).forEach(celebrityId => {
+            // Calculate scores for all celebrities and sort by recognizability
+            const celebritiesWithScores = Object.keys(celebrities).map(celebrityId => {
                 const celebrity = celebrities[celebrityId];
+                const recognizability = calculateRecognizabilityScore(celebrityId, celebrity);
+                return { celebrityId, celebrity, recognizability };
+            }).sort((a, b) => b.recognizability.score - a.recognizability.score);
+            
+            // Update overview statistics
+            updateRecognizabilityOverview(celebritiesWithScores);
+            
+            celebritiesWithScores.forEach(({ celebrityId, celebrity, recognizability }) => {
                 const button = document.createElement('button');
                 button.className = 'celebrity-btn';
-                button.textContent = celebrity.name;
                 button.onclick = () => selectCelebrity(celebrityId);
+                
+                // Create button content with score
+                button.innerHTML = `
+                    <div class="celebrity-btn-content" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span class="celebrity-name">${celebrity.name}</span>
+                        <span class="recognizability-badge" style="
+                            background-color: ${recognizability.grade.color};
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 12px;
+                            font-size: 0.8em;
+                            font-weight: bold;
+                            margin-left: 8px;
+                        ">${recognizability.score}/100</span>
+                    </div>
+                `;
+                
                 container.appendChild(button);
             });
+        }
+        
+        // Update recognizability overview statistics
+        function updateRecognizabilityOverview(celebritiesWithScores) {
+            const totalCelebrities = celebritiesWithScores.length;
+            const avgScore = Math.round(celebritiesWithScores.reduce((sum, c) => sum + c.recognizability.score, 0) / totalCelebrities);
+            const topTierCount = celebritiesWithScores.filter(c => c.recognizability.score >= 90).length;
+            const highRecognitionCount = celebritiesWithScores.filter(c => c.recognizability.score >= 80).length;
+            
+            document.getElementById('totalCelebrities').textContent = totalCelebrities;
+            document.getElementById('avgRecognizability').textContent = avgScore;
+            document.getElementById('topTierCount').textContent = topTierCount;
+            document.getElementById('highRecognitionCount').textContent = highRecognitionCount;
         }
         
         // Google Sheets configuration
