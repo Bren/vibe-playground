@@ -244,6 +244,40 @@
             opacity: 0.5;
         }
         
+        .show-more-container {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .show-more-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .show-more-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .show-more-btn:active {
+            transform: translateY(0);
+        }
+        
+        .show-more-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
         .date-picker-day.empty {
             background: transparent;
             cursor: default;
@@ -393,6 +427,12 @@
             <div id="celebritiesContainer" class="celebrities-grid" style="display: none;">
                 <!-- Celebrity cards will be generated here -->
             </div>
+            
+            <div class="show-more-container" style="display: none;">
+                <button id="showMoreBtn" class="show-more-btn">
+                    Show More Celebrities
+                </button>
+            </div>
             </div>
             
         <!-- Date Picker Modal -->
@@ -523,6 +563,12 @@
             console.log('🚀 Initializing Celebrity Scheduler...');
             await loadOccupiedDates();
             await show5NewCelebrities();
+            
+            // Add event listener for "Show More" button
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', showMoreCelebrities);
+            }
         });
         
         // Load occupied dates and existing celebrity names from Google Sheets
@@ -711,6 +757,63 @@
                 
                 container.appendChild(card);
             });
+            
+            // Show/hide "Show More" button based on available celebrities
+            updateShowMoreButton();
+        }
+        
+        // Update "Show More" button visibility and state
+        function updateShowMoreButton() {
+            const showMoreContainer = document.querySelector('.show-more-container');
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            
+            // Check if there are more unique celebrities available
+            const availableCelebs = allCelebrities.filter(celebId => 
+                !shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+            );
+            
+            if (availableCelebs.length > 0) {
+                showMoreContainer.style.display = 'block';
+                showMoreBtn.disabled = false;
+                showMoreBtn.textContent = `Show More Celebrities (${availableCelebs.length} available)`;
+            } else {
+                showMoreContainer.style.display = 'none';
+            }
+        }
+        
+        // Add more celebrities to the display
+        function showMoreCelebrities() {
+            const availableCelebs = allCelebrities.filter(celebId => 
+                !shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+            );
+            
+            if (availableCelebs.length === 0) {
+                console.log('No more unique celebrities available');
+                return;
+            }
+            
+            // Add up to 5 more celebrities (or all remaining if less than 5)
+            const toAdd = Math.min(5, availableCelebs.length);
+            const newCelebs = [];
+            
+            for (let i = 0; i < toAdd; i++) {
+                const randomIndex = Math.floor(Math.random() * availableCelebs.length);
+                const celebId = availableCelebs[randomIndex];
+                
+                newCelebs.push(celebId);
+                shownCelebrityIds.add(celebId);
+                
+                // Remove from available list to avoid duplicates
+                availableCelebs.splice(randomIndex, 1);
+            }
+            
+            // Add to displayed celebrities
+            displayedCelebrities.push(...newCelebs);
+            
+            console.log(`➕ Added ${newCelebs.length} more celebrities:`, newCelebs);
+            
+            // Re-render the celebrities
+            renderCelebrities();
         }
         
         // Open date picker modal
