@@ -460,11 +460,11 @@
         const SHEET_NAME = 'Published';
         
         // State
-        let allCelebrities = [];
+        window.allCelebrities = [];
         let displayedCelebrities = [];
         window.occupiedDates = new Map(); // date -> celebrity (global for debugging)
         let existingCelebrityNames = new Set(); // All names and nicknames from Google Sheets
-        let shownCelebrityIds = new Set();
+        window.shownCelebrityIds = new Set();
         let selectedCelebrity = null;
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -768,8 +768,9 @@
             const showMoreBtn = document.getElementById('showMoreBtn');
             
             // Check if there are more unique celebrities available
-            const availableCelebs = allCelebrities.filter(celebId => 
-                !shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+            const allCelebIds = Object.keys(celebrities);
+            const availableCelebs = allCelebIds.filter(celebId => 
+                !window.shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
             );
             
             if (availableCelebs.length > 0) {
@@ -783,8 +784,9 @@
         
         // Add more celebrities to the display
         function showMoreCelebrities() {
-            const availableCelebs = allCelebrities.filter(celebId => 
-                !shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+            const allCelebIds = Object.keys(celebrities);
+            const availableCelebs = allCelebIds.filter(celebId => 
+                !window.shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
             );
             
             if (availableCelebs.length === 0) {
@@ -801,7 +803,7 @@
                 const celebId = availableCelebs[randomIndex];
                 
                 newCelebs.push(celebId);
-                shownCelebrityIds.add(celebId);
+                window.shownCelebrityIds.add(celebId);
                 
                 // Remove from available list to avoid duplicates
                 availableCelebs.splice(randomIndex, 1);
