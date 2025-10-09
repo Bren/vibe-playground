@@ -1437,15 +1437,86 @@
             }
         }
         
+        // Generate more celebrities dynamically when we run out
+        function generateMoreCelebrities() {
+            console.log('🎭 Generating more celebrities dynamically...');
+            
+            // List of additional famous people to add dynamically
+            const moreCelebrities = [
+                { id: 'princess_diana', name: 'הנסיכה דיאנה', alternatives: ['דיאנה', 'Princess Diana', 'Diana'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Diana%2C_Princess_of_Wales_1997_%282%29.jpg/800px-Diana%2C_Princess_of_Wales_1997_%282%29.jpg' },
+                { id: 'queen_elizabeth', name: 'המלכה אליזבת השנייה', alternatives: ['אליזבת', 'Queen Elizabeth', 'Elizabeth II'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Queen_Elizabeth_II_in_March_2015.jpg/800px-Queen_Elizabeth_II_in_March_2015.jpg' },
+                { id: 'prince_harry', name: 'הנסיך הארי', alternatives: ['הארי', 'Prince Harry', 'Harry'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Prince_Harry_at_the_2017_Invictus_Games_opening_ceremony.jpg/800px-Prince_Harry_at_the_2017_Invictus_Games_opening_ceremony.jpg' },
+                { id: 'meghan_markle', name: 'מייגן מרקל', alternatives: ['מרקל', 'מייגן', 'Meghan Markle', 'Markle'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Meghan_Markle_2018.jpg/800px-Meghan_Markle_2018.jpg' },
+                { id: 'kate_middleton', name: 'קייט מידלטון', alternatives: ['מידלטון', 'קייט', 'Kate Middleton', 'Catherine'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Catherine%2C_Duchess_of_Cambridge_in_2019_%28cropped%29.jpg/800px-Catherine%2C_Duchess_of_Cambridge_in_2019_%28cropped%29.jpg' },
+                { id: 'david_bowie', name: 'דייויד בואי', alternatives: ['בואי', 'דייויד', 'David Bowie', 'Bowie'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/David-Bowie_Chicago_2002-08-08_photoby_Adam-Bielawski-cropped.jpg/800px-David-Bowie_Chicago_2002-08-08_photoby_Adam-Bielawski-cropped.jpg' },
+                { id: 'elton_john', name: 'אלטון ג\'ון', alternatives: ['אלטון', 'ג\'ון', 'Elton John', 'John'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Elton_John_2011_Shankbone_2.JPG/800px-Elton_John_2011_Shankbone_2.JPG' },
+                { id: 'prince', name: 'פרינס', alternatives: ['Prince', 'פרינס'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Prince_at_Coachella_001.jpg/800px-Prince_at_Coachella_001.jpg' },
+                { id: 'frank_sinatra', name: 'פרנק סינטרה', alternatives: ['סינטרה', 'פרנק', 'Frank Sinatra', 'Sinatra'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Frank_Sinatra_%2757.jpg/800px-Frank_Sinatra_%2757.jpg' },
+                { id: 'louis_armstrong', name: 'לואי ארמסטרונג', alternatives: ['ארמסטרונג', 'לואי', 'Louis Armstrong', 'Armstrong'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Louis_Armstrong_NYWTS.jpg/800px-Louis_Armstrong_NYWTS.jpg' },
+                { id: 'ella_fitzgerald', name: 'אלה פיצג\'רלד', alternatives: ['פיצג\'רלד', 'אלה', 'Ella Fitzgerald', 'Fitzgerald'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Ella_Fitzgerald_%281940%29.jpg/800px-Ella_Fitzgerald_%281940%29.jpg' },
+                { id: 'billie_holiday', name: 'בילי הולידיי', alternatives: ['הולידיי', 'בילי', 'Billie Holiday', 'Holiday'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Billie_Holiday_0001_original.jpg/800px-Billie_Holiday_0001_original.jpg' },
+                { id: 'james_brown', name: 'ג\'יימס בראון', alternatives: ['בראון', 'ג\'יימס', 'James Brown', 'Brown'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/James_Brown_Live_Hamburg_1973_1702730029.jpg/800px-James_Brown_Live_Hamburg_1973_1702730029.jpg' },
+                { id: 'ray_charles', name: 'ריי צ\'ארלס', alternatives: ['צ\'ארלס', 'ריי', 'Ray Charles', 'Charles'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Ray_Charles_classic_piano_pose.jpg/800px-Ray_Charles_classic_piano_pose.jpg' },
+                { id: 'aretha_franklin', name: 'ארתה פרנקלין', alternatives: ['פרנקלין', 'ארתה', 'Aretha Franklin', 'Franklin'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Aretha_Franklin_1968.jpg/800px-Aretha_Franklin_1968.jpg' },
+                { id: 'stevie_wonder', name: 'סטיבי וונדר', alternatives: ['וונדר', 'סטיבי', 'Stevie Wonder', 'Wonder'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Stevie_Wonder_1973.JPG/800px-Stevie_Wonder_1973.JPG' },
+                { id: 'tina_turner', name: 'טינה טרנר', alternatives: ['טרנר', 'טינה', 'Tina Turner', 'Turner'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Tina_Turner_-_Sportpaleis_Antwerp_-_1990_-_1.jpg/800px-Tina_Turner_-_Sportpaleis_Antwerp_-_1990_-_1.jpg' },
+                { id: 'cher', name: 'שר', alternatives: ['Cher', 'שר'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Cher_in_2019.png/800px-Cher_in_2019.png' },
+                { id: 'dolly_parton', name: 'דולי פרטון', alternatives: ['פרטון', 'דולי', 'Dolly Parton', 'Parton'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Dolly_Parton_2019.jpg/800px-Dolly_Parton_2019.jpg' },
+                { id: 'johnny_cash', name: 'ג\'וני קאש', alternatives: ['קאש', 'ג\'וני', 'Johnny Cash', 'Cash'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/JohnnyCashNavyReserve.jpg/800px-JohnnyCashNavyReserve.jpg' },
+                { id: 'bruce_springsteen', name: 'ברוס ספרינגסטין', alternatives: ['ספרינגסטין', 'ברוס', 'Bruce Springsteen', 'Springsteen'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Bruce_Springsteen_-_Roskilde_Festival_2013.jpg/800px-Bruce_Springsteen_-_Roskilde_Festival_2013.jpg' },
+                { id: 'u2_bono', name: 'בונו', alternatives: ['Bono', 'בונו', 'U2'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Bono_at_the_2009_Tribeca_Film_Festival.jpg/800px-Bono_at_the_2009_Tribeca_Film_Festival.jpg' },
+                { id: 'metallica', name: 'מטאליקה', alternatives: ['Metallica', 'מטאליקה'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Metallica_Live_at_The_O2%2C_London%2C_England%2C_22_October_2017.jpg/800px-Metallica_Live_at_The_O2%2C_London%2C_England%2C_22_October_2017.jpg' },
+                { id: 'ac_dc', name: 'AC/DC', alternatives: ['ACDC', 'AC DC'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/ACDC_In_Tacoma_2009.jpg/800px-ACDC_In_Tacoma_2009.jpg' },
+                { id: 'pink_floyd', name: 'פינק פלויד', alternatives: ['Pink Floyd', 'פינק פלויד'], photo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d6/Pink_Floyd_-_all_members.jpg/800px-Pink_Floyd_-_all_members.jpg' },
+                { id: 'led_zeppelin', name: 'לד זפלין', alternatives: ['Led Zeppelin', 'לד זפלין'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Led_Zeppelin_1977.jpg/800px-Led_Zeppelin_1977.jpg' },
+                { id: 'the_beatles', name: 'הביטלס', alternatives: ['Beatles', 'ביטלס', 'The Beatles'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/The_Fabs.JPG/800px-The_Fabs.JPG' },
+                { id: 'rolling_stones', name: 'הרולינג סטונס', alternatives: ['Rolling Stones', 'רולינג סטונס'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/The_Rolling_Stones_Summerfest_in_Milwaukee_-_2015.jpg/800px-The_Rolling_Stones_Summerfest_in_Milwaukee_-_2015.jpg' },
+                { id: 'queen_band', name: 'קווין', alternatives: ['Queen', 'קווין'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Queen_II_cover.jpg/800px-Queen_II_cover.jpg' },
+                { id: 'nirvana', name: 'נירוונה', alternatives: ['Nirvana', 'נירוונה'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Kurdt_Cobain_of_Nirvana_12_13_1993.jpg/800px-Kurdt_Cobain_of_Nirvana_12_13_1993.jpg' },
+                { id: 'green_day', name: 'גרין דיי', alternatives: ['Green Day', 'גרין דיי'], photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Green_Day_at_Lollapalooza_2010.jpg/800px-Green_Day_at_Lollapalooza_2010.jpg' }
+            ];
+            
+            // Add these celebrities to the main celebrities object
+            let addedCount = 0;
+            moreCelebrities.forEach(celeb => {
+                if (!celebrities[celeb.id]) {
+                    celebrities[celeb.id] = {
+                        name: celeb.name,
+                        alternatives: celeb.alternatives,
+                        photo: celeb.photo
+                    };
+                    addedCount++;
+                }
+            });
+            
+            console.log(`✨ Added ${addedCount} new celebrities to the database!`);
+            return addedCount;
+        }
+        
         // Add more celebrities to the display
         function showMoreCelebrities() {
             const allCelebIds = Object.keys(celebrities);
-            const availableCelebs = allCelebIds.filter(celebId => 
+            let availableCelebs = allCelebIds.filter(celebId => 
                 !window.shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
             );
             
+            // If we're running out of celebrities, generate more!
+            if (availableCelebs.length < 5) {
+                console.log('⚠️ Running low on celebrities, generating more...');
+                const added = generateMoreCelebrities();
+                
+                // Refresh the available celebrities list
+                const allCelebIds = Object.keys(celebrities);
+                availableCelebs = allCelebIds.filter(celebId => 
+                    !window.shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+                );
+                
+                console.log(`✅ Now have ${availableCelebs.length} available celebrities`);
+            }
+            
             if (availableCelebs.length === 0) {
-                console.log('No more unique celebrities available');
+                console.log('❌ No more unique celebrities available even after generation');
+                alert('כל המפורסמים כבר נוספו! 🎉 (All celebrities have been added!)');
                 return;
             }
             
