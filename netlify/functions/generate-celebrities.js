@@ -159,10 +159,19 @@ exports.handler = async (event, context) => {
                     continue;
                 }
                 
-                // Verify it's actually a person using Wikidata
+                // Verify it's actually a person using Wikidata - STRICT CHECK
                 const isPerson = await verifyIsPerson(celebInfo, searchQuery);
                 if (!isPerson) {
-                    console.log(`❌ Not a person: ${celebInfo.name}`);
+                    console.log(`❌ Failed person verification: ${celebInfo.name}`);
+                    continue;
+                }
+                
+                // Additional check: name must look like a person's name, not a profession
+                const nameLower = celebInfo.name.toLowerCase();
+                const professionWords = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
+                    'artist', 'politician', 'businessperson', 'athlete', 'director'];
+                if (professionWords.includes(nameLower) || nameLower === celebInfo.profession?.toLowerCase()) {
+                    console.log(`❌ Name is just a profession: ${celebInfo.name}`);
                     continue;
                 }
 
@@ -368,13 +377,33 @@ async function getCelebrityInfo(title) {
             return null;
         }
         
+        // Reject if title looks like a profession/category, not a person's name
+        const titleLower = title.toLowerCase();
+        const professionWords = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 'artist', 
+            'politician', 'businessperson', 'athlete', 'director', 'producer', 'model', 'chef', 
+            'doctor', 'lawyer', 'engineer', 'artist-in-residence'];
+        
+        // If title is just a profession word, reject it
+        if (professionWords.includes(titleLower) || titleLower.includes('(profession)')) {
+            console.log(`❌ Rejecting profession title: ${title}`);
+            return null;
+        }
+        
+        // Title should look like a person's name (has at least 2 words, or is a known single name)
+        const titleWords = title.split(' ').filter(w => w.length > 0);
+        if (titleWords.length < 1) {
+            return null;
+        }
+        
         // Basic check: if extract doesn't mention birth/death or common person indicators, might not be a person
         const extractLower = data.extract.toLowerCase();
-        const personIndicators = ['born', 'died', 'actor', 'musician', 'scientist', 'writer', 'artist', 'politician', 'president', 'director', 'singer'];
+        const personIndicators = ['born', 'died', 'birth', 'death', 'was an', 'is an', 'was a', 'is a', 
+            'actor', 'musician', 'scientist', 'writer', 'artist', 'politician', 'president', 'director', 'singer'];
         const hasPersonIndicator = personIndicators.some(indicator => extractLower.includes(indicator));
         
         if (!hasPersonIndicator && extractLower.length < 100) {
             // Might not be a person, skip
+            console.log(`❌ No person indicators in extract for: ${title}`);
             return null;
         }
 
@@ -534,25 +563,28 @@ async function calculateRecognizabilityScore(celebInfo, title) {
 
 // Verify that the entity is actually a person (human) using Wikidata
 async function verifyIsPerson(celebInfo, title) {
-    // If we have profession, that's a good sign
-    if (celebInfo.profession) {
-        // Check if profession is actually a person profession
-        const personProfessions = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
-            'author', 'artist', 'painter', 'athlete', 'politician', 'businessperson', 'entrepreneur',
-            'director', 'producer', 'comedian', 'model', 'chef', 'doctor', 'lawyer', 'engineer'];
-        const profLower = celebInfo.profession.toLowerCase();
-        if (personProfessions.some(pp => profLower.includes(pp))) {
-            return true;
-        }
+    // STRICT: Must verify via Wikidata that it's a human
+    // Reject if title is just a profession word
+    const titleLower = title.toLowerCase().trim();
+    const professionOnlyTitles = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
+        'author', 'artist', 'painter', 'athlete', 'politician', 'businessperson', 'entrepreneur',
+        'director', 'producer', 'comedian', 'model', 'chef', 'doctor', 'lawyer', 'engineer',
+        'artist-in-residence'];
+    
+    if (professionOnlyTitles.includes(titleLower)) {
+        console.log(`❌ Title is just a profession: ${title}`);
+        return false;
     }
     
-    // Try to get Wikidata ID and check instance of
+    // Title must look like a person's name (not a category or profession)
+    if (titleLower.includes('(profession)') || titleLower.includes('(occupation)') || 
+        titleLower.includes('category:') || titleLower.startsWith('list of')) {
+        console.log(`❌ Title looks like category/profession: ${title}`);
+        return false;
+    }
+    
+    // Try to get Wikidata ID and STRICTLY check instance of human
     try {
-        const wikiRes = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
-            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-            timeout: 5000
-        });
-        
         // Get Wikidata ID
         const wikidataRes = await axios.get('https://en.wikipedia.org/w/api.php', {
             params: {
@@ -571,45 +603,59 @@ async function verifyIsPerson(celebInfo, title) {
         const pageId = Object.keys(pages)[0];
         const wikidataId = pages[pageId]?.pageprops?.wikibase_item;
         
-        if (wikidataId) {
-            // Check if instance of human (Q5)
-            const entityRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
-                params: {
-                    action: 'wbgetentities',
-                    ids: wikidataId,
-                    props: 'claims',
-                    format: 'json',
-                    origin: '*'
-                },
-                timeout: 5000
-            });
-            
-            const entity = entityRes.data.entities?.[wikidataId];
-            if (entity) {
-                // Check instance of (P31) - should include human (Q5)
-                const instances = entity.claims?.P31 || [];
-                const isHuman = instances.some(inst => 
-                    inst.mainsnak?.datavalue?.value?.id === 'Q5' // Human
-                );
-                
-                if (isHuman) {
-                    return true;
-                }
-            }
+        if (!wikidataId) {
+            console.log(`❌ No Wikidata ID for: ${title}`);
+            return false; // STRICT: Must have Wikidata ID
         }
+        
+        // Check if instance of human (Q5) - THIS IS REQUIRED
+        const entityRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+            params: {
+                action: 'wbgetentities',
+                ids: wikidataId,
+                props: 'claims',
+                format: 'json',
+                origin: '*'
+            },
+            timeout: 5000
+        });
+        
+        const entity = entityRes.data.entities?.[wikidataId];
+        if (!entity) {
+            console.log(`❌ No entity found for Wikidata ID: ${wikidataId}`);
+            return false;
+        }
+        
+        // Check instance of (P31) - MUST include human (Q5)
+        const instances = entity.claims?.P31 || [];
+        const isHuman = instances.some(inst => {
+            const value = inst.mainsnak?.datavalue?.value;
+            return value?.id === 'Q5'; // Human
+        });
+        
+        if (!isHuman) {
+            console.log(`❌ Not a human in Wikidata: ${title} (instances: ${instances.map(i => i.mainsnak?.datavalue?.value?.id).join(', ')})`);
+            return false;
+        }
+        
+        // Additional check: reject if it's a painting, artwork, or other non-person entity
+        const rejectedTypes = ['Q3305213', 'Q838948', 'Q860861', 'Q5']; // Painting, artwork, etc.
+        const hasRejectedType = instances.some(inst => {
+            const value = inst.mainsnak?.datavalue?.value;
+            return rejectedTypes.includes(value?.id) && value?.id !== 'Q5'; // Allow human but reject others
+        });
+        
+        if (hasRejectedType) {
+            console.log(`❌ Has rejected type: ${title}`);
+            return false;
+        }
+        
+        console.log(`✅ Verified as human: ${title}`);
+        return true;
+        
     } catch (err) {
-        console.error('Error verifying person:', err.message);
+        console.error(`Error verifying person for ${title}:`, err.message);
+        return false; // STRICT: If verification fails, reject
     }
-    
-    // Fallback: check extract for person indicators
-    if (celebInfo.description) {
-        const extractLower = celebInfo.description.toLowerCase();
-        const strongPersonIndicators = ['born', 'died', 'birth', 'death', 'was an', 'is an', 'was a', 'is a'];
-        if (strongPersonIndicators.some(ind => extractLower.includes(ind))) {
-            return true;
-        }
-    }
-    
-    return false;
 }
 
