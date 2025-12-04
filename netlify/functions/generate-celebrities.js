@@ -295,116 +295,92 @@ function normalizeName(name) {
 }
 
 async function searchWikipedia(category) {
+    // Better approach: Search for specific famous people by name
+    // This ensures we get actual recognizable celebrities
+    
+    const famousPeople = {
+        'Actors': ['Tom Hanks', 'Meryl Streep', 'Leonardo DiCaprio', 'Scarlett Johansson', 'Brad Pitt', 'Angelina Jolie', 'Robert Downey Jr', 'Chris Evans', 'Emma Stone', 'Ryan Gosling', 'Jennifer Lawrence', 'Chris Hemsworth', 'Natalie Portman', 'Tom Cruise', 'Will Smith'],
+        'Musicians': ['Taylor Swift', 'Beyoncé', 'Ed Sheeran', 'Adele', 'Bruno Mars', 'Ariana Grande', 'Billie Eilish', 'The Weeknd', 'Drake', 'Post Malone', 'Justin Bieber', 'Lady Gaga', 'Rihanna', 'Dua Lipa', 'Harry Styles'],
+        'Scientists': ['Albert Einstein', 'Stephen Hawking', 'Marie Curie', 'Isaac Newton', 'Charles Darwin', 'Nikola Tesla', 'Neil deGrasse Tyson', 'Jane Goodall', 'Richard Feynman', 'Rosalind Franklin', 'Carl Sagan', 'Alan Turing', 'Ada Lovelace'],
+        'Writers': ['J.K. Rowling', 'Stephen King', 'Ernest Hemingway', 'Mark Twain', 'Jane Austen', 'George Orwell', 'Agatha Christie', 'Toni Morrison', 'Maya Angelou', 'Harper Lee', 'John Grisham', 'Dan Brown'],
+        'Artists': ['Pablo Picasso', 'Vincent van Gogh', 'Leonardo da Vinci', 'Michelangelo', 'Frida Kahlo', 'Andy Warhol', 'Salvador Dalí', 'Claude Monet', 'Georgia O\'Keeffe', 'Jackson Pollock'],
+        'Athletes': ['Michael Jordan', 'LeBron James', 'Serena Williams', 'Lionel Messi', 'Cristiano Ronaldo', 'Tom Brady', 'Usain Bolt', 'Roger Federer', 'Tiger Woods', 'Muhammad Ali', 'Kobe Bryant', 'Rafael Nadal'],
+        'Politicians': ['Barack Obama', 'Nelson Mandela', 'Winston Churchill', 'Mahatma Gandhi', 'Martin Luther King Jr', 'Angela Merkel', 'Joe Biden', 'Hillary Clinton', 'Vladimir Putin'],
+        'Businesspeople': ['Elon Musk', 'Bill Gates', 'Steve Jobs', 'Warren Buffett', 'Jeff Bezos', 'Mark Zuckerberg', 'Oprah Winfrey', 'Richard Branson', 'Larry Page', 'Sergey Brin']
+    };
+    
+    // Map category to search list
+    const categoryKey = category === 'Living people' ? 'Actors' : category;
+    const searchList = famousPeople[categoryKey] || famousPeople['Actors'];
+    
+    // Pick a random famous person and search for them
+    const randomPerson = searchList[Math.floor(Math.random() * searchList.length)];
+    
     try {
-        // Method 1: Get random page from category with better filtering
+        const searchRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+            params: {
+                action: 'query',
+                list: 'search',
+                srsearch: randomPerson,
+                srlimit: 3,
+                srnamespace: 0,
+                format: 'json',
+                origin: '*'
+            },
+            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+            timeout: 5000
+        });
+        
+        const results = searchRes.data.query?.search || [];
+        if (results.length > 0) {
+            // Return the first (most relevant) result
+            console.log(`✅ Found via search: ${results[0].title}`);
+            return results[0].title;
+        }
+    } catch (err) {
+        console.error('Person search failed:', err.message);
+    }
+    
+    // Fallback: Use category members with better filtering
+    try {
         const searchRes = await axios.get('https://en.wikipedia.org/w/api.php', {
             params: {
                 action: 'query',
                 list: 'categorymembers',
                 cmtitle: `Category:${category}`,
-                cmlimit: 200, // Get more results for better filtering
+                cmlimit: 100,
                 cmnamespace: 0,
                 format: 'json',
                 origin: '*'
             },
-            timeout: 10000,
+            timeout: 8000,
             headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' }
         });
         
         const members = searchRes.data.query?.categorymembers || [];
         if (members.length > 0) {
-            // Filter out disambiguation pages, lists, and other non-person pages
+            // Filter more aggressively - must look like a person's name
             const validMembers = members.filter(m => {
                 const title = m.title;
-                return !title.includes('(disambiguation)') && 
+                const words = title.split(' ').filter(w => w.length > 0);
+                return words.length >= 2 && words.length <= 4 && // 2-4 words typical for names
+                       !title.includes('(disambiguation)') && 
                        !title.includes('List of') &&
                        !title.includes('Category:') &&
-                       !title.includes('Template:') &&
                        !title.startsWith('List ') &&
-                       !title.match(/^\d{4}/) && // Don't start with year
-                       title.split(' ').length <= 5; // Reasonable name length
+                       !title.match(/^\d{4}/) &&
+                       !title.toLowerCase().includes('film') &&
+                       !title.toLowerCase().includes('album');
             });
             
             if (validMembers.length > 0) {
-                // Try multiple random selections to find a valid person
-                for (let i = 0; i < Math.min(10, validMembers.length); i++) {
-                    const randomMember = validMembers[Math.floor(Math.random() * validMembers.length)];
-                    // Quick check: verify it might be a person by checking if it has a Wikidata item
-                    try {
-                        const checkRes = await axios.get('https://en.wikipedia.org/w/api.php', {
-                            params: {
-                                action: 'query',
-                                prop: 'pageprops',
-                                ppprop: 'wikibase_item',
-                                titles: randomMember.title,
-                                format: 'json',
-                                origin: '*'
-                            },
-                            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                            timeout: 3000
-                        });
-                        
-                        const pages = checkRes.data.query?.pages || {};
-                        const pageId = Object.keys(pages)[0];
-                        const wikidataId = pages[pageId]?.pageprops?.wikibase_item;
-                        
-                        if (wikidataId) {
-                            return randomMember.title;
-                        }
-                    } catch (err) {
-                        // Continue to next candidate
-                        continue;
-                    }
-                }
-                
-                // If no Wikidata item found, just return a random one (will be filtered later)
-                return validMembers[Math.floor(Math.random() * validMembers.length)].title;
+                const randomMember = validMembers[Math.floor(Math.random() * validMembers.length)];
+                console.log(`✅ Found via category: ${randomMember.title}`);
+                return randomMember.title;
             }
         }
     } catch (err) {
         console.error('Category search failed:', err.message);
-    }
-
-    // Method 2: Use specific person categories that are more reliable
-    const personCategories = [
-        'Living people',
-        '20th-century actors',
-        '21st-century actors',
-        'American actors',
-        'British actors',
-        'American musicians',
-        'Nobel Prize winners',
-        'Olympic gold medalists'
-    ];
-    
-    const randomPersonCategory = personCategories[Math.floor(Math.random() * personCategories.length)];
-    try {
-        const personRes = await axios.get('https://en.wikipedia.org/w/api.php', {
-            params: {
-                action: 'query',
-                list: 'categorymembers',
-                cmtitle: `Category:${randomPersonCategory}`,
-                cmlimit: 50,
-                cmnamespace: 0,
-                format: 'json',
-                origin: '*'
-            },
-            timeout: 5000,
-            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' }
-        });
-        
-        const personMembers = personRes.data.query?.categorymembers || [];
-        if (personMembers.length > 0) {
-            const valid = personMembers.filter(m => 
-                !m.title.includes('(disambiguation)') && 
-                !m.title.includes('List of')
-            );
-            if (valid.length > 0) {
-                return valid[Math.floor(Math.random() * valid.length)].title;
-            }
-        }
-    } catch (err) {
-        console.error('Person category search failed:', err.message);
     }
     
     return null;
