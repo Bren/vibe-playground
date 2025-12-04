@@ -175,19 +175,43 @@ exports.handler = async (event, context) => {
                     console.log(`❌ Explicitly rejected as not a person: ${celebInfo.name}`);
                     continue;
                 } else if (isPerson === null) {
-                    // Uncertain - use fallback check
-                    if (celebInfo.profession && celebInfo.description) {
+                    // Uncertain - use fallback check (more lenient)
+                    let allowFallback = false;
+                    
+                    // Check description for person indicators
+                    if (celebInfo.description) {
                         const descLower = celebInfo.description.toLowerCase();
-                        const strongPersonIndicators = ['born', 'died', 'birth', 'death', 'was an', 'is an', 'was a', 'is a', 'actor', 'musician', 'scientist'];
+                        const strongPersonIndicators = ['born', 'died', 'birth', 'death', 'was an', 'is an', 'was a', 'is a', 
+                            'actor', 'musician', 'scientist', 'writer', 'artist', 'politician', 'director', 'singer'];
                         if (strongPersonIndicators.some(ind => descLower.includes(ind))) {
+                            allowFallback = true;
                             console.log(`⚠️ Wikidata check uncertain but allowing based on description: ${celebInfo.name}`);
-                            // Allow through with warning
-                        } else {
-                            console.log(`❌ No person indicators found: ${celebInfo.name}`);
-                            continue;
                         }
-                    } else {
-                        console.log(`❌ No profession or description for fallback: ${celebInfo.name}`);
+                    }
+                    
+                    // Also allow if we have a profession (indicates it's likely a person)
+                    if (!allowFallback && celebInfo.profession) {
+                        const profLower = celebInfo.profession.toLowerCase();
+                        const personProfessions = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
+                            'author', 'artist', 'athlete', 'politician', 'director', 'producer'];
+                        if (personProfessions.some(pp => profLower.includes(pp))) {
+                            allowFallback = true;
+                            console.log(`⚠️ Wikidata check uncertain but allowing based on profession: ${celebInfo.name}`);
+                        }
+                    }
+                    
+                    // If title looks like a person's name (has multiple words or is a known single name), allow it
+                    if (!allowFallback) {
+                        const titleWords = celebInfo.name.split(' ').filter(w => w.length > 0);
+                        // If it has 2+ words, likely a person's name
+                        if (titleWords.length >= 2) {
+                            allowFallback = true;
+                            console.log(`⚠️ Wikidata check uncertain but allowing based on name format: ${celebInfo.name}`);
+                        }
+                    }
+                    
+                    if (!allowFallback) {
+                        console.log(`❌ No fallback indicators found: ${celebInfo.name}`);
                         continue;
                     }
                 }
