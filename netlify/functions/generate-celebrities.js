@@ -97,7 +97,7 @@ exports.handler = async (event, context) => {
         const generatedCelebs = [];
         const generatedNames = new Set(); // Track names in current generation to avoid duplicates
         let attempts = 0;
-        const maxAttempts = 100; // Increased attempts for better filtering
+        const maxAttempts = 150; // Increased attempts for better filtering
 
         // Categories to search for famous people - prioritize based on learning
         let categories = [
@@ -159,21 +159,39 @@ exports.handler = async (event, context) => {
                     continue;
                 }
                 
-                // Verify it's actually a person using Wikidata - STRICT CHECK
-                const isPerson = await verifyIsPerson(celebInfo, searchQuery);
-                if (!isPerson) {
-                    console.log(`❌ Failed person verification: ${celebInfo.name}`);
-                    continue;
-                }
-                
-                // Additional check: name must look like a person's name, not a profession
-                const nameLower = celebInfo.name.toLowerCase();
-                const professionWords = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
-                    'artist', 'politician', 'businessperson', 'athlete', 'director'];
-                if (professionWords.includes(nameLower) || nameLower === celebInfo.profession?.toLowerCase()) {
+                // Check if name is just a profession (quick check first)
+                const nameLower = celebInfo.name.toLowerCase().trim();
+                const professionOnlyWords = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
+                    'artist', 'politician', 'businessperson', 'athlete', 'director', 'artist-in-residence'];
+                if (professionOnlyWords.includes(nameLower)) {
                     console.log(`❌ Name is just a profession: ${celebInfo.name}`);
                     continue;
                 }
+                
+                // Verify it's actually a person using Wikidata - but allow fallback
+                const isPerson = await verifyIsPerson(celebInfo, searchQuery);
+                if (isPerson === false) {
+                    // Explicitly rejected (not a person)
+                    console.log(`❌ Explicitly rejected as not a person: ${celebInfo.name}`);
+                    continue;
+                } else if (isPerson === null) {
+                    // Uncertain - use fallback check
+                    if (celebInfo.profession && celebInfo.description) {
+                        const descLower = celebInfo.description.toLowerCase();
+                        const strongPersonIndicators = ['born', 'died', 'birth', 'death', 'was an', 'is an', 'was a', 'is a', 'actor', 'musician', 'scientist'];
+                        if (strongPersonIndicators.some(ind => descLower.includes(ind))) {
+                            console.log(`⚠️ Wikidata check uncertain but allowing based on description: ${celebInfo.name}`);
+                            // Allow through with warning
+                        } else {
+                            console.log(`❌ No person indicators found: ${celebInfo.name}`);
+                            continue;
+                        }
+                    } else {
+                        console.log(`❌ No profession or description for fallback: ${celebInfo.name}`);
+                        continue;
+                    }
+                }
+                // If isPerson === true, we're good to go
 
                 // Calculate recognizability score
                 let score = await calculateRecognizabilityScore(celebInfo, searchQuery);
@@ -604,8 +622,9 @@ async function verifyIsPerson(celebInfo, title) {
         const wikidataId = pages[pageId]?.pageprops?.wikibase_item;
         
         if (!wikidataId) {
-            console.log(`❌ No Wikidata ID for: ${title}`);
-            return false; // STRICT: Must have Wikidata ID
+            console.log(`⚠️ No Wikidata ID for: ${title} - will use fallback check`);
+            // Don't reject immediately - allow fallback check
+            return null; // Return null to indicate "uncertain, use fallback"
         }
         
         // Check if instance of human (Q5) - THIS IS REQUIRED
@@ -638,11 +657,11 @@ async function verifyIsPerson(celebInfo, title) {
             return false;
         }
         
-        // Additional check: reject if it's a painting, artwork, or other non-person entity
-        const rejectedTypes = ['Q3305213', 'Q838948', 'Q860861', 'Q5']; // Painting, artwork, etc.
+        // Additional check: reject if it's explicitly a painting, artwork, or other non-person entity
+        const rejectedTypes = ['Q3305213', 'Q838948', 'Q860861']; // Painting, artwork, etc. (but NOT Q5 which is human)
         const hasRejectedType = instances.some(inst => {
             const value = inst.mainsnak?.datavalue?.value;
-            return rejectedTypes.includes(value?.id) && value?.id !== 'Q5'; // Allow human but reject others
+            return rejectedTypes.includes(value?.id);
         });
         
         if (hasRejectedType) {
@@ -655,7 +674,7 @@ async function verifyIsPerson(celebInfo, title) {
         
     } catch (err) {
         console.error(`Error verifying person for ${title}:`, err.message);
-        return false; // STRICT: If verification fails, reject
+        return null; // Return null to allow fallback check
     }
 }
 
