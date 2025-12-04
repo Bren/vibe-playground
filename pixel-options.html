@@ -631,7 +631,7 @@
                 console.log('📦 Response data:', data);
                 
                 if (data.success && data.celebrities && data.celebrities.length > 0) {
-                    // Filter out celebrities with recognizability score below 50
+                    // Filter out celebrities with recognizability score below 50 (frontend filter)
                     const filteredCelebs = data.celebrities.filter(celeb => 
                         celeb.recognizabilityScore && celeb.recognizabilityScore >= 50
                     );
@@ -639,7 +639,11 @@
                     console.log(`✅ Generated ${data.celebrities.length} celebrities, ${filteredCelebs.length} with score ≥ 50`);
                     
                     if (filteredCelebs.length === 0) {
-                        showError('No celebrities found with recognizability score ≥ 50. Try generating again.');
+                        // If none meet the 50 threshold, show what we have but warn
+                        console.warn('⚠️ No celebrities with score ≥ 50, showing all results');
+                        displayedCelebrities.push(...data.celebrities);
+                        renderCelebrities();
+                        showError('Note: Some celebrities have lower recognizability scores. Try generating again for better results.');
                     } else {
                         // Append to existing list
                         displayedCelebrities.push(...filteredCelebs);
@@ -648,7 +652,7 @@
                 } else {
                     const errorMsg = data.error || 'No celebrities returned';
                     console.error('❌ Generation failed:', errorMsg);
-                    showError('Failed to generate celebrities: ' + errorMsg);
+                    showError('Failed to generate celebrities: ' + errorMsg + (data.attempts ? ` (tried ${data.attempts} times)` : ''));
                 }
             } catch (error) {
                 console.error('❌ Error generating celebrities:', error);

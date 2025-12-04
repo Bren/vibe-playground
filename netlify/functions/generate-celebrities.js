@@ -138,9 +138,14 @@ exports.handler = async (event, context) => {
             categories = [...new Set([...popularCategories, ...categories])];
         }
 
+        // Try to get at least 5, but return what we have after maxAttempts
         while (generatedCelebs.length < 5 && attempts < maxAttempts) {
             attempts++;
             try {
+                // Log progress every 20 attempts
+                if (attempts % 20 === 0) {
+                    console.log(`🔄 Attempt ${attempts}/${maxAttempts}, found ${generatedCelebs.length} so far...`);
+                }
                 // Search Wikipedia for random famous people
                 const randomCategory = categories[Math.floor(Math.random() * categories.length)];
                 const searchQuery = await searchWikipedia(randomCategory);
@@ -239,8 +244,8 @@ exports.handler = async (event, context) => {
                     }
                 }
                 
-                // Only include if score is above threshold (50 for better quality)
-                if (score < 50) {
+                // Only include if score is above threshold (lowered to 40 to get more results)
+                if (score < 40) {
                     console.log(`❌ Score too low: ${score} for ${celebInfo.name}`);
                     continue;
                 }
@@ -260,13 +265,17 @@ exports.handler = async (event, context) => {
             }
         }
 
+        // Return what we have, even if less than 5
+        console.log(`✅ Generated ${generatedCelebs.length} celebrities after ${attempts} attempts`);
+        
         return {
             statusCode: 200,
             headers: { ...headers, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 success: true,
                 celebrities: generatedCelebs,
-                count: generatedCelebs.length
+                count: generatedCelebs.length,
+                attempts: attempts
             })
         };
 
