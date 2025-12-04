@@ -95,8 +95,9 @@ exports.handler = async (event, context) => {
 
         // Generate 5 new celebrities using Wikipedia API
         const generatedCelebs = [];
+        const generatedNames = new Set(); // Track names in current generation to avoid duplicates
         let attempts = 0;
-        const maxAttempts = 50;
+        const maxAttempts = 100; // Increased attempts for better filtering
 
         // Categories to search for famous people - prioritize based on learning
         let categories = [
@@ -153,7 +154,15 @@ exports.handler = async (event, context) => {
 
                 // Check if already exists or not suitable
                 const normalized = normalizeName(celebInfo.name);
-                if (existingNames.has(normalized) || notSuitableNames.has(normalized)) {
+                if (existingNames.has(normalized) || notSuitableNames.has(normalized) || generatedNames.has(normalized)) {
+                    console.log(`⏭️ Skipping duplicate or existing: ${celebInfo.name}`);
+                    continue;
+                }
+                
+                // Verify it's actually a person using Wikidata
+                const isPerson = await verifyIsPerson(celebInfo, searchQuery);
+                if (!isPerson) {
+                    console.log(`❌ Not a person: ${celebInfo.name}`);
                     continue;
                 }
 
@@ -191,6 +200,8 @@ exports.handler = async (event, context) => {
                     profession: celebInfo.profession || randomCategory,
                     nationality: celebInfo.nationality || 'Unknown'
                 });
+                
+                generatedNames.add(normalized); // Track to avoid duplicates
 
             } catch (err) {
                 console.error('Error generating celebrity:', err);
@@ -225,50 +236,115 @@ function normalizeName(name) {
 
 async function searchWikipedia(category) {
     try {
-        // Method 1: Get random page from category
+        // Method 1: Get random page from category with better filtering
         const searchRes = await axios.get('https://en.wikipedia.org/w/api.php', {
             params: {
                 action: 'query',
                 list: 'categorymembers',
                 cmtitle: `Category:${category}`,
-                cmlimit: 100,
+                cmlimit: 200, // Get more results for better filtering
                 cmnamespace: 0,
                 format: 'json',
                 origin: '*'
             },
-            timeout: 8000,
+            timeout: 10000,
             headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' }
         });
         
         const members = searchRes.data.query?.categorymembers || [];
         if (members.length > 0) {
-            // Filter out disambiguation pages and non-person pages
-            const validMembers = members.filter(m => 
-                !m.title.includes('(disambiguation)') && 
-                !m.title.includes('List of')
-            );
+            // Filter out disambiguation pages, lists, and other non-person pages
+            const validMembers = members.filter(m => {
+                const title = m.title;
+                return !title.includes('(disambiguation)') && 
+                       !title.includes('List of') &&
+                       !title.includes('Category:') &&
+                       !title.includes('Template:') &&
+                       !title.startsWith('List ') &&
+                       !title.match(/^\d{4}/) && // Don't start with year
+                       title.split(' ').length <= 5; // Reasonable name length
+            });
             
             if (validMembers.length > 0) {
-                const randomMember = validMembers[Math.floor(Math.random() * validMembers.length)];
-                return randomMember.title;
+                // Try multiple random selections to find a valid person
+                for (let i = 0; i < Math.min(10, validMembers.length); i++) {
+                    const randomMember = validMembers[Math.floor(Math.random() * validMembers.length)];
+                    // Quick check: verify it might be a person by checking if it has a Wikidata item
+                    try {
+                        const checkRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+                            params: {
+                                action: 'query',
+                                prop: 'pageprops',
+                                ppprop: 'wikibase_item',
+                                titles: randomMember.title,
+                                format: 'json',
+                                origin: '*'
+                            },
+                            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                            timeout: 3000
+                        });
+                        
+                        const pages = checkRes.data.query?.pages || {};
+                        const pageId = Object.keys(pages)[0];
+                        const wikidataId = pages[pageId]?.pageprops?.wikibase_item;
+                        
+                        if (wikidataId) {
+                            return randomMember.title;
+                        }
+                    } catch (err) {
+                        // Continue to next candidate
+                        continue;
+                    }
+                }
+                
+                // If no Wikidata item found, just return a random one (will be filtered later)
+                return validMembers[Math.floor(Math.random() * validMembers.length)].title;
             }
         }
     } catch (err) {
         console.error('Category search failed:', err.message);
     }
 
-    // Method 2: Fallback to random page
+    // Method 2: Use specific person categories that are more reliable
+    const personCategories = [
+        'Living people',
+        '20th-century actors',
+        '21st-century actors',
+        'American actors',
+        'British actors',
+        'American musicians',
+        'Nobel Prize winners',
+        'Olympic gold medalists'
+    ];
+    
+    const randomPersonCategory = personCategories[Math.floor(Math.random() * personCategories.length)];
     try {
-        const randomRes = await axios.get('https://en.wikipedia.org/api/rest_v1/page/random/summary', {
-            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-            timeout: 5000
+        const personRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+            params: {
+                action: 'query',
+                list: 'categorymembers',
+                cmtitle: `Category:${randomPersonCategory}`,
+                cmlimit: 50,
+                cmnamespace: 0,
+                format: 'json',
+                origin: '*'
+            },
+            timeout: 5000,
+            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' }
         });
-        // Check if it's a person (has extract and type is standard)
-        if (randomRes.data.type === 'standard' && randomRes.data.extract) {
-            return randomRes.data.title;
+        
+        const personMembers = personRes.data.query?.categorymembers || [];
+        if (personMembers.length > 0) {
+            const valid = personMembers.filter(m => 
+                !m.title.includes('(disambiguation)') && 
+                !m.title.includes('List of')
+            );
+            if (valid.length > 0) {
+                return valid[Math.floor(Math.random() * valid.length)].title;
+            }
         }
     } catch (err) {
-        console.error('Random page failed:', err.message);
+        console.error('Person category search failed:', err.message);
     }
     
     return null;
@@ -302,8 +378,30 @@ async function getCelebrityInfo(title) {
             return null;
         }
 
-        // Get Wikidata ID
-        const wikidataId = data.content_urls?.desktop?.page?.match(/Q\d+/)?.[0];
+        // Get Wikidata ID from the page URL or extract from content
+        let wikidataId = null;
+        try {
+            // Try to get Wikidata ID from Wikipedia API
+            const wikidataRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+                params: {
+                    action: 'query',
+                    prop: 'pageprops',
+                    ppprop: 'wikibase_item',
+                    titles: title,
+                    format: 'json',
+                    origin: '*'
+                },
+                headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                timeout: 5000
+            });
+            
+            const pages = wikidataRes.data.query?.pages || {};
+            const pageId = Object.keys(pages)[0];
+            wikidataId = pages[pageId]?.pageprops?.wikibase_item || null;
+        } catch (err) {
+            console.error('Error getting Wikidata ID:', err.message);
+        }
+        
         let profession = null;
         let nationality = null;
         let photo = data.thumbnail?.source || data.originalimage?.source || null;
@@ -432,5 +530,86 @@ async function calculateRecognizabilityScore(celebInfo, title) {
     if (celebInfo.nationality) score += 5;
 
     return Math.round(score);
+}
+
+// Verify that the entity is actually a person (human) using Wikidata
+async function verifyIsPerson(celebInfo, title) {
+    // If we have profession, that's a good sign
+    if (celebInfo.profession) {
+        // Check if profession is actually a person profession
+        const personProfessions = ['actor', 'actress', 'musician', 'singer', 'scientist', 'writer', 
+            'author', 'artist', 'painter', 'athlete', 'politician', 'businessperson', 'entrepreneur',
+            'director', 'producer', 'comedian', 'model', 'chef', 'doctor', 'lawyer', 'engineer'];
+        const profLower = celebInfo.profession.toLowerCase();
+        if (personProfessions.some(pp => profLower.includes(pp))) {
+            return true;
+        }
+    }
+    
+    // Try to get Wikidata ID and check instance of
+    try {
+        const wikiRes = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+            timeout: 5000
+        });
+        
+        // Get Wikidata ID
+        const wikidataRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+            params: {
+                action: 'query',
+                prop: 'pageprops',
+                ppprop: 'wikibase_item',
+                titles: title,
+                format: 'json',
+                origin: '*'
+            },
+            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+            timeout: 5000
+        });
+        
+        const pages = wikidataRes.data.query?.pages || {};
+        const pageId = Object.keys(pages)[0];
+        const wikidataId = pages[pageId]?.pageprops?.wikibase_item;
+        
+        if (wikidataId) {
+            // Check if instance of human (Q5)
+            const entityRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                params: {
+                    action: 'wbgetentities',
+                    ids: wikidataId,
+                    props: 'claims',
+                    format: 'json',
+                    origin: '*'
+                },
+                timeout: 5000
+            });
+            
+            const entity = entityRes.data.entities?.[wikidataId];
+            if (entity) {
+                // Check instance of (P31) - should include human (Q5)
+                const instances = entity.claims?.P31 || [];
+                const isHuman = instances.some(inst => 
+                    inst.mainsnak?.datavalue?.value?.id === 'Q5' // Human
+                );
+                
+                if (isHuman) {
+                    return true;
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Error verifying person:', err.message);
+    }
+    
+    // Fallback: check extract for person indicators
+    if (celebInfo.description) {
+        const extractLower = celebInfo.description.toLowerCase();
+        const strongPersonIndicators = ['born', 'died', 'birth', 'death', 'was an', 'is an', 'was a', 'is a'];
+        if (strongPersonIndicators.some(ind => extractLower.includes(ind))) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
