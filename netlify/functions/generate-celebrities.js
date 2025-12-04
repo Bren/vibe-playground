@@ -239,8 +239,8 @@ exports.handler = async (event, context) => {
                     }
                 }
                 
-                // Only include if score is above threshold
-                if (score < 30) {
+                // Only include if score is above threshold (50 for better quality)
+                if (score < 50) {
                     console.log(`❌ Score too low: ${score} for ${celebInfo.name}`);
                     continue;
                 }
