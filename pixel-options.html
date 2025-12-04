@@ -65,23 +65,26 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        /* Date Picker - Always Visible at Top - Compact */
+        /* Date Picker - Always Visible at Top - Very Compact */
         .date-picker-section {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 10px;
-            margin-bottom: 1rem;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 0.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .date-picker-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         
         .date-picker-month {
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             font-weight: bold;
         }
         
@@ -89,10 +92,10 @@
             background: rgba(255, 255, 255, 0.1);
             border: none;
             color: white;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 3px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
         }
         
         .date-picker-nav:hover {
@@ -102,28 +105,29 @@
         .date-picker-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 3px;
+            gap: 2px;
         }
         
         .date-picker-day-header {
             text-align: center;
             font-weight: bold;
-            padding: 4px;
+            padding: 2px;
             opacity: 0.8;
-            font-size: 0.65rem;
+            font-size: 0.55rem;
         }
         
         .date-picker-day {
-            aspect-ratio: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             transition: all 0.2s ease;
-            font-size: 0.7rem;
-            min-height: 20px;
+            font-size: 0.6rem;
+            height: 24px;
+            min-height: 24px;
+            max-height: 24px;
         }
         
         .date-picker-day:hover:not(.disabled):not(.empty):not(.selected) {
@@ -616,14 +620,23 @@
             container.innerHTML = '';
             
             try {
+                console.log('🔄 Generating celebrities...');
                 const response = await fetch('/.netlify/functions/generate-celebrities');
-                const data = await response.json();
                 
-                if (data.success && data.celebrities) {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                if (data.success && data.celebrities && data.celebrities.length > 0) {
                     // Filter out celebrities with recognizability score below 50
                     const filteredCelebs = data.celebrities.filter(celeb => 
-                        celeb.recognizabilityScore >= 50
+                        celeb.recognizabilityScore && celeb.recognizabilityScore >= 50
                     );
+                    
+                    console.log(`✅ Generated ${data.celebrities.length} celebrities, ${filteredCelebs.length} with score ≥ 50`);
                     
                     if (filteredCelebs.length === 0) {
                         showError('No celebrities found with recognizability score ≥ 50. Try generating again.');
@@ -633,11 +646,13 @@
                         renderCelebrities();
                     }
                 } else {
-                    showError('Failed to generate celebrities: ' + (data.error || 'Unknown error'));
+                    const errorMsg = data.error || 'No celebrities returned';
+                    console.error('❌ Generation failed:', errorMsg);
+                    showError('Failed to generate celebrities: ' + errorMsg);
                 }
             } catch (error) {
-                console.error('Error generating celebrities:', error);
-                showError('Failed to generate celebrities: ' + error.message);
+                console.error('❌ Error generating celebrities:', error);
+                showError('Failed to generate celebrities: ' + error.message + '. Check console for details.');
             } finally {
                 generateBtn.disabled = false;
                 loadingMsg.style.display = 'none';
