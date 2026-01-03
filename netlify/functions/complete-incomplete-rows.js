@@ -203,12 +203,24 @@ exports.handler = async (event, context) => {
                     nicknames: normalize(updatedRow.nicknames)
                 };
                 
-                // Check if anything actually changed
+                // Check if anything actually changed OR if we're filling in missing data
+                // A row is incomplete if ANY field is missing, so we should update if:
+                // 1. Any field changed, OR
+                // 2. Any field was empty and now has data (even if it's the same as what was there)
                 const hasChanges = 
                     updatedRowNormalized.gender !== originalRow.gender ||
                     updatedRowNormalized.nationality !== originalRow.nationality ||
                     updatedRowNormalized.photo !== originalRow.photo ||
                     updatedRowNormalized.nicknames !== originalRow.nicknames;
+                
+                // Also check if we're filling in missing data (row is incomplete)
+                const isFillingMissingData = 
+                    (!originalRow.gender && updatedRowNormalized.gender) ||
+                    (!originalRow.nationality && updatedRowNormalized.nationality) ||
+                    (!originalRow.photo && updatedRowNormalized.photo) ||
+                    (!originalRow.nicknames && updatedRowNormalized.nicknames);
+                
+                const shouldUpdate = hasChanges || isFillingMissingData;
                 
                 // Debug: Log comparison details
                 console.log(`   🔍 Change detection for row ${row.rowIndex}:`);
@@ -224,9 +236,9 @@ exports.handler = async (event, context) => {
                     console.log(`   ⚠️ celebInfo is null - no Wikipedia data found`);
                 }
                 
-                if (!hasChanges) {
+                if (!shouldUpdate) {
                     console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name}`);
-                    console.log(`   💡 Reason: All fields are either already filled OR Wikipedia lookup returned no data`);
+                    console.log(`   💡 Reason: All fields are already filled AND no new data from Wikipedia`);
                     
                     // Store sample for debugging
                     if (sampleProcessedRows.length < 5) {
@@ -240,7 +252,13 @@ exports.handler = async (event, context) => {
                                 photo: originalRow.photo ? 'has URL' : '(empty)',
                                 nicknames: originalRow.nicknames || '(empty)'
                             },
-                            reason: 'No changes detected'
+                            updated: {
+                                gender: updatedRowNormalized.gender || '(empty)',
+                                nationality: updatedRowNormalized.nationality || '(empty)',
+                                photo: updatedRowNormalized.photo ? 'has URL' : '(empty)',
+                                nicknames: updatedRowNormalized.nicknames || '(empty)'
+                            },
+                            reason: 'No changes detected and no missing data to fill'
                         });
                     }
                     
@@ -250,18 +268,18 @@ exports.handler = async (event, context) => {
                 
                 processedCount++;
                 
-                console.log(`   📊 Changes detected:`);
-                if (updatedRowNormalized.gender !== originalRow.gender) {
-                    console.log(`      Gender: "${originalRow.gender || '(empty)'}" → "${updatedRowNormalized.gender || '(empty)'}"`);
+                console.log(`   📊 Changes detected or filling missing data:`);
+                if (updatedRowNormalized.gender !== originalRow.gender || (!originalRow.gender && updatedRowNormalized.gender)) {
+                    console.log(`      Gender: "${originalRow.gender || '(empty)'}" → "${updatedRowNormalized.gender || '(empty)'}" ${!originalRow.gender && updatedRowNormalized.gender ? '(FILLING MISSING)' : ''}`);
                 }
-                if (updatedRowNormalized.nationality !== originalRow.nationality) {
-                    console.log(`      Nationality: "${originalRow.nationality || '(empty)'}" → "${updatedRowNormalized.nationality || '(empty)'}"`);
+                if (updatedRowNormalized.nationality !== originalRow.nationality || (!originalRow.nationality && updatedRowNormalized.nationality)) {
+                    console.log(`      Nationality: "${originalRow.nationality || '(empty)'}" → "${updatedRowNormalized.nationality || '(empty)'}" ${!originalRow.nationality && updatedRowNormalized.nationality ? '(FILLING MISSING)' : ''}`);
                 }
-                if (updatedRowNormalized.photo !== originalRow.photo) {
-                    console.log(`      Photo: "${originalRow.photo ? 'has URL' : '(empty)'}" → "${updatedRowNormalized.photo ? 'has URL' : '(empty)'}"`);
+                if (updatedRowNormalized.photo !== originalRow.photo || (!originalRow.photo && updatedRowNormalized.photo)) {
+                    console.log(`      Photo: "${originalRow.photo ? 'has URL' : '(empty)'}" → "${updatedRowNormalized.photo ? 'has URL' : '(empty)'}" ${!originalRow.photo && updatedRowNormalized.photo ? '(FILLING MISSING)' : ''}`);
                 }
-                if (updatedRowNormalized.nicknames !== originalRow.nicknames) {
-                    console.log(`      Nicknames: "${originalRow.nicknames || '(empty)'}" → "${updatedRowNormalized.nicknames || '(empty)'}"`);
+                if (updatedRowNormalized.nicknames !== originalRow.nicknames || (!originalRow.nicknames && updatedRowNormalized.nicknames)) {
+                    console.log(`      Nicknames: "${originalRow.nicknames || '(empty)'}" → "${updatedRowNormalized.nicknames || '(empty)'}" ${!originalRow.nicknames && updatedRowNormalized.nicknames ? '(FILLING MISSING)' : ''}`);
                 }
                 
                 console.log(`   📝 Final values: gender="${updatedRow.gender || '(empty)'}", nationality="${updatedRow.nationality || '(empty)'}", photo="${updatedRow.photo ? 'has URL' : '(empty)'}", nicknames="${updatedRow.nicknames || '(empty)'}"`);
