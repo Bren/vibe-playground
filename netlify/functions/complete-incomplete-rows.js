@@ -100,11 +100,17 @@ exports.handler = async (event, context) => {
             };
         }
         
-        // Process incomplete rows
+        // Process incomplete rows - limit to first 50 to avoid timeout
+        // User can run multiple times to process all rows
+        const maxRowsToProcess = 50;
+        const rowsToProcess = incompleteRows.slice(0, maxRowsToProcess);
+        
+        console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
+        
         const updatedRows = [];
         const errors = [];
         
-        for (const row of incompleteRows) {
+        for (const row of rowsToProcess) {
             // Skip rows without a name (can't look up data)
             if (!row.name) {
                 console.log(`⏭️ Skipping row ${row.rowIndex} - no name`);
@@ -187,8 +193,8 @@ exports.handler = async (event, context) => {
                 
                 console.log(`✅ Updated row ${row.rowIndex}: ${row.name}`);
                 
-                // Small delay to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Small delay to avoid rate limiting (reduced for faster processing)
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
             } catch (error) {
                 console.error(`❌ Error processing row ${row.rowIndex} (${row.name}):`, error.message);
@@ -201,13 +207,15 @@ exports.handler = async (event, context) => {
             headers: { ...headers, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 success: true,
-                message: `Processed ${incompleteRows.length} incomplete rows`,
+                message: `Processed ${rowsToProcess.length} rows (${incompleteRows.length - rowsToProcess.length} remaining)`,
                 completeRows: completeRows.length,
                 incompleteRows: incompleteRows.length,
+                processed: rowsToProcess.length,
+                remaining: incompleteRows.length - rowsToProcess.length,
                 updated: updatedRows.length,
                 updatedRows: updatedRows,
                 errors: errors.length,
-                errorDetails: errors
+                errorDetails: errors.slice(0, 20) // Limit error details to first 20
             })
         };
 
@@ -228,9 +236,10 @@ exports.handler = async (event, context) => {
 async function getCelebrityInfoFromName(name, nicknames = '') {
     try {
         // Try multiple search strategies for Hebrew/English names
-        const searchTerms = [name];
+        // PRIORITIZE nicknames first (they often have English names)
+        const searchTerms = [];
         
-        // If we have nicknames, try those too (often contain English names)
+        // If we have nicknames, try those FIRST (often contain English names)
         if (nicknames) {
             const nicknameList = nicknames.split(',').map(n => n.trim()).filter(n => n);
             // Look for English names in nicknames (non-Hebrew characters)
@@ -239,6 +248,15 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                     searchTerms.push(nick);
                 }
             });
+        }
+        
+        // Then try the original name (might be Hebrew or English)
+        searchTerms.push(name);
+        
+        // If name is Hebrew (contains Hebrew characters), try to find English equivalent
+        if (/[\u0590-\u05FF]/.test(name)) {
+            // Name is in Hebrew, prioritize nicknames even more
+            console.log(`   🔤 Hebrew name detected: ${name}, prioritizing nicknames`);
         }
         
         let title = null;
