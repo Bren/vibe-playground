@@ -1403,7 +1403,7 @@
                     }
                     
                     if (data.errorDetails && data.errorDetails.length > 0) {
-                        html += `<div class="result-item" style="background: rgba(255, 0, 0, 0.1);"><strong>Errors (${data.errors}):</strong><ul style="margin-top: 10px; padding-left: 20px;">`;
+                        html += `<div class="result-item" style="background: rgba(212, 165, 165, 0.15); border: 1px solid rgba(212, 165, 165, 0.3);"><strong>Errors (${data.errors}):</strong><ul style="margin-top: 10px; padding-left: 20px;">`;
                         data.errorDetails.forEach(error => {
                             html += `<li>Row ${error.rowIndex}: ${error.name || 'N/A'} - ${error.error}</li>`;
                         });
