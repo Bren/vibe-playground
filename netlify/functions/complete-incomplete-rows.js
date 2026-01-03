@@ -214,6 +214,7 @@ exports.handler = async (event, context) => {
                     updatedRowNormalized.nicknames !== originalRow.nicknames;
                 
                 // Also check if we're filling in missing data (row is incomplete)
+                // A row is incomplete if ANY field is missing, so we should update if we're filling ANY missing field
                 const isFillingMissingData = 
                     (!originalRow.gender && updatedRowNormalized.gender) ||
                     (!originalRow.nationality && updatedRowNormalized.nationality) ||
@@ -221,6 +222,19 @@ exports.handler = async (event, context) => {
                     (!originalRow.nicknames && updatedRowNormalized.nicknames);
                 
                 const shouldUpdate = hasChanges || isFillingMissingData;
+                
+                // Debug: Log why we're updating or not
+                if (shouldUpdate) {
+                    console.log(`   ✅ Will update row ${row.rowIndex}:`);
+                    if (hasChanges) console.log(`      - Has changes detected`);
+                    if (isFillingMissingData) console.log(`      - Filling missing data`);
+                } else {
+                    console.log(`   ❌ Will NOT update row ${row.rowIndex}:`);
+                    console.log(`      - No changes: ${!hasChanges}`);
+                    console.log(`      - Not filling missing: ${!isFillingMissingData}`);
+                    console.log(`      - Missing fields: gender=${!originalRow.gender ? 'YES' : 'no'}, nationality=${!originalRow.nationality ? 'YES' : 'no'}, photo=${!originalRow.photo ? 'YES' : 'no'}, nicknames=${!originalRow.nicknames ? 'YES' : 'no'}`);
+                    console.log(`      - Updated fields: gender=${updatedRowNormalized.gender ? 'YES' : 'no'}, nationality=${updatedRowNormalized.nationality ? 'YES' : 'no'}, photo=${updatedRowNormalized.photo ? 'YES' : 'no'}, nicknames=${updatedRowNormalized.nicknames ? 'YES' : 'no'}`);
+                }
                 
                 // Debug: Log comparison details
                 console.log(`   🔍 Change detection for row ${row.rowIndex}:`);
