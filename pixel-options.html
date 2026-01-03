@@ -1191,40 +1191,65 @@
         }
         
         async function correctMissingFromModal() {
+            console.log('🔍 correctMissingFromModal called');
             const correctBtn = document.getElementById('modalCorrectBtn');
             const statsContent = document.getElementById('modalStatsContent');
             
-            if (!confirm('This will scan and complete missing information. This may take a while. Continue?')) {
+            if (!correctBtn) {
+                console.error('❌ modalCorrectBtn not found!');
+                alert('Button element not found. Please refresh the page.');
                 return;
             }
             
+            if (!statsContent) {
+                console.error('❌ modalStatsContent not found!');
+                alert('Stats content element not found. Please refresh the page.');
+                return;
+            }
+            
+            if (!confirm('This will scan and complete missing information. This may take a while. Continue?')) {
+                console.log('❌ User cancelled');
+                return;
+            }
+            
+            console.log('✅ User confirmed, starting processing...');
             correctBtn.disabled = true;
             statsContent.innerHTML = '<div class="modal-loading">Processing... This may take a minute.</div>';
             
             try {
+                console.log('🔄 Calling complete-incomplete-rows function...');
                 const response = await fetch('/.netlify/functions/complete-incomplete-rows', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
                 
+                console.log('📦 Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('📦 Response data:', data);
                 
                 if (data.success) {
                     // Show success message briefly, then refresh stats
-                    statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">✅ Processed ${data.processed} rows. ${data.updated} rows updated. Refreshing statistics...</div>`;
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">✅ Processed ${data.processed || 0} rows. ${data.updated || 0} rows updated. Refreshing statistics...</div>`;
                     
                     // Wait a moment, then refresh stats
                     setTimeout(async () => {
+                        console.log('🔄 Refreshing database stats...');
                         await loadDatabaseStats();
                         correctBtn.disabled = false;
                     }, 2000);
                 } else {
+                    console.error('❌ Function returned success:false', data);
                     statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${data.error || 'Unknown error'}</div>`;
                     correctBtn.disabled = false;
                 }
             } catch (error) {
-                console.error('Error correcting missing information:', error);
-                statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${error.message}</div>`;
+                console.error('❌ Error correcting missing information:', error);
+                statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${error.message}. Check console for details.</div>`;
                 correctBtn.disabled = false;
             }
         }
