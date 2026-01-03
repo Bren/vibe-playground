@@ -129,6 +129,29 @@ exports.handler = async (event, context) => {
                 let fixedStatus = row.status;
                 let fixedPhoto = row.photo;
                 
+                // Auto-set Status to "Published" if publish date exists and is today or in the past
+                if (row.publishDate && !fixedStatus) {
+                    try {
+                        // Parse publish date (format: DD/MM/YYYY)
+                        const dateParts = row.publishDate.split('/');
+                        if (dateParts.length === 3) {
+                            const day = parseInt(dateParts[0]);
+                            const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
+                            const year = parseInt(dateParts[2]);
+                            const publishDateObj = new Date(year, month, day);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+                            
+                            if (publishDateObj <= today) {
+                                fixedStatus = 'Published';
+                                console.log(`   ✅ Auto-setting Status to "Published" (publish date: ${row.publishDate} is today or in past)`);
+                            }
+                        }
+                    } catch (err) {
+                        console.log(`   ⚠️ Could not parse publish date: ${row.publishDate}`);
+                    }
+                }
+                
                 // Check if columns are misaligned (e.g., "Published" in gender column, URLs in wrong places)
                 // More aggressive misalignment detection
                 if (row.gender && (
@@ -178,7 +201,7 @@ exports.handler = async (event, context) => {
                     publishDate: row.publishDate || '', // Keep publish date if exists
                     gender: fixedGender || (celebInfo ? celebInfo.gender : '') || '',
                     nationality: fixedNationality || (celebInfo ? celebInfo.nationality : '') || '',
-                    status: fixedStatus || 'Published', // Default status to 'Published' if empty
+                    status: fixedStatus || '', // Don't default to 'Published' here - we handle it above based on date
                     photo: fixedPhoto || (celebInfo ? celebInfo.photo : '') || '',
                     nicknames: row.nicknames || (celebInfo ? celebInfo.nicknames : '') || ''
                 };
