@@ -42,7 +42,7 @@ exports.handler = async (event, context) => {
         console.log('📊 Fetching all rows from sheet...');
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:G`,
+            range: `${SHEET_NAME}!A:F`,
         });
 
         const rows = response.data.values || [];
@@ -61,17 +61,15 @@ exports.handler = async (event, context) => {
                 publishDate: (row[1] || '').trim(),
                 gender: (row[2] || '').trim(),
                 nationality: (row[3] || '').trim(),
-                status: (row[4] || '').trim(),
-                photo: (row[5] || '').trim(),
-                nicknames: (row[6] || '').trim()
+                photo: (row[4] || '').trim(),
+                nicknames: (row[5] || '').trim()
             };
             
-            // Check if row is complete (all 7 columns filled)
+            // Check if row is complete (all 6 columns filled)
             const isComplete = rowData.name && 
                               rowData.publishDate && 
                               rowData.gender && 
                               rowData.nationality && 
-                              rowData.status && 
                               rowData.photo && 
                               rowData.nicknames;
             
@@ -119,52 +117,25 @@ exports.handler = async (event, context) => {
             
             try {
                 console.log(`🔍 Processing row ${row.rowIndex}: ${row.name}`);
-                console.log(`   Current data: gender=${row.gender}, nationality=${row.nationality}, status=${row.status}, photo=${row.photo ? 'yes' : 'no'}, nicknames=${row.nicknames}`);
+                console.log(`   Current data: gender=${row.gender}, nationality=${row.nationality}, photo=${row.photo ? 'yes' : 'no'}, nicknames=${row.nicknames}`);
                 
                 // Fill in missing fields (only fill what's missing, preserve existing data)
-                // But also fix misaligned columns - if status is in wrong place, fix it
+                // Also fix misaligned columns - if URLs are in wrong places, fix them
                 let fixedGender = row.gender;
                 let fixedNationality = row.nationality;
-                let fixedStatus = row.status;
                 let fixedPhoto = row.photo;
                 
-                // Auto-set Status to "Published" if publish date exists and is today or in the past
-                if (row.publishDate && !fixedStatus) {
-                    try {
-                        // Parse publish date (format: DD/MM/YYYY)
-                        const dateParts = row.publishDate.split('/');
-                        if (dateParts.length === 3) {
-                            const day = parseInt(dateParts[0]);
-                            const month = parseInt(dateParts[1]) - 1; // JS months are 0-indexed
-                            const year = parseInt(dateParts[2]);
-                            const publishDateObj = new Date(year, month, day);
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0); // Reset time to compare dates only
-                            
-                            if (publishDateObj <= today) {
-                                fixedStatus = 'Published';
-                                console.log(`   ✅ Auto-setting Status to "Published" (publish date: ${row.publishDate} is today or in past)`);
-                            }
-                        }
-                    } catch (err) {
-                        console.log(`   ⚠️ Could not parse publish date: ${row.publishDate}`);
-                    }
-                }
-                
-                // Check if columns are misaligned (e.g., "Published" in gender column, URLs in wrong places)
+                // Check if columns are misaligned (e.g., URLs in wrong places)
                 // More aggressive misalignment detection
                 if (row.gender && (
-                    row.gender.toLowerCase() === 'published' || 
                     row.gender.includes('http') ||
                     row.gender.includes('://') ||
                     row.gender.match(/^https?:\/\//)
                 )) {
-                    // Gender column has wrong data (URL or status), shift everything
-                    console.log(`   ⚠️ Detected misaligned columns in row ${row.rowIndex}, fixing...`);
+                    // Gender column has URL, shift to photo
+                    console.log(`   ⚠️ Detected URL in gender column for row ${row.rowIndex}, fixing...`);
+                    fixedPhoto = row.gender; // Move URL to photo
                     fixedGender = '';
-                    fixedNationality = row.gender.includes('http') ? '' : row.gender; // Only if not URL
-                    fixedStatus = row.nationality || 'Published';
-                    fixedPhoto = row.status || row.photo || '';
                 }
                 
                 // Check if nationality column has URL (should be in photo column)
@@ -172,13 +143,6 @@ exports.handler = async (event, context) => {
                     console.log(`   ⚠️ Detected URL in nationality column for row ${row.rowIndex}, fixing...`);
                     fixedPhoto = row.nationality; // Move URL to photo
                     fixedNationality = '';
-                }
-                
-                // Check if status column has URL
-                if (row.status && (row.status.includes('http') || row.status.includes('://'))) {
-                    console.log(`   ⚠️ Detected URL in status column for row ${row.rowIndex}, fixing...`);
-                    fixedPhoto = row.status; // Move URL to photo
-                    fixedStatus = 'Published';
                 }
                 
                 // Try to fetch data from Wikipedia/Wikidata (try with nicknames if available)
@@ -200,7 +164,6 @@ exports.handler = async (event, context) => {
                     publishDate: row.publishDate || '', // Keep publish date if exists
                     gender: fixedGender || (celebInfo ? celebInfo.gender : '') || '',
                     nationality: fixedNationality || (celebInfo ? celebInfo.nationality : '') || '',
-                    status: fixedStatus || '', // Don't default to 'Published' here - we handle it above based on date
                     photo: fixedPhoto || (celebInfo ? celebInfo.photo : '') || '',
                     nicknames: row.nicknames || (celebInfo ? celebInfo.nicknames : '') || ''
                 };
@@ -210,14 +173,12 @@ exports.handler = async (event, context) => {
                 const originalRow = {
                     gender: normalize(row.gender),
                     nationality: normalize(row.nationality),
-                    status: normalize(row.status),
                     photo: normalize(row.photo),
                     nicknames: normalize(row.nicknames)
                 };
                 const updatedRowNormalized = {
                     gender: normalize(updatedRow.gender),
                     nationality: normalize(updatedRow.nationality),
-                    status: normalize(updatedRow.status),
                     photo: normalize(updatedRow.photo),
                     nicknames: normalize(updatedRow.nicknames)
                 };
@@ -226,7 +187,6 @@ exports.handler = async (event, context) => {
                 const hasChanges = 
                     updatedRowNormalized.gender !== originalRow.gender ||
                     updatedRowNormalized.nationality !== originalRow.nationality ||
-                    updatedRowNormalized.status !== originalRow.status ||
                     updatedRowNormalized.photo !== originalRow.photo ||
                     updatedRowNormalized.nicknames !== originalRow.nicknames;
                 
@@ -238,11 +198,10 @@ exports.handler = async (event, context) => {
                 console.log(`   📊 Changes detected:`);
                 if (updatedRowNormalized.gender !== originalRow.gender) console.log(`      Gender: "${originalRow.gender}" → "${updatedRowNormalized.gender}"`);
                 if (updatedRowNormalized.nationality !== originalRow.nationality) console.log(`      Nationality: "${originalRow.nationality}" → "${updatedRowNormalized.nationality}"`);
-                if (updatedRowNormalized.status !== originalRow.status) console.log(`      Status: "${originalRow.status}" → "${updatedRowNormalized.status}"`);
                 if (updatedRowNormalized.photo !== originalRow.photo) console.log(`      Photo: "${originalRow.photo ? 'has' : 'none'}" → "${updatedRowNormalized.photo ? 'has' : 'none'}"`);
                 if (updatedRowNormalized.nicknames !== originalRow.nicknames) console.log(`      Nicknames: "${originalRow.nicknames}" → "${updatedRowNormalized.nicknames}"`);
                 
-                console.log(`   📝 Will update: gender=${updatedRow.gender || 'N/A'}, nationality=${updatedRow.nationality || 'N/A'}, status=${updatedRow.status || 'N/A'}`);
+                console.log(`   📝 Will update: gender=${updatedRow.gender || 'N/A'}, nationality=${updatedRow.nationality || 'N/A'}, photo=${updatedRow.photo ? 'yes' : 'no'}`);
                 
                 // Update the row in the sheet
                 const values = [[
@@ -250,7 +209,6 @@ exports.handler = async (event, context) => {
                     updatedRow.publishDate,
                     updatedRow.gender,
                     updatedRow.nationality,
-                    updatedRow.status,
                     updatedRow.photo,
                     updatedRow.nicknames
                 ]];
@@ -258,7 +216,7 @@ exports.handler = async (event, context) => {
                 try {
                     const updateResponse = await sheets.spreadsheets.values.update({
                         spreadsheetId: SHEET_ID,
-                        range: `${SHEET_NAME}!A${row.rowIndex}:G${row.rowIndex}`,
+                        range: `${SHEET_NAME}!A${row.rowIndex}:F${row.rowIndex}`,
                         valueInputOption: 'RAW',
                         resource: { values: values }
                     });
@@ -271,7 +229,6 @@ exports.handler = async (event, context) => {
                         updated: {
                             gender: !row.gender && updatedRow.gender ? updatedRow.gender : null,
                             nationality: !row.nationality && updatedRow.nationality ? updatedRow.nationality : null,
-                            status: !row.status && updatedRow.status ? updatedRow.status : null,
                             photo: !row.photo && updatedRow.photo ? 'Yes' : null,
                             nicknames: !row.nicknames && updatedRow.nicknames ? updatedRow.nicknames : null
                         }

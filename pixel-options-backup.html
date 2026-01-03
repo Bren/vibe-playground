@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Pixel Options - drorbren.com</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav {
+            margin-bottom: 3rem;
+        }
+        
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Celebrity Cards */
+        .celebrities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 2rem;
+        }
+        
+        .celebrity-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .celebrity-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .celebrity-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .celebrity-card-info {
+            padding: 15px;
+        }
+        
+        .celebrity-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .celebrity-score {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+        
+        .modal-close:hover {
+            opacity: 0.7;
+        }
+        
+        .modal-title {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .modal-subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        /* Date Picker */
+        .date-picker {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .date-picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .date-picker-month {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .date-picker-nav {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .date-picker-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .date-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .date-picker-day-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 8px;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        .date-picker-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+        
+        .date-picker-day:hover:not(.disabled):not(.empty) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .date-picker-day.disabled {
+            background: rgba(255, 0, 0, 0.2);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .date-picker-day.available {
+            background: rgba(76, 175, 80, 0.2);
+            cursor: pointer;
+        }
+        
+        .date-picker-day.available:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        
+        .date-picker-day.not-in-sheet {
+            background: rgba(158, 158, 158, 0.2);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .show-more-container {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .show-more-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .show-more-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .show-more-btn:active {
+            transform: translateY(0);
+        }
+        
+        .show-more-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .date-picker-day.empty {
+            background: transparent;
+            cursor: default;
+        }
+        
+        .date-picker-day.today {
+            border: 2px solid #4CAF50;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .celebrity-selector {
+            margin: 2rem 0;
+        }
+        
+        .celebrity-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        
+        .celebrity-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .celebrity-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .celebrity-btn.selected {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+        
+        .current-celebrity {
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .reference-photo {
+            margin: 1rem 0;
+        }
+        
+        
+        .controls {
+            margin: 2rem 0;
+        }
+        
+        .btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #45a049;
+        }
+        
+        .btn.secondary {
+            background: #ff9800;
+        }
+        
+        .btn.secondary:hover {
+            background: #e68900;
+        }
+        
+        .btn.danger {
+            background: #f44336;
+        }
+        
+        .btn.danger:hover {
+            background: #da190b;
+        }
+        
+        .info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .pixel-grid {
+                grid-template-columns: repeat(8, 1fr);
+                max-width: 300px;
+            }
+            
+            .nav a {
+                display: block;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="index.html">Home</a>
+            <a href="logic-crossword.html">Logic Crossword</a>
+            <a href="pixel-options.html">Pixel Options</a>
+        </nav>
+        
+        <h1>Pixel Options</h1>
+        
+        <div class="content">
+            <h2>Celebrity Scheduler</h2>
+            <p>Schedule famous people for daily features - click on a celebrity to assign them a date!</p>
+            
+            <div id="loadingMessage" class="loading">
+                Loading celebrities...
+            </div>
+            
+            <div id="errorMessage" class="error" style="display: none;"></div>
+            
+            <div id="celebritiesContainer" class="celebrities-grid" style="display: none;">
+                <!-- Celebrity cards will be generated here -->
+            </div>
+            
+            <div class="show-more-container" style="display: none;">
+                <button id="showMoreBtn" class="show-more-btn">
+                    Show More Celebrities
+                </button>
+            </div>
+            </div>
+            
+        <!-- Date Picker Modal -->
+        <div id="datePickerModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+                <h2 class="modal-title">Add to Date</h2>
+                <p class="modal-subtitle" id="modalCelebrityName">Select a date for this celebrity</p>
+                
+                <div class="date-picker">
+                    <div class="date-picker-header">
+                        <button class="date-picker-nav" onclick="previousMonth()">◀ Previous</button>
+                        <div class="date-picker-month" id="currentMonthYear"></div>
+                        <button class="date-picker-nav" onclick="nextMonth()">Next ▶</button>
+                    </div>
+                    <div class="date-picker-grid" id="datePickerGrid"></div>
+            </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const SHEET_ID = '1GgoGvCzW74vSqoaQeQmeGYEdNvLMY64iklDjCTYYOcY';
+        const SHEET_NAME = 'Published';
+        
+        // State
+        let allCelebrities = [];
+        let displayedCelebrities = [];
+        window.occupiedDates = new Map(); // date -> celebrity (global for debugging)
+        let existingCelebrityNames = new Set(); // All names and nicknames from Google Sheets
+        let shownCelebrityIds = new Set();
+        let selectedCelebrity = null;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        
+        // Celebrity database (hardcoded for now)
+        const celebrities = {
+            einstein: {
+                name: 'אלברט אינשטיין',
+                alternatives: ['אלברט', 'אינשטיין', 'א. אינשטיין'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Einstein_1921_by_F_Schmutzer_-_restoration.jpg/800px-Einstein_1921_by_F_Schmutzer_-_restoration.jpg'
+            },
+            gandhi: {
+                name: 'מהטמה גנדי',
+                alternatives: ['גנדי', 'מהטמה', 'גאנדי'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mahatma-Gandhi%2C_studio%2C_1931.jpg/800px-Mahatma-Gandhi%2C_studio%2C_1931.jpg'
+            },
+            mandela: {
+                name: 'נלסון מנדלה',
+                alternatives: ['מנדלה', 'נלסון'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Nelson_Mandela_1994.jpg/800px-Nelson_Mandela_1994.jpg'
+            },
+            mother_teresa: {
+                name: 'אם תרזה',
+                alternatives: ['תרזה', 'האם תרזה', 'Mother Teresa'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Mother_Teresa.jpg/800px-Mother_Teresa.jpg'
+            },
+            leonardo: {
+                name: 'לאונרדו דה וינצ\'י',
+                alternatives: ['לאונרדו', 'דה וינצ\'י', 'Da Vinci'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Leonardo_self.jpg/800px-Leonardo_self.jpg'
+            },
+            mozart: {
+                name: 'וולפגנג אמדאוס מוצרט',
+                alternatives: ['מוצרט', 'וולפגנג', 'Mozart'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Wolfgang-amadeus-mozart_1.jpg/800px-Wolfgang-amadeus-mozart_1.jpg'
+            },
+            shakespeare: {
+                name: 'ויליאם שייקספיר',
+                alternatives: ['שייקספיר', 'ויליאם', 'William Shakespeare', 'Shakespeare'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Shakespeare.jpg/800px-Shakespeare.jpg'
+            },
+            elon_musk: {
+                name: 'אילון מאסק',
+                alternatives: ['מאסק', 'אילון', 'Elon Musk', 'Musk'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/800px-Elon_Musk_Royal_Society_%28crop2%29.jpg'
+            },
+            steve_jobs: {
+                name: 'סטיב ג\'ובס',
+                alternatives: ['ג\'ובס', 'סטיב', 'Steve Jobs', 'Jobs'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg/800px-Steve_Jobs_Headshot_2010-CROP_%28cropped_2%29.jpg'
+            },
+            bill_gates: {
+                name: 'ביל גייטס',
+                alternatives: ['גייטס', 'ביל', 'Bill Gates', 'Gates'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Bill_Gates_2018.jpg/800px-Bill_Gates_2018.jpg'
+            },
+            elvis: {
+                name: 'אלביס פרסלי',
+                alternatives: ['פרסלי', 'אלביס', 'Elvis Presley', 'Elvis'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Elvis_Presley_1969.jpg/800px-Elvis_Presley_1969.jpg'
+            },
+            michael_jackson: {
+                name: 'מייקל ג\'קסון',
+                alternatives: ['ג\'קסון', 'מייקל', 'Michael Jackson', 'Jackson'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Michael_Jackson_in_1988.jpg/800px-Michael_Jackson_in_1988.jpg'
+            },
+            madonna: {
+                name: 'מדונה',
+                alternatives: ['Madonna', 'מדונה'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Madonna_-_Rebel_Heart_Tour_2015_-_Stockholm_%2823058147220%29_%28cropped%29.jpg/800px-Madonna_-_Rebel_Heart_Tour_2015_-_Stockholm_%2823058147220%29_%28cropped%29.jpg'
+            },
+            muhammad_ali: {
+                name: 'מוחמד עלי',
+                alternatives: ['עלי', 'מוחמד', 'Muhammad Ali', 'Ali'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Muhammad_Ali_NYWTS.jpg/800px-Muhammad_Ali_NYWTS.jpg'
+            },
+            pele: {
+                name: 'פלה',
+                alternatives: ['Pele', 'פלה'],
+                photo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNGNhZjUwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI2NCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuS9peS4lDwvdGV4dD48L3N2Zz4='
+            },
+            newton: {
+                name: 'אייזק ניוטון',
+                alternatives: ['ניוטון', 'אייזק', 'Isaac Newton', 'Newton'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Portrait_of_Sir_Isaac_Newton%2C_1689.jpg/800px-Portrait_of_Sir_Isaac_Newton%2C_1689.jpg'
+            },
+            darwin: {
+                name: 'צ\'ארלס דרווין',
+                alternatives: ['דרווין', 'צ\'ארלס', 'Charles Darwin', 'Darwin'],
+                photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Charles_Darwin_seated_crop.jpg/800px-Charles_Darwin_seated_crop.jpg'
+            }
+        };
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Initializing Celebrity Scheduler...');
+            await loadOccupiedDates();
+            await show5NewCelebrities();
+            
+            // Add event listener for "Show More" button
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            if (showMoreBtn) {
+                showMoreBtn.addEventListener('click', showMoreCelebrities);
+            }
+        });
+        
+        // Load occupied dates and existing celebrity names from Google Sheets
+        async function loadOccupiedDates() {
+            try {
+                console.log('📅 Loading occupied dates and existing celebrities from Google Sheets...');
+                const response = await fetch('/.netlify/functions/celebrities');
+                const data = await response.json();
+                
+                if (data.success && data.celebrities) {
+                    window.occupiedDates.clear();
+                    existingCelebrityNames.clear();
+                    
+                    data.celebrities.forEach(celeb => {
+                        // Store all dates from the sheet (both occupied and available)
+                        if (celeb.publishDate) {
+                            const parts = celeb.publishDate.split('/');
+                            if (parts.length === 3) {
+                                const day = parts[0];
+                                const month = parts[1];
+                                const year = parts[2];
+                                const dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                                
+                                if (celeb.name && celeb.name.trim()) {
+                                    // Date has a celebrity assigned
+                                    window.occupiedDates.set(dateKey, {
+                                        name: celeb.name,
+                                        rowIndex: celeb.rowIndex,
+                                        photo: celeb.photo,
+                                        nicknames: celeb.nicknames
+                                    });
+                                    console.log(`📅 Marking ${dateKey} as occupied by ${celeb.name} (row ${celeb.rowIndex})`);
+                                } else {
+                                    // Date exists in sheet but no celebrity assigned
+                                    window.occupiedDates.set(dateKey, {
+                                        name: null,
+                                        rowIndex: celeb.rowIndex,
+                                        photo: null,
+                                        nicknames: null
+                                    });
+                                    console.log(`📅 Marking ${dateKey} as available (row ${celeb.rowIndex})`);
+                                }
+                            } else {
+                                console.log(`⚠️ Invalid date format: ${celeb.publishDate}`);
+                            }
+                        }
+                        
+                        // Store all names and nicknames (normalized for comparison)
+                        if (celeb.name && celeb.name.trim()) {
+                            existingCelebrityNames.add(normalizeName(celeb.name));
+                        }
+                        
+                        // Add nicknames/alternatives
+                        if (celeb.nicknames) {
+                            const nicknames = celeb.nicknames.split(',').map(n => n.trim());
+                            nicknames.forEach(nickname => {
+                                if (nickname) {
+                                    existingCelebrityNames.add(normalizeName(nickname));
+                                }
+                            });
+                        }
+                    });
+                    
+                    console.log(`✅ Loaded ${window.occupiedDates.size} occupied dates`);
+                    console.log(`✅ Loaded ${existingCelebrityNames.size} existing celebrity names/nicknames`);
+                    
+                    // Debug: Show some occupied dates
+                    const occupiedArray = Array.from(window.occupiedDates.entries()).slice(0, 10);
+                    console.log('📅 Sample occupied dates:', occupiedArray);
+                }
+            } catch (error) {
+                console.error('Error loading occupied dates:', error);
+                showError('Failed to load occupied dates: ' + error.message);
+            }
+        }
+        
+        // Normalize name for comparison (remove spaces, lowercase, remove special chars)
+        function normalizeName(name) {
+            return name.toLowerCase()
+                .replace(/\s+/g, '')
+                .replace(/[^\w\u0590-\u05FF]/g, ''); // Keep alphanumeric and Hebrew chars
+        }
+        
+        // Check if a celebrity is already in the database
+        function isCelebrityInDatabase(celebId) {
+            const celeb = celebrities[celebId];
+            if (!celeb) return false;
+            
+            // Check main name
+            if (existingCelebrityNames.has(normalizeName(celeb.name))) {
+                console.log(`❌ DUPLICATE: "${celeb.name}" already exists in database`);
+                return true;
+            }
+            
+            // Check alternatives
+            if (celeb.alternatives && Array.isArray(celeb.alternatives)) {
+                for (const alt of celeb.alternatives) {
+                    if (existingCelebrityNames.has(normalizeName(alt))) {
+                        console.log(`❌ DUPLICATE: Alternative "${alt}" of "${celeb.name}" already exists in database`);
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // Show 5 new celebrities that haven't been shown before AND aren't in the database
+        async function show5NewCelebrities() {
+            try {
+                // Get all celebrity IDs
+                const allCelebIds = Object.keys(celebrities);
+                
+                // Filter out already shown ones AND ones already in database
+                const availableCelebs = allCelebIds.filter(id => 
+                    !shownCelebrityIds.has(id) && !isCelebrityInDatabase(id)
+                );
+                
+                console.log(`📊 Total celebrities: ${allCelebIds.length}`);
+                console.log(`📊 Already in database: ${allCelebIds.length - allCelebIds.filter(id => !isCelebrityInDatabase(id)).length}`);
+                console.log(`📊 Available to show: ${availableCelebs.length}`);
+                
+                // If we don't have enough available, reset the shown pool but keep filtering duplicates
+                if (availableCelebs.length < 5) {
+                    console.log('♻️ Not enough unshown celebrities, resetting shown pool...');
+                    shownCelebrityIds.clear();
+                    
+                    // Re-filter without the shown constraint
+                    const availableAfterReset = allCelebIds.filter(id => !isCelebrityInDatabase(id));
+                    
+                    if (availableAfterReset.length < 5) {
+                        showError(`⚠️ Only ${availableAfterReset.length} celebrities not yet in database. All others are already scheduled!`);
+                        
+                        // Show what we have
+                        if (availableAfterReset.length > 0) {
+                            displayedCelebrities = availableAfterReset;
+                            availableAfterReset.forEach(id => shownCelebrityIds.add(id));
+                            renderCelebrities();
+                        }
+                        return;
+                    }
+                    
+                    return show5NewCelebrities();
+                }
+                
+                // Randomly select 5
+                const selected = [];
+                const availableCopy = [...availableCelebs];
+                for (let i = 0; i < 5 && availableCopy.length > 0; i++) {
+                    const randomIndex = Math.floor(Math.random() * availableCopy.length);
+                    const celebId = availableCopy.splice(randomIndex, 1)[0];
+                    selected.push(celebId);
+                    shownCelebrityIds.add(celebId);
+                }
+                
+                displayedCelebrities = selected;
+                renderCelebrities();
+                
+                console.log(`✅ Showing 5 new celebrities:`, selected);
+            } catch (error) {
+                console.error('Error showing celebrities:', error);
+                showError('Failed to load celebrities: ' + error.message);
+            }
+        }
+        
+        // Render celebrity cards
+        function renderCelebrities() {
+            const container = document.getElementById('celebritiesContainer');
+            container.innerHTML = '';
+            container.style.display = 'grid';
+            document.getElementById('loadingMessage').style.display = 'none';
+            
+            displayedCelebrities.forEach(celebId => {
+                const celeb = celebrities[celebId];
+                const card = document.createElement('div');
+                card.className = 'celebrity-card';
+                card.onclick = () => openDatePicker(celebId);
+                
+                card.innerHTML = `
+                    <img src="${celeb.photo}" alt="${celeb.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNjY3ZWVhIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSI2NCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjwvdGV4dD48L3N2Zz4='">
+                    <div class="celebrity-card-info">
+                        <div class="celebrity-name">${celeb.name}</div>
+                        <div class="celebrity-score">Click to schedule</div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            // Show/hide "Show More" button based on available celebrities
+            updateShowMoreButton();
+        }
+        
+        // Update "Show More" button visibility and state
+        function updateShowMoreButton() {
+            const showMoreContainer = document.querySelector('.show-more-container');
+            const showMoreBtn = document.getElementById('showMoreBtn');
+            
+            // Check if there are more unique celebrities available
+            const availableCelebs = allCelebrities.filter(celebId => 
+                !shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+            );
+            
+            if (availableCelebs.length > 0) {
+                showMoreContainer.style.display = 'block';
+                showMoreBtn.disabled = false;
+                showMoreBtn.textContent = `Show More Celebrities (${availableCelebs.length} available)`;
+            } else {
+                showMoreContainer.style.display = 'none';
+            }
+        }
+        
+        // Add more celebrities to the display
+        function showMoreCelebrities() {
+            const availableCelebs = allCelebrities.filter(celebId => 
+                !shownCelebrityIds.has(celebId) && !isCelebrityInDatabase(celebId)
+            );
+            
+            if (availableCelebs.length === 0) {
+                console.log('No more unique celebrities available');
+                return;
+            }
+            
+            // Add up to 5 more celebrities (or all remaining if less than 5)
+            const toAdd = Math.min(5, availableCelebs.length);
+            const newCelebs = [];
+            
+            for (let i = 0; i < toAdd; i++) {
+                const randomIndex = Math.floor(Math.random() * availableCelebs.length);
+                const celebId = availableCelebs[randomIndex];
+                
+                newCelebs.push(celebId);
+                shownCelebrityIds.add(celebId);
+                
+                // Remove from available list to avoid duplicates
+                availableCelebs.splice(randomIndex, 1);
+            }
+            
+            // Add to displayed celebrities
+            displayedCelebrities.push(...newCelebs);
+            
+            console.log(`➕ Added ${newCelebs.length} more celebrities:`, newCelebs);
+            
+            // Re-render the celebrities
+            renderCelebrities();
+        }
+        
+        // Open date picker modal
+        function openDatePicker(celebId) {
+            selectedCelebrity = celebId;
+            const celeb = celebrities[celebId];
+            
+            document.getElementById('modalCelebrityName').textContent = `Select a date for ${celeb.name}`;
+            document.getElementById('datePickerModal').style.display = 'block';
+            
+            renderDatePicker();
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('datePickerModal').style.display = 'none';
+            selectedCelebrity = null;
+        }
+        
+        // Navigate months
+        function previousMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderDatePicker();
+        }
+        
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderDatePicker();
+        }
+        
+        // Render date picker calendar
+        function renderDatePicker() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            document.getElementById('currentMonthYear').textContent = 
+                `${monthNames[currentMonth]} ${currentYear}`;
+            
+            const grid = document.getElementById('datePickerGrid');
+            grid.innerHTML = '';
+            
+            // Day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'date-picker-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+            
+            // Get first day of month and total days
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'date-picker-day empty';
+                grid.appendChild(emptyDay);
+            }
+            
+            // Day cells
+            const today = new Date();
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'date-picker-day';
+                dayCell.textContent = day;
+                
+                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Check if date exists in the sheet
+                if (window.occupiedDates.has(dateKey)) {
+                    const dateInfo = window.occupiedDates.get(dateKey);
+                    if (dateInfo.name) {
+                        // Date has a celebrity assigned
+                        dayCell.classList.add('disabled');
+                        dayCell.title = `Occupied by ${dateInfo.name}`;
+                        console.log(`🚫 Date ${dateKey} is occupied by ${dateInfo.name} (row ${dateInfo.rowIndex})`);
+                    } else {
+                        // Date exists in sheet but is available
+                        dayCell.classList.add('available');
+                        dayCell.title = `Available - click to assign`;
+                        dayCell.onclick = () => selectDate(day, dateInfo.rowIndex);
+                        console.log(`✅ Date ${dateKey} is available (row ${dateInfo.rowIndex})`);
+                    }
+                } else {
+                    // Date doesn't exist in sheet at all
+                    dayCell.classList.add('not-in-sheet');
+                    dayCell.title = `Date not in sheet`;
+                    console.log(`❌ Date ${dateKey} not found in sheet`);
+                }
+                
+                // Mark today
+                if (currentYear === today.getFullYear() && 
+                    currentMonth === today.getMonth() && 
+                    day === today.getDate()) {
+                    dayCell.classList.add('today');
+                }
+                
+                grid.appendChild(dayCell);
+            }
+        }
+        
+        // Select a date and add celebrity to Google Sheets
+        async function selectDate(day, rowIndex) {
+            if (!selectedCelebrity || !rowIndex) return;
+            
+            const celeb = celebrities[selectedCelebrity];
+            const publishDate = `${String(day).padStart(2, '0')}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
+            
+            try {
+                console.log(`📅 Updating row ${rowIndex} with ${celeb.name} for ${publishDate}...`);
+                
+                // Update existing row in Google Sheets
+                const response = await fetch('/.netlify/functions/update-celebrity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: celeb.name,
+                        publishDate: publishDate,
+                        photo: celeb.photo,
+                        alternatives: celeb.alternatives,
+                        rowIndex: rowIndex
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log(`✅ Successfully updated row ${rowIndex} with ${celeb.name} for ${publishDate}`);
+                    
+                    // Update occupied dates with new info
+                    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    window.occupiedDates.set(dateKey, {
+                        name: celeb.name,
+                        rowIndex: rowIndex,
+                        photo: celeb.photo,
+                        nicknames: celeb.alternatives ? celeb.alternatives.join(', ') : ''
+                    });
+                    
+                    // Add to existing names database
+                    existingCelebrityNames.add(normalizeName(celeb.name));
+                    if (celeb.alternatives) {
+                        celeb.alternatives.forEach(alt => {
+                            existingCelebrityNames.add(normalizeName(alt));
+                        });
+                    }
+                    
+                    // Remove from displayed celebrities and add a new one
+                    displayedCelebrities = displayedCelebrities.filter(id => id !== selectedCelebrity);
+                    
+                    // Add a new celebrity (excluding duplicates)
+                    const availableCelebs = Object.keys(celebrities).filter(id => 
+                        !shownCelebrityIds.has(id) && 
+                        !displayedCelebrities.includes(id) &&
+                        !isCelebrityInDatabase(id) // Check against database
+                    );
+                    
+                    if (availableCelebs.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * availableCelebs.length);
+                        const newCelebId = availableCelebs[randomIndex];
+                        displayedCelebrities.push(newCelebId);
+                        shownCelebrityIds.add(newCelebId);
+                        console.log(`➕ Added new celebrity: ${newCelebId}`);
+                    } else {
+                        console.log(`⚠️ No more unique celebrities available to add. Showing ${displayedCelebrities.length} remaining.`);
+                        if (displayedCelebrities.length === 0) {
+                            // All celebrities scheduled, reload
+                            console.log('🎉 All available celebrities have been scheduled!');
+                            shownCelebrityIds.clear();
+                            await show5NewCelebrities();
+                        }
+                    }
+                    
+                    renderCelebrities();
+                    closeModal();
+                } else {
+                    showError('Failed to add celebrity: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error adding celebrity:', error);
+                showError('Failed to add celebrity: ' + error.message);
+            }
+        }
+        
+        // Show error message
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('datePickerModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

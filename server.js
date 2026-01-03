@@ -49,7 +49,7 @@ app.get('/api/celebrities', async (req, res) => {
         
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:G`, // Get columns A through G (including nicknames)
+            range: `${SHEET_NAME}!A:F`, // Get columns A through F (including nicknames)
         });
 
         const rows = response.data.values || [];
@@ -58,9 +58,8 @@ app.get('/api/celebrities', async (req, res) => {
             publishDate: row[1] || '',
             gender: row[2] || '',
             nationality: row[3] || '',
-            status: row[4] || '',
-            photo: row[5] || '',
-            nicknames: row[6] || ''
+            photo: row[4] || '',
+            nicknames: row[5] || ''
         })).filter(celebrity => celebrity.name);
 
         res.json({

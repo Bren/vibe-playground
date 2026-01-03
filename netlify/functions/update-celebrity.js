@@ -65,12 +65,12 @@ exports.handler = async (event, context) => {
 
         // Prepare the data for the specific row
         const nicknamesStr = alternatives && Array.isArray(alternatives) ? alternatives.join(', ') : '';
-        const values = [[name, publishDate, '', '', '', photo || '', nicknamesStr]];
+        const values = [[name, publishDate, '', '', photo || '', nicknamesStr]];
         
         // Update the specific row instead of appending
         const response = await sheets.spreadsheets.values.update({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A${rowIndex}:G${rowIndex}`,
+            range: `${SHEET_NAME}!A${rowIndex}:F${rowIndex}`,
             valueInputOption: 'RAW',
             resource: {
                 values: values
@@ -106,3 +106,5 @@ exports.handler = async (event, context) => {
         };
     }
 };
+
+

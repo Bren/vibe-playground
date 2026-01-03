@@ -37,14 +37,14 @@ exports.handler = async (event, context) => {
 
         // Get existing celebrities and not suitable list
         const [publishedRes, notSuitableRes] = await Promise.all([
-            sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${SHEET_NAME}!A:G` }).catch(() => ({ data: { values: [] } })),
+            sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${SHEET_NAME}!A:F` }).catch(() => ({ data: { values: [] } })),
             sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: `${NOT_SUITABLE_SHEET}!A:A` }).catch(() => ({ data: { values: [] } }))
         ]);
 
         const existingNames = new Set();
         (publishedRes.data.values || []).slice(1).forEach(row => {
             if (row[0]) existingNames.add(normalizeName(row[0]));
-            if (row[6]) row[6].split(',').forEach(n => n.trim() && existingNames.add(normalizeName(n.trim())));
+            if (row[5]) row[5].split(',').forEach(n => n.trim() && existingNames.add(normalizeName(n.trim())));
         });
 
         const notSuitableNames = new Set();

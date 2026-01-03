@@ -76,15 +76,15 @@ exports.handler = async (event, context) => {
             finalPublishDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
         }
         
-        // Prepare nicknames column (column G)
+        // Prepare nicknames column (column F)
         const nicknamesStr = alternatives && Array.isArray(alternatives) ? alternatives.join(', ') : '';
         
-        // Add the new row with the correct structure: Name, Publish date, Gender, Nationality, Status, Photo URL, Nicknames
-        const values = [[name, finalPublishDate, '', '', '', photo || '', nicknamesStr]];
+        // Add the new row with the correct structure: Name, Publish date, Gender, Nationality, Photo URL, Nicknames
+        const values = [[name, finalPublishDate, '', '', photo || '', nicknamesStr]];
         
         const response = await sheets.spreadsheets.values.append({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:G`,
+            range: `${SHEET_NAME}!A:F`,
             valueInputOption: 'RAW',
             resource: {
                 values: values

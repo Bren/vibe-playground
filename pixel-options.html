@@ -1144,45 +1144,40 @@
         
         function renderDatabaseStats(data) {
             const statsContent = document.getElementById('modalStatsContent');
-            const { totalEntries, stats } = data;
+            const { totalEntries, columnStats } = data;
             
             let html = `
                 <div class="stats-container">
                     <div class="stats-total">Total Entries: ${totalEntries}</div>
                     <div class="stats-column">
                         <div class="stats-column-name">Name</div>
-                        <div class="stats-complete">Complete: ${stats.name.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.name.incomplete}</div>
+                        <div class="stats-complete">Complete: ${columnStats.name.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${columnStats.name.incomplete}</div>
                     </div>
                     <div class="stats-column">
                         <div class="stats-column-name">Publish Date</div>
-                        <div class="stats-complete">Complete: ${stats.publishDate.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.publishDate.incomplete}</div>
+                        <div class="stats-complete">Complete: ${columnStats.publishDate.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${columnStats.publishDate.incomplete}</div>
                     </div>
                     <div class="stats-column">
                         <div class="stats-column-name">Gender</div>
-                        <div class="stats-complete">Complete: ${stats.gender.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.gender.incomplete}</div>
+                        <div class="stats-complete">Complete: ${columnStats.gender.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${columnStats.gender.incomplete}</div>
                     </div>
                     <div class="stats-column">
                         <div class="stats-column-name">Nationality</div>
-                        <div class="stats-complete">Complete: ${stats.nationality.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.nationality.incomplete}</div>
-                    </div>
-                    <div class="stats-column">
-                        <div class="stats-column-name">Status</div>
-                        <div class="stats-complete">Complete: ${stats.status.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.status.incomplete}</div>
+                        <div class="stats-complete">Complete: ${columnStats.nationality.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${columnStats.nationality.incomplete}</div>
                     </div>
                     <div class="stats-column">
                         <div class="stats-column-name">Photo URL</div>
-                        <div class="stats-complete">Complete: ${stats.photo.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.photo.incomplete}</div>
+                        <div class="stats-complete">Complete: ${columnStats.photo.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${columnStats.photo.incomplete}</div>
                     </div>
                     <div class="stats-column">
                         <div class="stats-column-name">Nicknames</div>
-                        <div class="stats-complete">Complete: ${stats.nicknames.complete}</div>
-                        <div class="stats-incomplete">Incomplete: ${stats.nicknames.incomplete}</div>
+                        <div class="stats-complete">Complete: ${columnStats.nicknames.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${columnStats.nicknames.incomplete}</div>
                     </div>
                 </div>
             `;

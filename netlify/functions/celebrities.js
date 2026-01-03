@@ -46,7 +46,7 @@ exports.handler = async (event, context) => {
         
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:G`,
+            range: `${SHEET_NAME}!A:F`,
         });
 
         const rows = response.data.values || [];
@@ -56,9 +56,8 @@ exports.handler = async (event, context) => {
             publishDate: row[1] || '',
             gender: row[2] || '',
             nationality: row[3] || '',
-            status: row[4] || '',
-            photo: row[5] || '',
-            nicknames: row[6] || ''
+            photo: row[4] || '',
+            nicknames: row[5] || ''
         })).filter(celebrity => celebrity.publishDate); // Filter by publishDate instead of name
 
         return {

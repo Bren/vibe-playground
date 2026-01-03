@@ -39,7 +39,7 @@ exports.handler = async (event, context) => {
         
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A:G`,
+            range: `${SHEET_NAME}!A:F`,
         });
 
         const rows = response.data.values || [];
@@ -53,7 +53,6 @@ exports.handler = async (event, context) => {
             publishDate: { complete: 0, incomplete: 0 },
             gender: { complete: 0, incomplete: 0 },
             nationality: { complete: 0, incomplete: 0 },
-            status: { complete: 0, incomplete: 0 },
             photo: { complete: 0, incomplete: 0 },
             nicknames: { complete: 0, incomplete: 0 }
         };
@@ -64,9 +63,8 @@ exports.handler = async (event, context) => {
             stats.publishDate[row[1] && row[1].trim() ? 'complete' : 'incomplete']++;
             stats.gender[row[2] && row[2].trim() ? 'complete' : 'incomplete']++;
             stats.nationality[row[3] && row[3].trim() ? 'complete' : 'incomplete']++;
-            stats.status[row[4] && row[4].trim() ? 'complete' : 'incomplete']++;
-            stats.photo[row[5] && row[5].trim() ? 'complete' : 'incomplete']++;
-            stats.nicknames[row[6] && row[6].trim() ? 'complete' : 'incomplete']++;
+            stats.photo[row[4] && row[4].trim() ? 'complete' : 'incomplete']++;
+            stats.nicknames[row[5] && row[5].trim() ? 'complete' : 'incomplete']++;
         });
         
         return {
@@ -75,7 +73,7 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({
                 success: true,
                 totalEntries: totalEntries,
-                stats: stats
+                columnStats: stats
             })
         };
 
