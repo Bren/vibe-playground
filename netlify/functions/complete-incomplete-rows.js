@@ -100,8 +100,8 @@ exports.handler = async (event, context) => {
         
         // Process incomplete rows in batches to avoid timeout
         // Netlify free tier has ~10-26 second timeout, so we'll process in batches
-        // Reduced to 10 rows per batch since each lookup can take 1-2 seconds
-        const BATCH_SIZE = 10; // Process 10 rows at a time to avoid timeout
+        // Process 100 rows at a time - with delays between requests, this should complete within timeout
+        const BATCH_SIZE = 100; // Process 100 rows at a time
         const rowsToProcess = incompleteRows.slice(0, BATCH_SIZE);
         
         console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
@@ -979,8 +979,10 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
         
         // Get photo (P18) - try multiple sources for best quality
         const photos = entity.claims?.P18 || [];
+        console.log(`   📸 Checking for photos: ${photos.length} P18 claims found`);
         if (photos.length > 0) {
             const photoValue = photos[0].mainsnak?.datavalue?.value;
+            console.log(`   📸 Photo value from Wikidata: ${photoValue ? photoValue.substring(0, 50) + '...' : 'null'}`);
             if (photoValue) {
                 const filename = photoValue.replace(/ /g, '_');
                 
@@ -991,7 +993,7 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                         try {
                             const wikiSummary = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`, {
                                 headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                                timeout: 3000
+                                timeout: 8000
                             });
                             if (wikiSummary.data.thumbnail?.source) {
                                 photo = wikiSummary.data.thumbnail.source;
@@ -1001,10 +1003,12 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                                 console.log(`   📸 Found photo from Wikipedia original: ${photo.substring(0, 80)}...`);
                             }
                         } catch (e) {
+                            console.log(`   ⚠️ Wikipedia summary API failed: ${e.message}`);
                             // Fall through to Commons URL
                         }
                     }
                 } catch (e) {
+                    console.log(`   ⚠️ Wikipedia summary API error: ${e.message}`);
                     // Fall through
                 }
                 
@@ -1025,9 +1029,15 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                     // Prefer Commons direct URL for better quality
                     photo = directCommonsUrl;
                 }
+            } else {
+                console.log(`   ⚠️ Photo value is null or empty`);
             }
         } else {
             console.log(`   ⚠️ No P18 image property found in Wikidata`);
+        }
+        
+        if (!photo) {
+            console.log(`   ⚠️ No photo extracted after all attempts`);
         }
         
         // Get comprehensive nicknames/aliases/name variations
@@ -1066,14 +1076,22 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
             }
         });
         
+        // Also add the main name itself as a nickname if we have it
+        if (mainName && mainName.trim()) {
+            aliases.push(mainName);
+        }
+        
         if (aliases.length > 0) {
-            // Remove duplicates and the original name, limit to reasonable number
+            // Remove duplicates and limit to reasonable number
             const uniqueAliases = [...new Set(aliases)]
-                .filter(alias => alias && alias.trim() && alias.toLowerCase() !== mainName.toLowerCase())
+                .filter(alias => alias && alias.trim())
                 .slice(0, 10); // Increased limit to get more name variations
             if (uniqueAliases.length > 0) {
                 extractedNicknames = uniqueAliases.join(', ');
+                console.log(`   📝 Extracted ${uniqueAliases.length} nicknames: ${extractedNicknames.substring(0, 100)}...`);
             }
+        } else {
+            console.log(`   ⚠️ No nicknames/aliases found in Wikidata`);
         }
         
         return {
