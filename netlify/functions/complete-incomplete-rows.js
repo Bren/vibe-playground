@@ -5,11 +5,17 @@ const OpenAI = require('openai');
 // Helper function to translate gender to Hebrew
 function translateGenderToHebrew(gender) {
     if (!gender) return null;
-    const lower = gender.toLowerCase();
-    if (lower.includes('male') || lower === 'male' || lower === 'זכר') {
-        return 'זכר';
-    } else if (lower.includes('female') || lower === 'female' || lower === 'נקבה') {
+    const lower = gender.toLowerCase().trim();
+    
+    // Check for female FIRST (because "female" contains "male" as a substring!)
+    if (lower === 'female' || lower === 'נקבה' || lower.includes('female')) {
         return 'נקבה';
+    } else if (lower === 'male' || lower === 'זכר' || lower.includes('male')) {
+        return 'זכר';
+    } else if (lower.includes('non-binary') || lower.includes('nonbinary')) {
+        return 'לא-בינארי';
+    } else if (lower.includes('intersex')) {
+        return 'אינטרסקס';
     }
     return gender; // Return as-is if not recognized
 }
