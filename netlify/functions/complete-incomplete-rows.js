@@ -165,8 +165,8 @@ exports.handler = async (event, context) => {
         // Process incomplete rows in batches to avoid timeout
         // Netlify free tier has ~10-26 second timeout, so we'll process in batches
         // Process rows in batches to avoid Netlify timeout (~10-26 seconds)
-        // Reduced to 15 rows to ensure we stay well under timeout limits
-        const BATCH_SIZE = 15; // Process 15 rows at a time
+        // Set to 25 rows for better throughput while staying under timeout limits
+        const BATCH_SIZE = 25; // Process 25 rows at a time
         const rowsToProcess = incompleteRows.slice(0, BATCH_SIZE);
         
         console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
