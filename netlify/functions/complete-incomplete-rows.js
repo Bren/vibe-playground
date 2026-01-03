@@ -178,6 +178,19 @@ exports.handler = async (event, context) => {
                         wikipediaFailureCount++;
                         console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}`);
                         console.log(`   📊 Row needs: gender=${!row.gender ? 'YES' : 'no'}, nationality=${!row.nationality ? 'YES' : 'no'}, photo=${!row.photo ? 'YES' : 'no'}, nicknames=${!row.nicknames ? 'YES' : 'no'}`);
+                        
+                        // Store failure details for debugging
+                        if (lookupErrors.length < 10) {
+                            lookupErrors.push({
+                                name: row.name,
+                                error: 'No Wikipedia/Wikidata data found',
+                                type: 'NoResults',
+                                code: 'N/A',
+                                httpStatus: 'N/A',
+                                responseData: 'Search completed but returned no results',
+                                searchTerms: row.nicknames ? row.nicknames.split(',').slice(0, 3).join(', ') : row.name
+                            });
+                        }
                     }
                 } catch (err) {
                     wikipediaFailureCount++;
@@ -570,7 +583,8 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         
         // If Wikipedia search also failed, return null
         if (!title) {
-            console.log(`   ❌ No results from Wikidata or Wikipedia`);
+            console.log(`   ❌ No results from Wikidata or Wikipedia after trying all search terms`);
+            console.log(`   📋 Search terms attempted: ${searchTerms.map(s => `"${s.term}" (${s.lang})`).join(', ')}`);
             return null;
         }
         
