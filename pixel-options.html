@@ -1239,6 +1239,20 @@
                         console.warn(`   - Wikipedia lookups: ${wikiSuccess} succeeded, ${wikiFailure} failed`);
                         if (wikiFailure === data.processed) {
                             console.error('❌ ALL Wikipedia lookups failed! This is the problem.');
+                            
+                            // Show lookup errors if available
+                            if (data.lookupErrors && data.lookupErrors.length > 0) {
+                                console.error('📋 Wikipedia lookup errors (first 10):');
+                                data.lookupErrors.forEach((err, idx) => {
+                                    console.error(`   ${idx + 1}. ${err.name}:`);
+                                    console.error(`      - Error: ${err.error}`);
+                                    console.error(`      - Type: ${err.type}, Code: ${err.code}`);
+                                    console.error(`      - HTTP Status: ${err.httpStatus}`);
+                                    if (err.responseData !== 'N/A') {
+                                        console.error(`      - Response: ${err.responseData}`);
+                                    }
+                                });
+                            }
                         } else if (wikiSuccess > 0 && updatedCount === 0) {
                             console.error('❌ Wikipedia lookups succeeded but no rows were updated! This suggests a change detection issue.');
                         } else {
