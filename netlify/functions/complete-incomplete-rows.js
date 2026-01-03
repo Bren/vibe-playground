@@ -511,26 +511,27 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
 
                 const entity = wdRes.data.entities?.[wikidataId];
                 if (entity) {
-                    // Get photo from Wikidata P18 (image property) - better quality than Wikipedia thumbnail
+                    // Get photo from Wikidata P18 (image property) - try multiple formats
                     const photos = entity.claims?.P18 || [];
-                    if (photos.length > 0 && !photo) {
-                        const photoValue = photos[0].mainsnak?.datavalue?.value;
-                        if (photoValue) {
-                            // Construct proper Wikimedia Commons URL
-                            const filename = photoValue.replace(/ /g, '_');
-                            // Try to get a good size thumbnail (800px width is a good balance)
-                            photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
-                            console.log(`   📸 Found photo from Wikidata P18: ${photo.substring(0, 80)}...`);
-                        }
-                    } else if (photos.length > 0 && photo) {
-                        // We have a photo from Wikipedia, but let's try to get a better one from Commons
+                    if (photos.length > 0) {
                         const photoValue = photos[0].mainsnak?.datavalue?.value;
                         if (photoValue) {
                             const filename = photoValue.replace(/ /g, '_');
-                            // Use Commons direct file URL for better quality
-                            const commonsPhoto = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
-                            console.log(`   📸 Upgrading to Commons photo: ${commonsPhoto.substring(0, 80)}...`);
-                            photo = commonsPhoto;
+                            
+                            // Try direct Commons file URL (most reliable format)
+                            // Format: https://upload.wikimedia.org/wikipedia/commons/[first char]/[first 2 chars]/[filename]
+                            const firstChar = filename.substring(0, 1);
+                            const firstTwoChars = filename.substring(0, 2);
+                            const directCommonsUrl = `https://upload.wikimedia.org/wikipedia/commons/${firstChar}/${firstTwoChars}/${encodeURIComponent(filename)}`;
+                            
+                            if (!photo) {
+                                photo = directCommonsUrl;
+                                console.log(`   📸 Found photo from Wikidata P18 (direct): ${photo.substring(0, 80)}...`);
+                            } else {
+                                // Upgrade to Commons direct URL for better quality
+                                console.log(`   📸 Upgrading to Commons direct URL: ${directCommonsUrl.substring(0, 80)}...`);
+                                photo = directCommonsUrl;
+                            }
                         }
                     }
                     
@@ -860,18 +861,22 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                     // Fall through
                 }
                 
-                // Strategy 2: Use Commons direct file URL with good size (800px width)
+                // Strategy 2: Try Commons direct file URL (multiple formats for reliability)
                 if (!photo) {
-                    photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
-                    console.log(`   📸 Using Commons photo: ${photo.substring(0, 80)}...`);
+                    // Try direct upload.wikimedia.org URL (most reliable)
+                    const firstChar = filename.substring(0, 1);
+                    const firstTwoChars = filename.substring(0, 2);
+                    photo = `https://upload.wikimedia.org/wikipedia/commons/${firstChar}/${firstTwoChars}/${encodeURIComponent(filename)}`;
+                    console.log(`   📸 Using Commons direct URL: ${photo.substring(0, 80)}...`);
                 } else {
-                    // We have a photo, but let's upgrade to Commons for better quality
-                    const commonsPhoto = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
-                    console.log(`   📸 Also available from Commons: ${commonsPhoto.substring(0, 80)}...`);
-                    // Use Commons if we don't have a good Wikipedia photo
-                    if (!photo.includes('commons.wikimedia.org')) {
-                        photo = commonsPhoto;
-                    }
+                    // We have a photo from Wikipedia, but let's upgrade to Commons for better quality
+                    const firstChar = filename.substring(0, 1);
+                    const firstTwoChars = filename.substring(0, 2);
+                    const directCommonsUrl = `https://upload.wikimedia.org/wikipedia/commons/${firstChar}/${firstTwoChars}/${encodeURIComponent(filename)}`;
+                    console.log(`   📸 Upgrading to Commons direct URL: ${directCommonsUrl.substring(0, 80)}...`);
+                    
+                    // Prefer Commons direct URL for better quality
+                    photo = directCommonsUrl;
                 }
             }
         } else {
