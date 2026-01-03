@@ -1,6 +1,63 @@
 const { google } = require('googleapis');
 const axios = require('axios');
 
+// Helper function to translate gender to Hebrew
+function translateGenderToHebrew(gender) {
+    if (!gender) return null;
+    const lower = gender.toLowerCase();
+    if (lower.includes('male') || lower === 'male' || lower === 'זכר') {
+        return 'זכר';
+    } else if (lower.includes('female') || lower === 'female' || lower === 'נקבה') {
+        return 'נקבה';
+    }
+    return gender; // Return as-is if not recognized
+}
+
+// Helper function to translate nationality to Hebrew
+function translateNationalityToHebrew(nationality) {
+    if (!nationality) return null;
+    
+    const translations = {
+        'israel': 'ישראל',
+        'united states': 'ארצות הברית',
+        'united kingdom': 'בריטניה',
+        'ukraine': 'אוקראינה',
+        'france': 'צרפת',
+        'germany': 'גרמניה',
+        'italy': 'איטליה',
+        'spain': 'ספרד',
+        'canada': 'קנדה',
+        'australia': 'אוסטרליה',
+        'russia': 'רוסיה',
+        'china': 'סין',
+        'japan': 'יפן',
+        'india': 'הודו',
+        'brazil': 'ברזיל',
+        'mexico': 'מקסיקו',
+        'argentina': 'ארגנטינה',
+        'south korea': 'דרום קוריאה',
+        'poland': 'פולין',
+        'netherlands': 'הולנד',
+        'belgium': 'בלגיה',
+        'sweden': 'שוודיה',
+        'norway': 'נורווגיה',
+        'denmark': 'דנמרק',
+        'finland': 'פינלנד',
+        'greece': 'יוון',
+        'portugal': 'פורטוגל',
+        'ireland': 'אירלנד',
+        'switzerland': 'שוויץ',
+        'austria': 'אוסטריה',
+        'turkey': 'טורקיה',
+        'egypt': 'מצרים',
+        'south africa': 'דרום אפריקה',
+        'new zealand': 'ניו זילנד'
+    };
+    
+    const lower = nationality.toLowerCase().trim();
+    return translations[lower] || nationality; // Return Hebrew translation or original if not found
+}
+
 exports.handler = async (event, context) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -695,14 +752,8 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                             });
                             const genderLabel = genderRes.data.entities?.[genderId]?.labels?.en?.value;
                             if (genderLabel) {
-                                // Map to simple gender values
-                                if (genderLabel.toLowerCase().includes('male') || genderLabel.toLowerCase() === 'male') {
-                                    gender = 'Male';
-                                } else if (genderLabel.toLowerCase().includes('female') || genderLabel.toLowerCase() === 'female') {
-                                    gender = 'Female';
-                                } else {
-                                    gender = genderLabel;
-                                }
+                                // Map to Hebrew gender values
+                                gender = translateGenderToHebrew(genderLabel);
                             }
                         }
                     }
@@ -769,7 +820,10 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                 headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
                 timeout: 3000
             });
-            nationality = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
+            const nationalityEn = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
+            if (nationalityEn) {
+                nationality = translateNationalityToHebrew(nationalityEn);
+            }
         }
                     
                     // Get comprehensive nicknames/aliases/name variations
@@ -975,7 +1029,10 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                 headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
                 timeout: 3000
             });
-            nationality = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
+            const nationalityEn = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
+            if (nationalityEn) {
+                nationality = translateNationalityToHebrew(nationalityEn);
+            }
         }
         
         // Get photo (P18) - try multiple sources for best quality
