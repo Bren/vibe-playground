@@ -823,7 +823,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                             .filter(alias => alias && alias.trim() && alias.toLowerCase() !== name.toLowerCase())
                             .slice(0, 10); // Increased limit to get more name variations
                         if (uniqueAliases.length > 0) {
-                            nicknames = uniqueAliases.join(', ');
+                            extractedNicknames = uniqueAliases.join(', ');
                         }
                     }
                 }
@@ -831,13 +831,13 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                 console.error('Error fetching Wikidata:', err);
             }
         }
-
+        
         return {
             name: data.title,
             gender: gender,
             nationality: nationality,
             photo: photo,
-            nicknames: nicknames
+            nicknames: extractedNicknames
         };
 
     } catch (error) {
