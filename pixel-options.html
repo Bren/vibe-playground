@@ -1207,12 +1207,7 @@
                 return;
             }
             
-            if (!confirm('This will scan and complete missing information. This may take a while. Continue?')) {
-                console.log('❌ User cancelled');
-                return;
-            }
-            
-            console.log('✅ User confirmed, starting processing...');
+            console.log('✅ Starting processing...');
             correctBtn.disabled = true;
             statsContent.innerHTML = '<div class="modal-loading">Processing... This may take a minute.</div>';
             
