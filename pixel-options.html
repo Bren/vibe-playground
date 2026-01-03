@@ -167,6 +167,11 @@
         /* Generate Button */
         .generate-section {
             margin: 2rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         
         .generate-btn {
@@ -194,6 +199,55 @@
             box-shadow: none;
         }
         
+        .complete-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .complete-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .complete-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results-section {
+            margin: 2rem 0;
+            padding: 20px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .results-section h3 {
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .results-section .result-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        
         /* Celebrity Cards - Force 5 in one row */
         .celebrities-grid {
             display: grid;
@@ -209,6 +263,18 @@
             transition: all 0.3s ease;
             border: 2px solid rgba(255, 255, 255, 0.2);
             position: relative;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
         
         .celebrity-card:hover {
@@ -363,6 +429,16 @@
                 font-size: 0.6rem;
                 min-height: 18px;
             }
+            
+            .generate-section {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .complete-btn {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
@@ -396,6 +472,9 @@
                 <button id="generateBtn" class="generate-btn" onclick="generateCelebrities()">
                     Generate 5 New Celebrities
                     </button>
+                <button id="completeBtn" class="complete-btn" onclick="completeIncompleteRows()">
+                    Complete Incomplete Rows
+                </button>
             </div>
             
             <!-- Confirm Section -->
@@ -408,6 +487,12 @@
             
             <div id="loadingMessage" class="loading" style="display: none;">
                 Generating celebrities...
+            </div>
+            
+            <!-- Results Section for Complete Incomplete Rows -->
+            <div id="resultsSection" class="results-section">
+                <h3>Completion Results</h3>
+                <div id="resultsContent"></div>
             </div>
             
             <div id="celebritiesContainer" class="celebrities-grid">
@@ -609,7 +694,7 @@
             renderDatePicker();
         }
         
-        // Generate celebrities from API
+        // Generate celebrities from API - Live streaming version
         async function generateCelebrities() {
             const generateBtn = document.getElementById('generateBtn');
             const loadingMsg = document.getElementById('loadingMessage');
@@ -617,43 +702,71 @@
             
             generateBtn.disabled = true;
             loadingMsg.style.display = 'block';
-            container.innerHTML = '';
+            loadingMsg.textContent = 'Searching for celebrities... (0/5)';
+            
+            // Clear only new celebrities, keep existing ones
+            const newCelebrities = [];
+            const excludeNames = displayedCelebrities.map(c => c.name);
             
             try {
-                console.log('🔄 Generating celebrities...');
-                const response = await fetch('/.netlify/functions/generate-celebrities');
+                console.log('🔄 Generating celebrities live...');
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log('📦 Response data:', data);
-                
-                if (data.success && data.celebrities && data.celebrities.length > 0) {
-                    // Filter out celebrities with recognizability score below 50 (frontend filter)
-                    const filteredCelebs = data.celebrities.filter(celeb => 
-                        celeb.recognizabilityScore && celeb.recognizabilityScore >= 50
-                    );
+                // Generate 5 celebrities one by one
+                for (let i = 0; i < 5; i++) {
+                    loadingMsg.textContent = `Searching for celebrities... (${i}/5)`;
                     
-                    console.log(`✅ Generated ${data.celebrities.length} celebrities, ${filteredCelebs.length} with score ≥ 50`);
-                    
-                    if (filteredCelebs.length === 0) {
-                        // If none meet the 50 threshold, show what we have but warn
-                        console.warn('⚠️ No celebrities with score ≥ 50, showing all results');
-                        displayedCelebrities.push(...data.celebrities);
-                        renderCelebrities();
-                        showError('Note: Some celebrities have lower recognizability scores. Try generating again for better results.');
-                    } else {
-                        // Append to existing list
-                        displayedCelebrities.push(...filteredCelebs);
-                        renderCelebrities();
+                    try {
+                        const response = await fetch('/.netlify/functions/generate-single-celebrity', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ excludeNames: excludeNames })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.success && data.celebrity) {
+                            const celeb = data.celebrity;
+                            
+                            // Filter by recognizability score (≥ 50)
+                            if (celeb.recognizabilityScore && celeb.recognizabilityScore >= 50) {
+                                newCelebrities.push(celeb);
+                                excludeNames.push(celeb.name);
+                                
+                                // Add to displayed list immediately
+                                displayedCelebrities.push(celeb);
+                                renderCelebrities();
+                                
+                                console.log(`✅ Found ${i + 1}/5: ${celeb.name} (score: ${celeb.recognizabilityScore})`);
+                            } else {
+                                console.log(`⚠️ Skipping ${celeb.name} - score too low: ${celeb.recognizabilityScore}`);
+                                i--; // Try again for this slot
+                                continue;
+                            }
+                        } else {
+                            console.log(`⚠️ Failed to generate celebrity ${i + 1}, retrying...`);
+                            i--; // Retry this slot
+                            continue;
+                        }
+                    } catch (error) {
+                        console.error(`Error generating celebrity ${i + 1}:`, error);
+                        i--; // Retry this slot
+                        continue;
                     }
-                } else {
-                    const errorMsg = data.error || 'No celebrities returned';
-                    console.error('❌ Generation failed:', errorMsg);
-                    showError('Failed to generate celebrities: ' + errorMsg + (data.attempts ? ` (tried ${data.attempts} times)` : ''));
+                    
+                    // Small delay between requests to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
+                
+                if (newCelebrities.length === 0) {
+                    showError('Could not find any suitable celebrities. Try generating again.');
+                } else if (newCelebrities.length < 5) {
+                    showError(`Found ${newCelebrities.length} celebrities (some may have been skipped due to low scores).`);
+                }
+                
             } catch (error) {
                 console.error('❌ Error generating celebrities:', error);
                 showError('Failed to generate celebrities: ' + error.message + '. Check console for details.');
@@ -823,6 +936,92 @@
             setTimeout(() => {
                 errorEl.style.display = 'none';
             }, 5000);
+        }
+        
+        // Complete incomplete rows
+        async function completeIncompleteRows() {
+            const completeBtn = document.getElementById('completeBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            const loadingMsg = document.getElementById('loadingMessage');
+            
+            if (!confirm('This will scan all rows and complete missing data. This may take a while. Continue?')) {
+                return;
+            }
+            
+            completeBtn.disabled = true;
+            loadingMsg.style.display = 'block';
+            loadingMsg.textContent = 'Scanning and completing incomplete rows...';
+            resultsSection.classList.remove('active');
+            resultsContent.innerHTML = '';
+            
+            try {
+                console.log('🔄 Completing incomplete rows...');
+                const response = await fetch('/.netlify/functions/complete-incomplete-rows', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                if (data.success) {
+                    let html = `
+                        <div class="result-item">
+                            <strong>✅ Processing Complete!</strong>
+                        </div>
+                        <div class="result-item">
+                            <strong>Complete rows:</strong> ${data.completeRows}
+                        </div>
+                        <div class="result-item">
+                            <strong>Incomplete rows found:</strong> ${data.incompleteRows}
+                        </div>
+                        <div class="result-item">
+                            <strong>Rows updated:</strong> ${data.updated}
+                        </div>
+                    `;
+                    
+                    if (data.updatedRows && data.updatedRows.length > 0) {
+                        html += '<div class="result-item"><strong>Updated rows:</strong><ul style="margin-top: 10px; padding-left: 20px;">';
+                        data.updatedRows.forEach(row => {
+                            const updates = Object.entries(row.updated)
+                                .filter(([key, value]) => value !== null)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(', ');
+                            html += `<li>Row ${row.rowIndex}: ${row.name} - ${updates || 'No updates'}</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
+                    
+                    if (data.errorDetails && data.errorDetails.length > 0) {
+                        html += `<div class="result-item" style="background: rgba(255, 0, 0, 0.1);"><strong>Errors (${data.errors}):</strong><ul style="margin-top: 10px; padding-left: 20px;">`;
+                        data.errorDetails.forEach(error => {
+                            html += `<li>Row ${error.rowIndex}: ${error.name || 'N/A'} - ${error.error}</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
+                    
+                    resultsContent.innerHTML = html;
+                    resultsSection.classList.add('active');
+                    
+                    // Reload occupied dates to reflect any changes
+                    await loadOccupiedDates();
+                    renderDatePicker();
+                    
+                } else {
+                    showError('Failed to complete rows: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('❌ Error completing rows:', error);
+                showError('Failed to complete rows: ' + error.message + '. Check console for details.');
+            } finally {
+                completeBtn.disabled = false;
+                loadingMsg.style.display = 'none';
+            }
         }
     </script>
 </body>
