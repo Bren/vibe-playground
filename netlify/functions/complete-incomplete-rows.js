@@ -183,18 +183,42 @@ exports.handler = async (event, context) => {
                     nicknames: row.nicknames || (celebInfo ? celebInfo.nicknames : '') || ''
                 };
                 
+                // Normalize empty strings for comparison
+                const normalize = (val) => (val || '').trim();
+                const originalRow = {
+                    gender: normalize(row.gender),
+                    nationality: normalize(row.nationality),
+                    status: normalize(row.status),
+                    photo: normalize(row.photo),
+                    nicknames: normalize(row.nicknames)
+                };
+                const updatedRowNormalized = {
+                    gender: normalize(updatedRow.gender),
+                    nationality: normalize(updatedRow.nationality),
+                    status: normalize(updatedRow.status),
+                    photo: normalize(updatedRow.photo),
+                    nicknames: normalize(updatedRow.nicknames)
+                };
+                
                 // Check if anything actually changed
                 const hasChanges = 
-                    updatedRow.gender !== row.gender ||
-                    updatedRow.nationality !== row.nationality ||
-                    updatedRow.status !== row.status ||
-                    updatedRow.photo !== row.photo ||
-                    updatedRow.nicknames !== row.nicknames;
+                    updatedRowNormalized.gender !== originalRow.gender ||
+                    updatedRowNormalized.nationality !== originalRow.nationality ||
+                    updatedRowNormalized.status !== originalRow.status ||
+                    updatedRowNormalized.photo !== originalRow.photo ||
+                    updatedRowNormalized.nicknames !== originalRow.nicknames;
                 
                 if (!hasChanges) {
                     console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name}`);
                     continue;
                 }
+                
+                console.log(`   📊 Changes detected:`);
+                if (updatedRowNormalized.gender !== originalRow.gender) console.log(`      Gender: "${originalRow.gender}" → "${updatedRowNormalized.gender}"`);
+                if (updatedRowNormalized.nationality !== originalRow.nationality) console.log(`      Nationality: "${originalRow.nationality}" → "${updatedRowNormalized.nationality}"`);
+                if (updatedRowNormalized.status !== originalRow.status) console.log(`      Status: "${originalRow.status}" → "${updatedRowNormalized.status}"`);
+                if (updatedRowNormalized.photo !== originalRow.photo) console.log(`      Photo: "${originalRow.photo ? 'has' : 'none'}" → "${updatedRowNormalized.photo ? 'has' : 'none'}"`);
+                if (updatedRowNormalized.nicknames !== originalRow.nicknames) console.log(`      Nicknames: "${originalRow.nicknames}" → "${updatedRowNormalized.nicknames}"`);
                 
                 console.log(`   📝 Will update: gender=${updatedRow.gender || 'N/A'}, nationality=${updatedRow.nationality || 'N/A'}, status=${updatedRow.status || 'N/A'}`);
                 
