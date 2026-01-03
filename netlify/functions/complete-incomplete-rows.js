@@ -158,6 +158,12 @@ exports.handler = async (event, context) => {
                 try {
                     console.log(`   🔍 Attempting Wikipedia lookup for: "${row.name}"${row.nicknames ? ` (nicknames: ${row.nicknames})` : ''}`);
                     const lookupStartTime = Date.now();
+                    
+                    // Add small delay to avoid rate limiting (50ms between requests)
+                    if (processedCount > 0) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
+                    
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
                     const lookupDuration = Date.now() - lookupStartTime;
                     console.log(`   ⏱️ Lookup took ${lookupDuration}ms`);
