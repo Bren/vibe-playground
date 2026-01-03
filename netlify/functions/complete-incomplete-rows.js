@@ -388,40 +388,62 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
             }
         }
         
-        // If Wikipedia search failed, try Wikidata search directly
-        if (!title) {
-            console.log(`   ⚠️ No Wikipedia results, trying Wikidata search directly...`);
-            
-            // Try searching Wikidata by label (works for Hebrew names)
-            for (const { term, lang } of searchTerms.slice(0, 3)) { // Try first 3 search terms
-                try {
-                    const wdSearchRes = await axios.get('https://www.wikidata.org/w/api.php', {
-                        params: {
-                            action: 'wbsearchentities',
-                            search: term,
-                            language: lang === 'he' ? 'he' : 'en',
-                            limit: 3,
-                            format: 'json',
-                            origin: '*'
-                        },
-                        headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                        timeout: 5000
-                    });
-                    
-                    const wdResults = wdSearchRes.data?.search || [];
-                    if (wdResults.length > 0) {
-                        const wikidataId = wdResults[0].id;
-                        console.log(`   ✅ Found Wikidata entity: ${wikidataId} (searched: ${term})`);
-                        
-                        // Get entity data directly from Wikidata
-                        return await getCelebrityInfoFromWikidataId(wikidataId);
-                    }
-                } catch (err) {
-                    console.log(`   ⚠️ Wikidata search failed for "${term}": ${err.message}`);
-                    continue;
+        // Try Wikidata search directly FIRST (better for disambiguation)
+        // This helps avoid getting disambiguation pages from Wikipedia
+        let wikidataIdFromSearch = null;
+        console.log(`   🔍 Searching Wikidata directly for: "${searchTerms[0].term}"...`);
+        for (const { term, lang } of searchTerms.slice(0, 3)) {
+            try {
+                const wdSearchRes = await axios.get('https://www.wikidata.org/w/api.php', {
+                    params: {
+                        action: 'wbsearchentities',
+                        search: term,
+                        language: lang === 'he' ? 'he' : 'en',
+                        limit: 5,
+                        format: 'json',
+                        origin: '*'
+                    },
+                    headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                    timeout: 5000
+                });
+                
+                const wdResults = wdSearchRes.data?.search || [];
+                if (wdResults.length > 0) {
+                    // Prefer results that look like people (have "musician", "singer", "actor", etc. in description)
+                    const personResults = wdResults.filter(r => 
+                        r.description && (
+                            r.description.toLowerCase().includes('musician') ||
+                            r.description.toLowerCase().includes('singer') ||
+                            r.description.toLowerCase().includes('actor') ||
+                            r.description.toLowerCase().includes('person') ||
+                            r.description.toLowerCase().includes('born') ||
+                            r.description.toLowerCase().includes('character')
+                        )
+                    );
+                    const bestResult = personResults.length > 0 ? personResults[0] : wdResults[0];
+                    wikidataIdFromSearch = bestResult.id;
+                    console.log(`   ✅ Found Wikidata entity: ${wikidataIdFromSearch} (${bestResult.description || 'no description'})`);
+                    break;
                 }
+            } catch (err) {
+                console.log(`   ⚠️ Wikidata search failed for "${term}": ${err.message}`);
+                continue;
             }
-            
+        }
+        
+        // If Wikidata search failed, try Wikipedia
+        if (!wikidataIdFromSearch && !title) {
+            console.log(`   ⚠️ No Wikidata results, trying Wikipedia search...`);
+            // Continue with Wikipedia search below
+        }
+        
+        // If we found Wikidata ID directly, use it
+        if (wikidataIdFromSearch) {
+            return await getCelebrityInfoFromWikidataId(wikidataIdFromSearch);
+        }
+        
+        // If Wikipedia search also failed, return null
+        if (!title) {
             console.log(`   ❌ No results from Wikipedia or Wikidata`);
             return null;
         }
