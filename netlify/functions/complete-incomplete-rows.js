@@ -150,22 +150,25 @@ exports.handler = async (event, context) => {
                 try {
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
                     if (celebInfo) {
-                        console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}`);
+                        console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}, nicknames=${celebInfo.nicknames || 'N/A'}`);
                     } else {
-                        console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}, will only fix misalignments and defaults`);
+                        console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}, will only fix misalignments`);
                     }
                 } catch (err) {
-                    console.log(`   ⚠️ Error fetching Wikipedia data: ${err.message}, will only fix misalignments and defaults`);
+                    console.log(`   ⚠️ Error fetching Wikipedia data: ${err.message}, will only fix misalignments`);
                 }
                 
-                // Build updated row - use Wikipedia data if available, otherwise just fix what we can
+                // Build updated row - fill missing fields with Wikipedia data
+                // Only use existing data if it's not empty, otherwise use Wikipedia data
                 const updatedRow = {
                     name: row.name, // Keep original name
                     publishDate: row.publishDate || '', // Keep publish date if exists
-                    gender: fixedGender || (celebInfo ? celebInfo.gender : '') || '',
-                    nationality: fixedNationality || (celebInfo ? celebInfo.nationality : '') || '',
-                    photo: fixedPhoto || (celebInfo ? celebInfo.photo : '') || '',
-                    nicknames: row.nicknames || (celebInfo ? celebInfo.nicknames : '') || ''
+                    // Use existing value if present, otherwise use Wikipedia data
+                    gender: (fixedGender && fixedGender.trim()) ? fixedGender : (celebInfo?.gender || ''),
+                    nationality: (fixedNationality && fixedNationality.trim()) ? fixedNationality : (celebInfo?.nationality || ''),
+                    photo: (fixedPhoto && fixedPhoto.trim()) ? fixedPhoto : (celebInfo?.photo || ''),
+                    // For nicknames, merge existing with Wikipedia data (avoid duplicates)
+                    nicknames: mergeNicknames(row.nicknames, celebInfo?.nicknames)
                 };
                 
                 // Normalize empty strings for comparison
@@ -196,12 +199,20 @@ exports.handler = async (event, context) => {
                 }
                 
                 console.log(`   📊 Changes detected:`);
-                if (updatedRowNormalized.gender !== originalRow.gender) console.log(`      Gender: "${originalRow.gender}" → "${updatedRowNormalized.gender}"`);
-                if (updatedRowNormalized.nationality !== originalRow.nationality) console.log(`      Nationality: "${originalRow.nationality}" → "${updatedRowNormalized.nationality}"`);
-                if (updatedRowNormalized.photo !== originalRow.photo) console.log(`      Photo: "${originalRow.photo ? 'has' : 'none'}" → "${updatedRowNormalized.photo ? 'has' : 'none'}"`);
-                if (updatedRowNormalized.nicknames !== originalRow.nicknames) console.log(`      Nicknames: "${originalRow.nicknames}" → "${updatedRowNormalized.nicknames}"`);
+                if (updatedRowNormalized.gender !== originalRow.gender) {
+                    console.log(`      Gender: "${originalRow.gender || '(empty)'}" → "${updatedRowNormalized.gender || '(empty)'}"`);
+                }
+                if (updatedRowNormalized.nationality !== originalRow.nationality) {
+                    console.log(`      Nationality: "${originalRow.nationality || '(empty)'}" → "${updatedRowNormalized.nationality || '(empty)'}"`);
+                }
+                if (updatedRowNormalized.photo !== originalRow.photo) {
+                    console.log(`      Photo: "${originalRow.photo ? 'has URL' : '(empty)'}" → "${updatedRowNormalized.photo ? 'has URL' : '(empty)'}"`);
+                }
+                if (updatedRowNormalized.nicknames !== originalRow.nicknames) {
+                    console.log(`      Nicknames: "${originalRow.nicknames || '(empty)'}" → "${updatedRowNormalized.nicknames || '(empty)'}"`);
+                }
                 
-                console.log(`   📝 Will update: gender=${updatedRow.gender || 'N/A'}, nationality=${updatedRow.nationality || 'N/A'}, photo=${updatedRow.photo ? 'yes' : 'no'}`);
+                console.log(`   📝 Final values: gender="${updatedRow.gender || '(empty)'}", nationality="${updatedRow.nationality || '(empty)'}", photo="${updatedRow.photo ? 'has URL' : '(empty)'}", nicknames="${updatedRow.nicknames || '(empty)'}"`);
                 
                 // Update the row in the sheet
                 const values = [[
@@ -682,5 +693,22 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
         console.error('Error getting info from Wikidata ID:', error);
         return null;
     }
+}
+
+// Helper function to merge nicknames, avoiding duplicates
+function mergeNicknames(existing, fromWiki) {
+    const existingList = existing ? existing.split(',').map(n => n.trim()).filter(n => n) : [];
+    const wikiList = fromWiki ? fromWiki.split(',').map(n => n.trim()).filter(n => n) : [];
+    
+    // Combine and deduplicate (case-insensitive)
+    const all = [...existingList];
+    wikiList.forEach(nick => {
+        const normalized = nick.toLowerCase();
+        if (!all.some(ex => ex.toLowerCase() === normalized)) {
+            all.push(nick);
+        }
+    });
+    
+    return all.length > 0 ? all.join(', ') : '';
 }
 
