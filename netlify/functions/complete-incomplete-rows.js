@@ -100,12 +100,11 @@ exports.handler = async (event, context) => {
             };
         }
         
-        // Process incomplete rows - limit to first 50 to avoid timeout
-        // User can run multiple times to process all rows
-        const maxRowsToProcess = 50;
-        const rowsToProcess = incompleteRows.slice(0, maxRowsToProcess);
+        // Process all incomplete rows
+        // Note: This may take a while, but Netlify functions can handle longer runs
+        const rowsToProcess = incompleteRows;
         
-        console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
+        console.log(`📊 Processing ${rowsToProcess.length} incomplete rows`);
         
         const updatedRows = [];
         const errors = [];
@@ -286,7 +285,10 @@ exports.handler = async (event, context) => {
                 }
                 
                 // Small delay to avoid rate limiting (reduced for faster processing)
-                await new Promise(resolve => setTimeout(resolve, 200));
+                // Only delay every 10 rows to speed up processing
+                if (updatedRows.length % 10 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
                 
             } catch (error) {
                 console.error(`❌ Error processing row ${row.rowIndex} (${row.name}):`, error.message);
@@ -299,13 +301,13 @@ exports.handler = async (event, context) => {
             headers: { ...headers, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 success: true,
-                message: `Processed ${rowsToProcess.length} rows (${incompleteRows.length - rowsToProcess.length} remaining)`,
+                message: `Processed all ${rowsToProcess.length} incomplete rows`,
                 completeRows: completeRows.length,
                 incompleteRows: incompleteRows.length,
                 processed: rowsToProcess.length,
-                remaining: incompleteRows.length - rowsToProcess.length,
+                remaining: 0,
                 updated: updatedRows.length,
-                updatedRows: updatedRows,
+                updatedRows: updatedRows.slice(0, 50), // Limit to first 50 for response size
                 errors: errors.length,
                 errorDetails: errors.slice(0, 20) // Limit error details to first 20
             })
