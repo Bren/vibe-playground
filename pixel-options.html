@@ -210,7 +210,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-        }
+;        }
         
         .complete-btn:hover:not(:disabled) {
             transform: translateY(-2px);
@@ -1233,9 +1233,13 @@
                     
                     if (updatedCount === 0 && data.processed > 0) {
                         console.warn('⚠️ No rows were updated! This could mean:');
+                        console.warn(`   - Wikipedia lookups: ${data.wikipediaSuccess || 0} succeeded, ${data.wikipediaFailure || 0} failed`);
                         console.warn('   - All rows already have data');
                         console.warn('   - Wikipedia lookups failed for all rows');
                         console.warn('   - No changes were detected');
+                        if (data.wikipediaFailure === data.processed) {
+                            console.error('❌ ALL Wikipedia lookups failed! Check Netlify function logs for details.');
+                        }
                     }
                     
                     statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">${message}<br>Refreshing statistics...</div>`;

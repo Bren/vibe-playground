@@ -111,6 +111,8 @@ exports.handler = async (event, context) => {
         const errors = [];
         let processedCount = 0;
         let skippedCount = 0;
+        let wikipediaSuccessCount = 0;
+        let wikipediaFailureCount = 0;
         
         for (const row of rowsToProcess) {
             // Skip rows without a name (can't look up data)
@@ -160,8 +162,10 @@ exports.handler = async (event, context) => {
                     console.log(`   ⏱️ Lookup took ${lookupDuration}ms`);
                     
                     if (celebInfo) {
+                        wikipediaSuccessCount++;
                         console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes (' + celebInfo.photo.substring(0, 50) + '...)' : 'no'}, nicknames=${celebInfo.nicknames || 'N/A'}`);
                     } else {
+                        wikipediaFailureCount++;
                         console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}`);
                         console.log(`   📊 Row needs: gender=${!row.gender ? 'YES' : 'no'}, nationality=${!row.nationality ? 'YES' : 'no'}, photo=${!row.photo ? 'YES' : 'no'}, nicknames=${!row.nicknames ? 'YES' : 'no'}`);
                     }
@@ -296,6 +300,8 @@ exports.handler = async (event, context) => {
         
         console.log(`\n📊 Final Summary:`);
         console.log(`   - Total rows processed: ${rowsToProcess.length}`);
+        console.log(`   - Wikipedia lookups succeeded: ${wikipediaSuccessCount}`);
+        console.log(`   - Wikipedia lookups failed: ${wikipediaFailureCount}`);
         console.log(`   - Rows with changes detected: ${processedCount}`);
         console.log(`   - Rows skipped (no changes): ${skippedCount}`);
         console.log(`   - Rows successfully updated: ${updatedRows.length}`);
@@ -304,7 +310,7 @@ exports.handler = async (event, context) => {
         return {
             statusCode: 200,
             headers: { ...headers, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+                body: JSON.stringify({
                 success: true,
                 message: `Processed ${rowsToProcess.length} rows (${incompleteRows.length - rowsToProcess.length} remaining)`,
                 completeRows: completeRows.length,
@@ -313,6 +319,8 @@ exports.handler = async (event, context) => {
                 remaining: incompleteRows.length - rowsToProcess.length,
                 updated: updatedRows.length,
                 skipped: skippedCount,
+                wikipediaSuccess: wikipediaSuccessCount,
+                wikipediaFailure: wikipediaFailureCount,
                 updatedRows: updatedRows.slice(0, 50), // Limit to first 50 for response size
                 errors: errors.length,
                 errorDetails: errors.slice(0, 20) // Limit error details to first 20
