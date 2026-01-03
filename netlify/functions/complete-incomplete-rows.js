@@ -438,8 +438,9 @@ exports.handler = async (event, context) => {
                 
                 // Small delay to avoid rate limiting (reduced for faster processing)
                 // Only delay every 10 rows to speed up processing
-                if (updatedRows.length % 10 === 0) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                // Reduced delay for faster batch processing
+                if (updatedRows.length % 20 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
                 
             } catch (error) {
