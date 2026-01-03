@@ -154,14 +154,19 @@ exports.handler = async (event, context) => {
                 let celebInfo = null;
                 try {
                     console.log(`   🔍 Attempting Wikipedia lookup for: "${row.name}"${row.nicknames ? ` (nicknames: ${row.nicknames})` : ''}`);
+                    const lookupStartTime = Date.now();
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
+                    const lookupDuration = Date.now() - lookupStartTime;
+                    console.log(`   ⏱️ Lookup took ${lookupDuration}ms`);
+                    
                     if (celebInfo) {
-                        console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}, nicknames=${celebInfo.nicknames || 'N/A'}`);
+                        console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes (' + celebInfo.photo.substring(0, 50) + '...)' : 'no'}, nicknames=${celebInfo.nicknames || 'N/A'}`);
                     } else {
-                        console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}, will only fix misalignments`);
+                        console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}`);
+                        console.log(`   📊 Row needs: gender=${!row.gender ? 'YES' : 'no'}, nationality=${!row.nationality ? 'YES' : 'no'}, photo=${!row.photo ? 'YES' : 'no'}, nicknames=${!row.nicknames ? 'YES' : 'no'}`);
                     }
                 } catch (err) {
-                    console.log(`   ⚠️ Error fetching Wikipedia data: ${err.message}, will only fix misalignments`);
+                    console.log(`   ❌ Error fetching Wikipedia data: ${err.message}`);
                     console.log(`   📋 Error details: ${err.stack || 'No stack trace'}`);
                 }
                 
@@ -202,13 +207,21 @@ exports.handler = async (event, context) => {
                 
                 // Debug: Log comparison details
                 console.log(`   🔍 Change detection for row ${row.rowIndex}:`);
-                console.log(`      Gender: "${originalRow.gender}" vs "${updatedRowNormalized.gender}" → ${updatedRowNormalized.gender !== originalRow.gender ? 'CHANGE' : 'same'}`);
-                console.log(`      Nationality: "${originalRow.nationality}" vs "${updatedRowNormalized.nationality}" → ${updatedRowNormalized.nationality !== originalRow.nationality ? 'CHANGE' : 'same'}`);
-                console.log(`      Photo: "${originalRow.photo ? 'has' : 'empty'}" vs "${updatedRowNormalized.photo ? 'has' : 'empty'}" → ${updatedRowNormalized.photo !== originalRow.photo ? 'CHANGE' : 'same'}`);
-                console.log(`      Nicknames: "${originalRow.nicknames}" vs "${updatedRowNormalized.nicknames}" → ${updatedRowNormalized.nicknames !== originalRow.nicknames ? 'CHANGE' : 'same'}`);
+                console.log(`      Gender: "${originalRow.gender || '(empty)'}" vs "${updatedRowNormalized.gender || '(empty)'}" → ${updatedRowNormalized.gender !== originalRow.gender ? '✅ CHANGE' : '❌ same'}`);
+                console.log(`      Nationality: "${originalRow.nationality || '(empty)'}" vs "${updatedRowNormalized.nationality || '(empty)'}" → ${updatedRowNormalized.nationality !== originalRow.nationality ? '✅ CHANGE' : '❌ same'}`);
+                console.log(`      Photo: "${originalRow.photo ? 'has URL' : '(empty)'}" vs "${updatedRowNormalized.photo ? 'has URL' : '(empty)'}" → ${updatedRowNormalized.photo !== originalRow.photo ? '✅ CHANGE' : '❌ same'}`);
+                console.log(`      Nicknames: "${originalRow.nicknames || '(empty)'}" vs "${updatedRowNormalized.nicknames || '(empty)'}" → ${updatedRowNormalized.nicknames !== originalRow.nicknames ? '✅ CHANGE' : '❌ same'}`);
+                
+                // Additional debug: Show what celebInfo provided
+                if (celebInfo) {
+                    console.log(`   📊 celebInfo provided: gender="${celebInfo.gender || 'none'}", nationality="${celebInfo.nationality || 'none'}", photo="${celebInfo.photo ? 'yes' : 'no'}", nicknames="${celebInfo.nicknames || 'none'}"`);
+                } else {
+                    console.log(`   ⚠️ celebInfo is null - no Wikipedia data found`);
+                }
                 
                 if (!hasChanges) {
-                    console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name} (all fields match)`);
+                    console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name}`);
+                    console.log(`   💡 Reason: All fields are either already filled OR Wikipedia lookup returned no data`);
                     skippedCount++;
                     continue;
                 }
