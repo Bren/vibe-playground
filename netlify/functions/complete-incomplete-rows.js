@@ -382,11 +382,20 @@ exports.handler = async (event, context) => {
                 
                 // Also check if we're filling in missing data (row is incomplete)
                 // A row is incomplete if ANY field is missing, so we should update if we're filling ANY missing field
+                // Don't count "null" placeholder as "missing" - it means we already tried
+                const isEmptyOrNull = (val) => !val || val === NOT_FOUND_PLACEHOLDER;
                 const isFillingMissingData = 
-                    (!originalRow.gender && updatedRowNormalized.gender) ||
-                    (!originalRow.nationality && updatedRowNormalized.nationality) ||
-                    (!originalRow.photo && updatedRowNormalized.photo) ||
-                    (!originalRow.nicknames && updatedRowNormalized.nicknames);
+                    (isEmptyOrNull(originalRow.gender) && updatedRowNormalized.gender && updatedRowNormalized.gender !== NOT_FOUND_PLACEHOLDER) ||
+                    (isEmptyOrNull(originalRow.nationality) && updatedRowNormalized.nationality && updatedRowNormalized.nationality !== NOT_FOUND_PLACEHOLDER) ||
+                    (isEmptyOrNull(originalRow.photo) && updatedRowNormalized.photo && updatedRowNormalized.photo !== NOT_FOUND_PLACEHOLDER) ||
+                    (isEmptyOrNull(originalRow.nicknames) && updatedRowNormalized.nicknames && updatedRowNormalized.nicknames !== NOT_FOUND_PLACEHOLDER);
+                
+                // Also update if we're marking fields as "null" (lookup failed)
+                const isMarkingAsNull = 
+                    (!originalRow.gender && updatedRowNormalized.gender === NOT_FOUND_PLACEHOLDER) ||
+                    (!originalRow.nationality && updatedRowNormalized.nationality === NOT_FOUND_PLACEHOLDER) ||
+                    (!originalRow.photo && updatedRowNormalized.photo === NOT_FOUND_PLACEHOLDER) ||
+                    (!originalRow.nicknames && updatedRowNormalized.nicknames === NOT_FOUND_PLACEHOLDER);
                 
                 const shouldUpdate = hasChanges || isFillingMissingData || isMarkingAsNull;
                 
@@ -395,6 +404,7 @@ exports.handler = async (event, context) => {
                     console.log(`   ✅ Will update row ${row.rowIndex}:`);
                     if (hasChanges) console.log(`      - Has changes detected`);
                     if (isFillingMissingData) console.log(`      - Filling missing data`);
+                    if (isMarkingAsNull) console.log(`      - Marking fields as "${NOT_FOUND_PLACEHOLDER}" (lookup failed)`);
                 } else {
                     console.log(`   ❌ Will NOT update row ${row.rowIndex}:`);
                     console.log(`      - No changes: ${!hasChanges}`);
