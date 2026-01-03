@@ -248,6 +248,161 @@
             border-radius: 5px;
         }
         
+        .db-management-btn {
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+        
+        .db-management-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+        
+        .stats-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stats-total {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: white;
+        }
+        
+        .stats-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .stats-column-name {
+            font-weight: bold;
+            color: white;
+        }
+        
+        .stats-complete {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+        
+        .stats-incomplete {
+            color: #f44336;
+            font-weight: 600;
+        }
+        
+        .modal-actions {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .modal-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .modal-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .modal-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .modal-loading {
+            text-align: center;
+            padding: 2rem;
+            color: white;
+        }
+        
         /* Celebrity Cards - Force 5 in one row */
         .celebrities-grid {
             display: grid;
@@ -475,6 +630,9 @@
                 <button id="completeBtn" class="complete-btn" onclick="completeIncompleteRows()">
                     Complete Incomplete Rows
                 </button>
+                <button id="dbManagementBtn" class="db-management-btn" onclick="openDatabaseManagement()">
+                    Database Management
+                </button>
             </div>
             
             <!-- Confirm Section -->
@@ -493,6 +651,24 @@
             <div id="resultsSection" class="results-section">
                 <h3>Completion Results</h3>
                 <div id="resultsContent"></div>
+            </div>
+            
+            <!-- Database Management Modal -->
+            <div id="dbModal" class="modal-overlay" onclick="if(event.target === this) closeDatabaseManagement()">
+                <div class="modal-content" onclick="event.stopPropagation()">
+                    <div class="modal-header">
+                        <h2>Database Management</h2>
+                        <button class="modal-close" onclick="closeDatabaseManagement()">×</button>
+                    </div>
+                    <div id="modalStatsContent">
+                        <div class="modal-loading">Loading database statistics...</div>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="modalCorrectBtn" class="modal-btn" onclick="correctMissingFromModal()">
+                            Correct Missing Information
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <div id="celebritiesContainer" class="celebrities-grid">
@@ -936,6 +1112,124 @@
             setTimeout(() => {
                 errorEl.style.display = 'none';
             }, 5000);
+        }
+        
+        // Database Management Modal Functions
+        async function openDatabaseManagement() {
+            const modal = document.getElementById('dbModal');
+            modal.classList.add('active');
+            await loadDatabaseStats();
+        }
+        
+        function closeDatabaseManagement() {
+            const modal = document.getElementById('dbModal');
+            modal.classList.remove('active');
+        }
+        
+        async function loadDatabaseStats() {
+            const statsContent = document.getElementById('modalStatsContent');
+            statsContent.innerHTML = '<div class="modal-loading">Loading database statistics...</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/database-stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderDatabaseStats(data);
+                } else {
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error loading database stats:', error);
+                statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error loading statistics: ${error.message}</div>`;
+            }
+        }
+        
+        function renderDatabaseStats(data) {
+            const statsContent = document.getElementById('modalStatsContent');
+            const { totalEntries, stats } = data;
+            
+            let html = `
+                <div class="stats-container">
+                    <div class="stats-total">Total Entries: ${totalEntries}</div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Name</div>
+                        <div class="stats-complete">Complete: ${stats.name.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.name.incomplete}</div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Publish Date</div>
+                        <div class="stats-complete">Complete: ${stats.publishDate.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.publishDate.incomplete}</div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Gender</div>
+                        <div class="stats-complete">Complete: ${stats.gender.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.gender.incomplete}</div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Nationality</div>
+                        <div class="stats-complete">Complete: ${stats.nationality.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.nationality.incomplete}</div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Status</div>
+                        <div class="stats-complete">Complete: ${stats.status.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.status.incomplete}</div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Photo URL</div>
+                        <div class="stats-complete">Complete: ${stats.photo.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.photo.incomplete}</div>
+                    </div>
+                    <div class="stats-column">
+                        <div class="stats-column-name">Nicknames</div>
+                        <div class="stats-complete">Complete: ${stats.nicknames.complete}</div>
+                        <div class="stats-incomplete">Incomplete: ${stats.nicknames.incomplete}</div>
+                    </div>
+                </div>
+            `;
+            
+            statsContent.innerHTML = html;
+        }
+        
+        async function correctMissingFromModal() {
+            const correctBtn = document.getElementById('modalCorrectBtn');
+            const statsContent = document.getElementById('modalStatsContent');
+            
+            if (!confirm('This will scan and complete missing information. This may take a while. Continue?')) {
+                return;
+            }
+            
+            correctBtn.disabled = true;
+            statsContent.innerHTML = '<div class="modal-loading">Processing... This may take a minute.</div>';
+            
+            try {
+                const response = await fetch('/.netlify/functions/complete-incomplete-rows', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success message briefly, then refresh stats
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">✅ Processed ${data.processed} rows. ${data.updated} rows updated. Refreshing statistics...</div>`;
+                    
+                    // Wait a moment, then refresh stats
+                    setTimeout(async () => {
+                        await loadDatabaseStats();
+                        correctBtn.disabled = false;
+                    }, 2000);
+                } else {
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${data.error || 'Unknown error'}</div>`;
+                    correctBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error correcting missing information:', error);
+                statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${error.message}</div>`;
+                correctBtn.disabled = false;
+            }
         }
         
         // Complete incomplete rows
