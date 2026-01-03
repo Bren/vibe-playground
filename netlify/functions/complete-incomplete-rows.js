@@ -648,9 +648,33 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
         if (photos.length > 0) {
             const photoValue = photos[0].mainsnak?.datavalue?.value;
             if (photoValue) {
-                // Convert to Wikimedia Commons URL
+                // Convert to direct image URL (Wikimedia Commons)
                 const filename = photoValue.replace(/ /g, '_');
-                photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`;
+                // Try to get thumbnail from Wikipedia API first
+                try {
+                    // Check if we can get it from Wikipedia
+                    const wikiTitle = entity.labels?.en?.value || entity.labels?.he?.value;
+                    if (wikiTitle) {
+                        try {
+                            const wikiSummary = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`, {
+                                headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                                timeout: 3000
+                            });
+                            if (wikiSummary.data.thumbnail?.source) {
+                                photo = wikiSummary.data.thumbnail.source;
+                            }
+                        } catch (e) {
+                            // Fall through to Commons URL
+                        }
+                    }
+                } catch (e) {
+                    // Fall through
+                }
+                
+                // Fallback: use Commons direct URL
+                if (!photo) {
+                    photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`;
+                }
             }
         }
         
