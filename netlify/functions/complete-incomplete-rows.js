@@ -158,8 +158,8 @@ exports.handler = async (event, context) => {
         // Process incomplete rows in batches to avoid timeout
         // Netlify free tier has ~10-26 second timeout, so we'll process in batches
         // Process rows in batches to avoid Netlify timeout (~10-26 seconds)
-        // Each lookup takes ~1-2 seconds, so we can process ~15-20 rows safely
-        const BATCH_SIZE = 20; // Process 20 rows at a time to balance speed and timeout
+        // Optimized: Reduced delays and increased batch size for faster processing
+        const BATCH_SIZE = 50; // Process 50 rows at a time
         const rowsToProcess = incompleteRows.slice(0, BATCH_SIZE);
         
         console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
@@ -219,10 +219,10 @@ exports.handler = async (event, context) => {
                     console.log(`   🔍 Attempting Wikipedia lookup for: "${row.name}"${row.nicknames ? ` (nicknames: ${row.nicknames})` : ''}`);
                     const lookupStartTime = Date.now();
                     
-                    // Add small delay to avoid rate limiting (50ms between requests)
-                    // Reduced delay to speed up processing while still avoiding rate limits
-                    if (processedCount > 0) {
-                        await new Promise(resolve => setTimeout(resolve, 50));
+                    // Minimal delay to avoid rate limiting (30ms between requests)
+                    // Reduced delay for faster batch processing
+                    if (processedCount > 0 && processedCount % 10 !== 0) {
+                        await new Promise(resolve => setTimeout(resolve, 30));
                     }
                     
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
