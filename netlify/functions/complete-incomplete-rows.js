@@ -122,17 +122,6 @@ exports.handler = async (event, context) => {
                 console.log(`🔍 Processing row ${row.rowIndex}: ${row.name}`);
                 console.log(`   Current data: gender=${row.gender}, nationality=${row.nationality}, status=${row.status}, photo=${row.photo ? 'yes' : 'no'}, nicknames=${row.nicknames}`);
                 
-                // Fetch data from Wikipedia/Wikidata (try with nicknames if available)
-                const celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
-                
-                if (!celebInfo) {
-                    console.log(`❌ Could not find data for: ${row.name}`);
-                    errors.push({ rowIndex: row.rowIndex, name: row.name, error: 'Could not find Wikipedia data' });
-                    continue;
-                }
-                
-                console.log(`   ✅ Found data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}`);
-                
                 // Fill in missing fields (only fill what's missing, preserve existing data)
                 // But also fix misaligned columns - if status is in wrong place, fix it
                 let fixedGender = row.gender;
@@ -150,15 +139,42 @@ exports.handler = async (event, context) => {
                     fixedPhoto = row.status || row.photo || '';
                 }
                 
+                // Try to fetch data from Wikipedia/Wikidata (try with nicknames if available)
+                let celebInfo = null;
+                try {
+                    celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
+                    if (celebInfo) {
+                        console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}`);
+                    } else {
+                        console.log(`   ⚠️ Could not find Wikipedia data for: ${row.name}, will only fix misalignments and defaults`);
+                    }
+                } catch (err) {
+                    console.log(`   ⚠️ Error fetching Wikipedia data: ${err.message}, will only fix misalignments and defaults`);
+                }
+                
+                // Build updated row - use Wikipedia data if available, otherwise just fix what we can
                 const updatedRow = {
                     name: row.name, // Keep original name
                     publishDate: row.publishDate || '', // Keep publish date if exists
-                    gender: fixedGender || celebInfo.gender || '',
-                    nationality: fixedNationality || celebInfo.nationality || '',
+                    gender: fixedGender || (celebInfo ? celebInfo.gender : '') || '',
+                    nationality: fixedNationality || (celebInfo ? celebInfo.nationality : '') || '',
                     status: fixedStatus || 'Published', // Default status to 'Published' if empty
-                    photo: fixedPhoto || celebInfo.photo || '',
-                    nicknames: row.nicknames || celebInfo.nicknames || ''
+                    photo: fixedPhoto || (celebInfo ? celebInfo.photo : '') || '',
+                    nicknames: row.nicknames || (celebInfo ? celebInfo.nicknames : '') || ''
                 };
+                
+                // Check if anything actually changed
+                const hasChanges = 
+                    updatedRow.gender !== row.gender ||
+                    updatedRow.nationality !== row.nationality ||
+                    updatedRow.status !== row.status ||
+                    updatedRow.photo !== row.photo ||
+                    updatedRow.nicknames !== row.nicknames;
+                
+                if (!hasChanges) {
+                    console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name}`);
+                    continue;
+                }
                 
                 console.log(`   📝 Will update: gender=${updatedRow.gender || 'N/A'}, nationality=${updatedRow.nationality || 'N/A'}, status=${updatedRow.status || 'N/A'}`);
                 
@@ -173,25 +189,34 @@ exports.handler = async (event, context) => {
                     updatedRow.nicknames
                 ]];
                 
-                await sheets.spreadsheets.values.update({
-                    spreadsheetId: SHEET_ID,
-                    range: `${SHEET_NAME}!A${row.rowIndex}:G${row.rowIndex}`,
-                    valueInputOption: 'RAW',
-                    resource: { values: values }
-                });
-                
-                updatedRows.push({
-                    rowIndex: row.rowIndex,
-                    name: row.name,
-                    updated: {
-                        gender: !row.gender && updatedRow.gender ? updatedRow.gender : null,
-                        nationality: !row.nationality && updatedRow.nationality ? updatedRow.nationality : null,
-                        photo: !row.photo && updatedRow.photo ? 'Yes' : null,
-                        nicknames: !row.nicknames && updatedRow.nicknames ? updatedRow.nicknames : null
-                    }
-                });
-                
-                console.log(`✅ Updated row ${row.rowIndex}: ${row.name}`);
+                try {
+                    const updateResponse = await sheets.spreadsheets.values.update({
+                        spreadsheetId: SHEET_ID,
+                        range: `${SHEET_NAME}!A${row.rowIndex}:G${row.rowIndex}`,
+                        valueInputOption: 'RAW',
+                        resource: { values: values }
+                    });
+                    
+                    console.log(`   ✅ Sheet update response: ${JSON.stringify(updateResponse.data)}`);
+                    
+                    updatedRows.push({
+                        rowIndex: row.rowIndex,
+                        name: row.name,
+                        updated: {
+                            gender: !row.gender && updatedRow.gender ? updatedRow.gender : null,
+                            nationality: !row.nationality && updatedRow.nationality ? updatedRow.nationality : null,
+                            status: !row.status && updatedRow.status ? updatedRow.status : null,
+                            photo: !row.photo && updatedRow.photo ? 'Yes' : null,
+                            nicknames: !row.nicknames && updatedRow.nicknames ? updatedRow.nicknames : null
+                        }
+                    });
+                    
+                    console.log(`✅ Successfully updated row ${row.rowIndex}: ${row.name}`);
+                } catch (updateError) {
+                    console.error(`❌ Error updating row ${row.rowIndex} in sheet:`, updateError);
+                    errors.push({ rowIndex: row.rowIndex, name: row.name, error: `Update failed: ${updateError.message}` });
+                    continue;
+                }
                 
                 // Small delay to avoid rate limiting (reduced for faster processing)
                 await new Promise(resolve => setTimeout(resolve, 200));
