@@ -114,9 +114,10 @@ exports.handler = async (event, context) => {
             
             try {
                 console.log(`🔍 Processing row ${row.rowIndex}: ${row.name}`);
+                console.log(`   Current data: gender=${row.gender}, nationality=${row.nationality}, status=${row.status}, photo=${row.photo ? 'yes' : 'no'}, nicknames=${row.nicknames}`);
                 
-                // Fetch data from Wikipedia/Wikidata
-                const celebInfo = await getCelebrityInfoFromName(row.name);
+                // Fetch data from Wikipedia/Wikidata (try with nicknames if available)
+                const celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
                 
                 if (!celebInfo) {
                     console.log(`❌ Could not find data for: ${row.name}`);
@@ -124,16 +125,36 @@ exports.handler = async (event, context) => {
                     continue;
                 }
                 
+                console.log(`   ✅ Found data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}`);
+                
                 // Fill in missing fields (only fill what's missing, preserve existing data)
+                // But also fix misaligned columns - if status is in wrong place, fix it
+                let fixedGender = row.gender;
+                let fixedNationality = row.nationality;
+                let fixedStatus = row.status;
+                let fixedPhoto = row.photo;
+                
+                // Check if columns are misaligned (e.g., "Published" in gender column)
+                if (row.gender && (row.gender.toLowerCase() === 'published' || row.gender.includes('http'))) {
+                    // Gender column has wrong data, shift everything
+                    console.log(`   ⚠️ Detected misaligned columns in row ${row.rowIndex}, fixing...`);
+                    fixedGender = '';
+                    fixedNationality = row.gender; // Gender column might have nationality
+                    fixedStatus = row.nationality || 'Published';
+                    fixedPhoto = row.status || row.photo || '';
+                }
+                
                 const updatedRow = {
                     name: row.name, // Keep original name
                     publishDate: row.publishDate || '', // Keep publish date if exists
-                    gender: row.gender || celebInfo.gender || '',
-                    nationality: row.nationality || celebInfo.nationality || '',
-                    status: row.status || 'Published', // Default status to 'Published' if empty
-                    photo: row.photo || celebInfo.photo || '',
+                    gender: fixedGender || celebInfo.gender || '',
+                    nationality: fixedNationality || celebInfo.nationality || '',
+                    status: fixedStatus || 'Published', // Default status to 'Published' if empty
+                    photo: fixedPhoto || celebInfo.photo || '',
                     nicknames: row.nicknames || celebInfo.nicknames || ''
                 };
+                
+                console.log(`   📝 Will update: gender=${updatedRow.gender || 'N/A'}, nationality=${updatedRow.nationality || 'N/A'}, status=${updatedRow.status || 'N/A'}`);
                 
                 // Update the row in the sheet
                 const values = [[
@@ -204,29 +225,57 @@ exports.handler = async (event, context) => {
 };
 
 // Helper function to get celebrity info from name
-async function getCelebrityInfoFromName(name) {
+async function getCelebrityInfoFromName(name, nicknames = '') {
     try {
-        // Search Wikipedia for the name
-        const searchRes = await axios.get('https://en.wikipedia.org/w/api.php', {
-            params: {
-                action: 'query',
-                list: 'search',
-                srsearch: name,
-                srlimit: 1,
-                srnamespace: 0,
-                format: 'json',
-                origin: '*'
-            },
-            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-            timeout: 5000
-        });
+        // Try multiple search strategies for Hebrew/English names
+        const searchTerms = [name];
         
-        const results = searchRes.data.query?.search || [];
-        if (results.length === 0) {
-            return null;
+        // If we have nicknames, try those too (often contain English names)
+        if (nicknames) {
+            const nicknameList = nicknames.split(',').map(n => n.trim()).filter(n => n);
+            // Look for English names in nicknames (non-Hebrew characters)
+            nicknameList.forEach(nick => {
+                if (/[a-zA-Z]/.test(nick) && nick.length > 2) {
+                    searchTerms.push(nick);
+                }
+            });
         }
         
-        const title = results[0].title;
+        let title = null;
+        
+        // Try each search term
+        for (const searchTerm of searchTerms) {
+            try {
+                const searchRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+                    params: {
+                        action: 'query',
+                        list: 'search',
+                        srsearch: searchTerm,
+                        srlimit: 3,
+                        srnamespace: 0,
+                        format: 'json',
+                        origin: '*'
+                    },
+                    headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                    timeout: 5000
+                });
+                
+                const results = searchRes.data.query?.search || [];
+                if (results.length > 0) {
+                    title = results[0].title;
+                    console.log(`   ✅ Found Wikipedia page: ${title} (searched: ${searchTerm})`);
+                    break;
+                }
+            } catch (err) {
+                console.log(`   ⚠️ Search failed for "${searchTerm}": ${err.message}`);
+                continue;
+            }
+        }
+        
+        if (!title) {
+            console.log(`   ❌ No Wikipedia results for any search term`);
+            return null;
+        }
         
         // Get detailed info
         const wikiRes = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
