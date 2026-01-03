@@ -158,8 +158,8 @@ exports.handler = async (event, context) => {
         // Process incomplete rows in batches to avoid timeout
         // Netlify free tier has ~10-26 second timeout, so we'll process in batches
         // Process rows in batches to avoid Netlify timeout (~10-26 seconds)
-        // Balance between speed and reliability - 30 rows is a good middle ground
-        const BATCH_SIZE = 30; // Process 30 rows at a time
+        // Reduced to 15 rows to ensure we stay well under timeout limits
+        const BATCH_SIZE = 15; // Process 15 rows at a time
         const rowsToProcess = incompleteRows.slice(0, BATCH_SIZE);
         
         console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
@@ -219,10 +219,10 @@ exports.handler = async (event, context) => {
                     console.log(`   🔍 Attempting Wikipedia lookup for: "${row.name}"${row.nicknames ? ` (nicknames: ${row.nicknames})` : ''}`);
                     const lookupStartTime = Date.now();
                     
-                    // Small delay to avoid rate limiting (40ms between requests)
-                    // Only delay every 5th request to speed up processing
-                    if (processedCount > 0 && processedCount % 5 !== 0) {
-                        await new Promise(resolve => setTimeout(resolve, 40));
+                    // Small delay to avoid rate limiting (50ms between requests)
+                    // Delay every 3rd request to balance speed and rate limits
+                    if (processedCount > 0 && processedCount % 3 !== 0) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     }
                     
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
@@ -436,11 +436,10 @@ exports.handler = async (event, context) => {
                     continue;
                 }
                 
-                // Small delay to avoid rate limiting (reduced for faster processing)
-                // Only delay every 10 rows to speed up processing
-                // Reduced delay for faster batch processing
-                if (updatedRows.length % 20 === 0) {
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                // Small delay to avoid rate limiting on Google Sheets API
+                // Delay every 10 rows to balance speed and API limits
+                if (updatedRows.length > 0 && updatedRows.length % 10 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
                 
             } catch (error) {
