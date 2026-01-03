@@ -115,6 +115,7 @@ exports.handler = async (event, context) => {
         let wikipediaSuccessCount = 0;
         let wikipediaFailureCount = 0;
         const sampleProcessedRows = []; // Store first 5 rows for debugging
+        const lookupErrors = []; // Store first 10 lookup errors for debugging
         
         for (const row of rowsToProcess) {
             // Skip rows without a name (can't look up data)
@@ -180,6 +181,14 @@ exports.handler = async (event, context) => {
                     }
                 } catch (err) {
                     wikipediaFailureCount++;
+                    const errorDetails = {
+                        name: row.name,
+                        error: err.message,
+                        type: err.constructor.name,
+                        code: err.code || 'N/A',
+                        httpStatus: err.response?.status || 'N/A',
+                        responseData: err.response?.data ? JSON.stringify(err.response.data).substring(0, 200) : 'N/A'
+                    };
                     console.log(`   ❌ Error fetching Wikipedia data: ${err.message}`);
                     console.log(`   📋 Error type: ${err.constructor.name}`);
                     console.log(`   📋 Error code: ${err.code || 'N/A'}`);
@@ -187,6 +196,11 @@ exports.handler = async (event, context) => {
                     if (err.response) {
                         console.log(`   📋 HTTP Status: ${err.response.status}`);
                         console.log(`   📋 Response data: ${JSON.stringify(err.response.data).substring(0, 200)}`);
+                    }
+                    
+                    // Store first 10 errors for debugging
+                    if (lookupErrors.length < 10) {
+                        lookupErrors.push(errorDetails);
                     }
                 }
                 
@@ -388,6 +402,7 @@ exports.handler = async (event, context) => {
                 wikipediaFailure: wikipediaFailureCount,
                 updatedRows: updatedRows.slice(0, 50), // Limit to first 50 for response size
                 sampleProcessedRows: sampleProcessedRows, // First 5 skipped rows for debugging
+                lookupErrors: lookupErrors, // First 10 Wikipedia lookup errors
                 errors: errors.length,
                 errorDetails: errors.slice(0, 20) // Limit error details to first 20
             })
