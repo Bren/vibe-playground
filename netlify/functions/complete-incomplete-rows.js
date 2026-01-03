@@ -749,6 +749,7 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                     format: 'json',
                     origin: '*'
                 },
+                headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
                 timeout: 3000
             });
             nationality = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
