@@ -98,11 +98,13 @@ exports.handler = async (event, context) => {
             };
         }
         
-        // Process all incomplete rows
-        // Note: This may take a while, but Netlify functions can handle longer runs
-        const rowsToProcess = incompleteRows;
+        // Process incomplete rows in batches to avoid timeout
+        // Netlify free tier has ~10-26 second timeout, so we'll process in batches
+        const BATCH_SIZE = 100; // Process 100 rows at a time
+        const rowsToProcess = incompleteRows.slice(0, BATCH_SIZE);
         
-        console.log(`📊 Processing ${rowsToProcess.length} incomplete rows`);
+        console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
+        console.log(`   Note: Processing in batches of ${BATCH_SIZE} to avoid timeout. Click again to process more.`);
         
         const updatedRows = [];
         const errors = [];
@@ -269,11 +271,11 @@ exports.handler = async (event, context) => {
             headers: { ...headers, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 success: true,
-                message: `Processed all ${rowsToProcess.length} incomplete rows`,
+                message: `Processed ${rowsToProcess.length} rows (${incompleteRows.length - rowsToProcess.length} remaining)`,
                 completeRows: completeRows.length,
                 incompleteRows: incompleteRows.length,
                 processed: rowsToProcess.length,
-                remaining: 0,
+                remaining: incompleteRows.length - rowsToProcess.length,
                 updated: updatedRows.length,
                 updatedRows: updatedRows.slice(0, 50), // Limit to first 50 for response size
                 errors: errors.length,

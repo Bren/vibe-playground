@@ -1223,15 +1223,19 @@
                 console.log('📦 Response data:', data);
                 
                 if (data.success) {
-                    // Show success message briefly, then refresh stats
-                    statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">✅ Processed ${data.processed || 0} rows. ${data.updated || 0} rows updated. Refreshing statistics...</div>`;
+                    // Show detailed success message
+                    const message = `✅ Processed ${data.processed || 0} rows. ${data.updated || 0} rows updated. ${data.remaining || 0} rows remaining.`;
+                    console.log('✅ Success:', message);
+                    console.log('📊 Full response:', JSON.stringify(data, null, 2));
                     
-                    // Wait a moment, then refresh stats
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">${message}<br>Refreshing statistics...</div>`;
+                    
+                    // Wait a moment for Google Sheets to update, then refresh stats
                     setTimeout(async () => {
                         console.log('🔄 Refreshing database stats...');
                         await loadDatabaseStats();
                         correctBtn.disabled = false;
-                    }, 2000);
+                    }, 3000); // Increased to 3 seconds to allow Google Sheets to update
                 } else {
                     console.error('❌ Function returned success:false', data);
                     statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${data.error || 'Unknown error'}</div>`;
