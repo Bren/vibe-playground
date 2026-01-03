@@ -461,6 +461,12 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
             return null;
         }
         
+        // Try to get photo from Wikipedia summary first (best quality)
+        let photo = data.thumbnail?.source || data.originalimage?.source || null;
+        if (photo) {
+            console.log(`   📸 Found photo from Wikipedia summary: ${photo.substring(0, 80)}...`);
+        }
+        
         // Get Wikidata ID from the appropriate Wikipedia
         let wikidataId = null;
         try {
@@ -486,7 +492,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         
         let gender = null;
         let nationality = null;
-        let photo = data.thumbnail?.source || data.originalimage?.source || null;
+        // Photo already extracted from Wikipedia summary above, but we'll try to get better one from Wikidata
         let nicknames = null;
 
         if (wikidataId) {
@@ -505,6 +511,29 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
 
                 const entity = wdRes.data.entities?.[wikidataId];
                 if (entity) {
+                    // Get photo from Wikidata P18 (image property) - better quality than Wikipedia thumbnail
+                    const photos = entity.claims?.P18 || [];
+                    if (photos.length > 0 && !photo) {
+                        const photoValue = photos[0].mainsnak?.datavalue?.value;
+                        if (photoValue) {
+                            // Construct proper Wikimedia Commons URL
+                            const filename = photoValue.replace(/ /g, '_');
+                            // Try to get a good size thumbnail (800px width is a good balance)
+                            photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
+                            console.log(`   📸 Found photo from Wikidata P18: ${photo.substring(0, 80)}...`);
+                        }
+                    } else if (photos.length > 0 && photo) {
+                        // We have a photo from Wikipedia, but let's try to get a better one from Commons
+                        const photoValue = photos[0].mainsnak?.datavalue?.value;
+                        if (photoValue) {
+                            const filename = photoValue.replace(/ /g, '_');
+                            // Use Commons direct file URL for better quality
+                            const commonsPhoto = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
+                            console.log(`   📸 Upgrading to Commons photo: ${commonsPhoto.substring(0, 80)}...`);
+                            photo = commonsPhoto;
+                        }
+                    }
+                    
                     // Get gender (P21)
                     const genders = entity.claims?.P21 || [];
                     if (genders.length > 0) {
@@ -800,16 +829,15 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
             nationality = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
         }
         
-        // Get photo (P18)
+        // Get photo (P18) - try multiple sources for best quality
         const photos = entity.claims?.P18 || [];
         if (photos.length > 0) {
             const photoValue = photos[0].mainsnak?.datavalue?.value;
             if (photoValue) {
-                // Convert to direct image URL (Wikimedia Commons)
                 const filename = photoValue.replace(/ /g, '_');
-                // Try to get thumbnail from Wikipedia API first
+                
+                // Strategy 1: Try Wikipedia summary API for thumbnail (fast, good quality)
                 try {
-                    // Check if we can get it from Wikipedia
                     const wikiTitle = entity.labels?.en?.value || entity.labels?.he?.value;
                     if (wikiTitle) {
                         try {
@@ -819,6 +847,10 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                             });
                             if (wikiSummary.data.thumbnail?.source) {
                                 photo = wikiSummary.data.thumbnail.source;
+                                console.log(`   📸 Found photo from Wikipedia summary: ${photo.substring(0, 80)}...`);
+                            } else if (wikiSummary.data.originalimage?.source) {
+                                photo = wikiSummary.data.originalimage.source;
+                                console.log(`   📸 Found photo from Wikipedia original: ${photo.substring(0, 80)}...`);
                             }
                         } catch (e) {
                             // Fall through to Commons URL
@@ -828,11 +860,22 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                     // Fall through
                 }
                 
-                // Fallback: use Commons direct URL
+                // Strategy 2: Use Commons direct file URL with good size (800px width)
                 if (!photo) {
-                    photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`;
+                    photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
+                    console.log(`   📸 Using Commons photo: ${photo.substring(0, 80)}...`);
+                } else {
+                    // We have a photo, but let's upgrade to Commons for better quality
+                    const commonsPhoto = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
+                    console.log(`   📸 Also available from Commons: ${commonsPhoto.substring(0, 80)}...`);
+                    // Use Commons if we don't have a good Wikipedia photo
+                    if (!photo.includes('commons.wikimedia.org')) {
+                        photo = commonsPhoto;
+                    }
                 }
             }
+        } else {
+            console.log(`   ⚠️ No P18 image property found in Wikidata`);
         }
         
         // Get comprehensive nicknames/aliases/name variations
