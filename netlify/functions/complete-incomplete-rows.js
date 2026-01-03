@@ -313,22 +313,28 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         if (nicknames) {
             const nicknameList = nicknames.split(',').map(n => n.trim()).filter(n => n);
             // Look for English names in nicknames (non-Hebrew characters)
-            nicknameList.forEach(nick => {
-                if (/[a-zA-Z]/.test(nick) && nick.length > 2) {
-                    searchTerms.push({ term: nick, lang: 'en' });
-                }
+            // Prioritize longer names (more likely to be full names)
+            const englishNicks = nicknameList
+                .filter(nick => /[a-zA-Z]/.test(nick) && nick.length > 2)
+                .sort((a, b) => b.length - a.length); // Sort by length, longest first
+            
+            englishNicks.forEach(nick => {
+                searchTerms.push({ term: nick, lang: 'en', priority: 1 }); // High priority
             });
         }
         
         // Then try the original name
         if (isHebrewName) {
             // Try Hebrew Wikipedia first for Hebrew names
-            searchTerms.push({ term: name, lang: 'he' });
-            searchTerms.push({ term: name, lang: 'en' }); // Also try English
+            searchTerms.push({ term: name, lang: 'he', priority: 2 });
+            searchTerms.push({ term: name, lang: 'en', priority: 3 }); // Also try English
         } else {
             // English name, try English Wikipedia
-            searchTerms.push({ term: name, lang: 'en' });
+            searchTerms.push({ term: name, lang: 'en', priority: 2 });
         }
+        
+        // Sort by priority (lower number = higher priority)
+        searchTerms.sort((a, b) => (a.priority || 3) - (b.priority || 3));
         
         let title = null;
         let wikiLang = 'en';
@@ -364,8 +370,41 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
             }
         }
         
+        // If Wikipedia search failed, try Wikidata search directly
         if (!title) {
-            console.log(`   ❌ No Wikipedia results for any search term`);
+            console.log(`   ⚠️ No Wikipedia results, trying Wikidata search directly...`);
+            
+            // Try searching Wikidata by label (works for Hebrew names)
+            for (const { term, lang } of searchTerms.slice(0, 3)) { // Try first 3 search terms
+                try {
+                    const wdSearchRes = await axios.get('https://www.wikidata.org/w/api.php', {
+                        params: {
+                            action: 'wbsearchentities',
+                            search: term,
+                            language: lang === 'he' ? 'he' : 'en',
+                            limit: 3,
+                            format: 'json',
+                            origin: '*'
+                        },
+                        headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                        timeout: 5000
+                    });
+                    
+                    const wdResults = wdSearchRes.data?.search || [];
+                    if (wdResults.length > 0) {
+                        const wikidataId = wdResults[0].id;
+                        console.log(`   ✅ Found Wikidata entity: ${wikidataId} (searched: ${term})`);
+                        
+                        // Get entity data directly from Wikidata
+                        return await getCelebrityInfoFromWikidataId(wikidataId);
+                    }
+                } catch (err) {
+                    console.log(`   ⚠️ Wikidata search failed for "${term}": ${err.message}`);
+                    continue;
+                }
+            }
+            
+            console.log(`   ❌ No results from Wikipedia or Wikidata`);
             return null;
         }
         
@@ -528,6 +567,113 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
 
     } catch (error) {
         console.error('Error getting celebrity info:', error);
+        return null;
+    }
+}
+
+// Helper function to get celebrity info directly from Wikidata ID
+async function getCelebrityInfoFromWikidataId(wikidataId) {
+    try {
+        const wdRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+            params: {
+                action: 'wbgetentities',
+                ids: wikidataId,
+                props: 'claims|labels',
+                languages: 'en|he',
+                format: 'json',
+                origin: '*'
+            },
+            timeout: 5000
+        });
+
+        const entity = wdRes.data.entities?.[wikidataId];
+        if (!entity) {
+            return null;
+        }
+        
+        let gender = null;
+        let nationality = null;
+        let photo = null;
+        let nicknames = null;
+        
+        // Get gender (P21)
+        const genders = entity.claims?.P21 || [];
+        if (genders.length > 0) {
+            const genderId = genders[0].mainsnak?.datavalue?.value?.id;
+            if (genderId) {
+                const genderRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                    params: {
+                        action: 'wbgetentities',
+                        ids: genderId,
+                        props: 'labels',
+                        languages: 'en',
+                        format: 'json',
+                        origin: '*'
+                    }
+                });
+                const genderLabel = genderRes.data.entities?.[genderId]?.labels?.en?.value;
+                if (genderLabel) {
+                    if (genderLabel.toLowerCase().includes('male') || genderLabel.toLowerCase() === 'male') {
+                        gender = 'Male';
+                    } else if (genderLabel.toLowerCase().includes('female') || genderLabel.toLowerCase() === 'female') {
+                        gender = 'Female';
+                    } else {
+                        gender = genderLabel;
+                    }
+                }
+            }
+        }
+
+        // Get nationality (P27)
+        const nationalities = entity.claims?.P27 || [];
+        if (nationalities.length > 0) {
+            const natId = nationalities[0].mainsnak?.datavalue?.value?.id;
+            if (natId) {
+                const natRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                    params: {
+                        action: 'wbgetentities',
+                        ids: natId,
+                        props: 'labels',
+                        languages: 'en',
+                        format: 'json',
+                        origin: '*'
+                    }
+                });
+                nationality = natRes.data.entities?.[natId]?.labels?.en?.value || null;
+            }
+        }
+        
+        // Get photo (P18)
+        const photos = entity.claims?.P18 || [];
+        if (photos.length > 0) {
+            const photoValue = photos[0].mainsnak?.datavalue?.value;
+            if (photoValue) {
+                // Convert to Wikimedia Commons URL
+                const filename = photoValue.replace(/ /g, '_');
+                photo = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`;
+            }
+        }
+        
+        // Get labels for nicknames
+        const labels = entity.labels || {};
+        const labelList = [];
+        if (labels.en) labelList.push(labels.en.value);
+        if (labels.he && labels.he.value !== labels.en?.value) labelList.push(labels.he.value);
+        
+        if (labelList.length > 1) {
+            nicknames = labelList.slice(1).join(', ');
+        }
+        
+        return {
+            name: labels.en?.value || labels.he?.value || 'Unknown',
+            gender: gender,
+            nationality: nationality,
+            photo: photo,
+            nicknames: nicknames
+        };
+        
+    } catch (error) {
+        console.error('Error getting info from Wikidata ID:', error);
         return null;
     }
 }
