@@ -1179,11 +1179,11 @@
                 if (data.success) {
                     renderDatabaseStats(data);
                 } else {
-                    statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${data.error}</div>`;
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #C48A8A;">Error: ${data.error}</div>`;
                 }
             } catch (error) {
                 console.error('Error loading database stats:', error);
-                statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error loading statistics: ${error.message}</div>`;
+                statsContent.innerHTML = `<div class="modal-loading" style="color: #C48A8A;">Error loading statistics: ${error.message}</div>`;
             }
         }
         
@@ -1317,7 +1317,7 @@
                         }
                     }
                     
-                    statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">${message}<br>Refreshing statistics...</div>`;
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #7A9E5A;">${message}<br>Refreshing statistics...</div>`;
                     
                     // Wait a moment for Google Sheets to update, then refresh stats
                     setTimeout(async () => {
@@ -1327,12 +1327,12 @@
                     }, 3000); // Increased to 3 seconds to allow Google Sheets to update
                 } else {
                     console.error('❌ Function returned success:false', data);
-                    statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${data.error || 'Unknown error'}</div>`;
+                    statsContent.innerHTML = `<div class="modal-loading" style="color: #C48A8A;">Error: ${data.error || 'Unknown error'}</div>`;
                     correctBtn.disabled = false;
                 }
             } catch (error) {
                 console.error('❌ Error correcting missing information:', error);
-                statsContent.innerHTML = `<div class="modal-loading" style="color: #f44336;">Error: ${error.message}. Check console for details.</div>`;
+                statsContent.innerHTML = `<div class="modal-loading" style="color: #C48A8A;">Error: ${error.message}. Check console for details.</div>`;
                 correctBtn.disabled = false;
             }
         }
