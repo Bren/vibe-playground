@@ -105,9 +105,12 @@ exports.handler = async (event, context) => {
         
         console.log(`📊 Processing ${rowsToProcess.length} rows (out of ${incompleteRows.length} incomplete rows)`);
         console.log(`   Note: Processing in batches of ${BATCH_SIZE} to avoid timeout. Click again to process more.`);
+        console.log(`   Sample of rows to process: ${rowsToProcess.slice(0, 5).map(r => r.name).join(', ')}...`);
         
         const updatedRows = [];
         const errors = [];
+        let processedCount = 0;
+        let skippedCount = 0;
         
         for (const row of rowsToProcess) {
             // Skip rows without a name (can't look up data)
@@ -150,6 +153,7 @@ exports.handler = async (event, context) => {
                 // Try to fetch data from Wikipedia/Wikidata (try with nicknames if available)
                 let celebInfo = null;
                 try {
+                    console.log(`   🔍 Attempting Wikipedia lookup for: "${row.name}"${row.nicknames ? ` (nicknames: ${row.nicknames})` : ''}`);
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
                     if (celebInfo) {
                         console.log(`   ✅ Found Wikipedia data: gender=${celebInfo.gender || 'N/A'}, nationality=${celebInfo.nationality || 'N/A'}, photo=${celebInfo.photo ? 'yes' : 'no'}, nicknames=${celebInfo.nicknames || 'N/A'}`);
@@ -158,6 +162,7 @@ exports.handler = async (event, context) => {
                     }
                 } catch (err) {
                     console.log(`   ⚠️ Error fetching Wikipedia data: ${err.message}, will only fix misalignments`);
+                    console.log(`   📋 Error details: ${err.stack || 'No stack trace'}`);
                 }
                 
                 // Build updated row - fill missing fields with Wikipedia data
@@ -195,10 +200,20 @@ exports.handler = async (event, context) => {
                     updatedRowNormalized.photo !== originalRow.photo ||
                     updatedRowNormalized.nicknames !== originalRow.nicknames;
                 
+                // Debug: Log comparison details
+                console.log(`   🔍 Change detection for row ${row.rowIndex}:`);
+                console.log(`      Gender: "${originalRow.gender}" vs "${updatedRowNormalized.gender}" → ${updatedRowNormalized.gender !== originalRow.gender ? 'CHANGE' : 'same'}`);
+                console.log(`      Nationality: "${originalRow.nationality}" vs "${updatedRowNormalized.nationality}" → ${updatedRowNormalized.nationality !== originalRow.nationality ? 'CHANGE' : 'same'}`);
+                console.log(`      Photo: "${originalRow.photo ? 'has' : 'empty'}" vs "${updatedRowNormalized.photo ? 'has' : 'empty'}" → ${updatedRowNormalized.photo !== originalRow.photo ? 'CHANGE' : 'same'}`);
+                console.log(`      Nicknames: "${originalRow.nicknames}" vs "${updatedRowNormalized.nicknames}" → ${updatedRowNormalized.nicknames !== originalRow.nicknames ? 'CHANGE' : 'same'}`);
+                
                 if (!hasChanges) {
-                    console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name}`);
+                    console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name} (all fields match)`);
+                    skippedCount++;
                     continue;
                 }
+                
+                processedCount++;
                 
                 console.log(`   📊 Changes detected:`);
                 if (updatedRowNormalized.gender !== originalRow.gender) {
@@ -266,6 +281,13 @@ exports.handler = async (event, context) => {
             }
         }
         
+        console.log(`\n📊 Final Summary:`);
+        console.log(`   - Total rows processed: ${rowsToProcess.length}`);
+        console.log(`   - Rows with changes detected: ${processedCount}`);
+        console.log(`   - Rows skipped (no changes): ${skippedCount}`);
+        console.log(`   - Rows successfully updated: ${updatedRows.length}`);
+        console.log(`   - Errors: ${errors.length}`);
+        
         return {
             statusCode: 200,
             headers: { ...headers, 'Content-Type': 'application/json' },
@@ -277,6 +299,7 @@ exports.handler = async (event, context) => {
                 processed: rowsToProcess.length,
                 remaining: incompleteRows.length - rowsToProcess.length,
                 updated: updatedRows.length,
+                skipped: skippedCount,
                 updatedRows: updatedRows.slice(0, 50), // Limit to first 50 for response size
                 errors: errors.length,
                 errorDetails: errors.slice(0, 20) // Limit error details to first 20
