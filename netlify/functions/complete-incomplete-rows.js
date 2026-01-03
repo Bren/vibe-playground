@@ -113,6 +113,7 @@ exports.handler = async (event, context) => {
         let skippedCount = 0;
         let wikipediaSuccessCount = 0;
         let wikipediaFailureCount = 0;
+        const sampleProcessedRows = []; // Store first 5 rows for debugging
         
         for (const row of rowsToProcess) {
             // Skip rows without a name (can't look up data)
@@ -226,6 +227,23 @@ exports.handler = async (event, context) => {
                 if (!hasChanges) {
                     console.log(`   ⏭️ No changes needed for row ${row.rowIndex}: ${row.name}`);
                     console.log(`   💡 Reason: All fields are either already filled OR Wikipedia lookup returned no data`);
+                    
+                    // Store sample for debugging
+                    if (sampleProcessedRows.length < 5) {
+                        sampleProcessedRows.push({
+                            name: row.name,
+                            rowIndex: row.rowIndex,
+                            hasCelebInfo: !!celebInfo,
+                            original: {
+                                gender: originalRow.gender || '(empty)',
+                                nationality: originalRow.nationality || '(empty)',
+                                photo: originalRow.photo ? 'has URL' : '(empty)',
+                                nicknames: originalRow.nicknames || '(empty)'
+                            },
+                            reason: 'No changes detected'
+                        });
+                    }
+                    
                     skippedCount++;
                     continue;
                 }
@@ -322,6 +340,7 @@ exports.handler = async (event, context) => {
                 wikipediaSuccess: wikipediaSuccessCount,
                 wikipediaFailure: wikipediaFailureCount,
                 updatedRows: updatedRows.slice(0, 50), // Limit to first 50 for response size
+                sampleProcessedRows: sampleProcessedRows, // First 5 skipped rows for debugging
                 errors: errors.length,
                 errorDetails: errors.slice(0, 20) // Limit error details to first 20
             })

@@ -1227,18 +1227,34 @@
                     // Show detailed success message
                     const updatedCount = data.updated || 0;
                     const remainingCount = data.remaining !== undefined ? data.remaining : (data.incompleteRows - data.processed);
+                    const wikiSuccess = data.wikipediaSuccess || 0;
+                    const wikiFailure = data.wikipediaFailure || 0;
                     const message = `✅ Processed ${data.processed || 0} rows. ${updatedCount} rows updated. ${remainingCount} rows remaining.`;
                     console.log('✅ Success:', message);
                     console.log(`📈 Stats: ${updatedCount} updated, ${data.errors || 0} errors`);
+                    console.log(`🔍 Wikipedia lookups: ${wikiSuccess} succeeded, ${wikiFailure} failed`);
                     
                     if (updatedCount === 0 && data.processed > 0) {
                         console.warn('⚠️ No rows were updated! This could mean:');
-                        console.warn(`   - Wikipedia lookups: ${data.wikipediaSuccess || 0} succeeded, ${data.wikipediaFailure || 0} failed`);
-                        console.warn('   - All rows already have data');
-                        console.warn('   - Wikipedia lookups failed for all rows');
-                        console.warn('   - No changes were detected');
-                        if (data.wikipediaFailure === data.processed) {
-                            console.error('❌ ALL Wikipedia lookups failed! Check Netlify function logs for details.');
+                        console.warn(`   - Wikipedia lookups: ${wikiSuccess} succeeded, ${wikiFailure} failed`);
+                        if (wikiFailure === data.processed) {
+                            console.error('❌ ALL Wikipedia lookups failed! This is the problem.');
+                        } else if (wikiSuccess > 0 && updatedCount === 0) {
+                            console.error('❌ Wikipedia lookups succeeded but no rows were updated! This suggests a change detection issue.');
+                        } else {
+                            console.warn('   - All rows already have data');
+                            console.warn('   - No changes were detected');
+                        }
+                        
+                        // Show sample processed rows for debugging
+                        if (data.sampleProcessedRows && data.sampleProcessedRows.length > 0) {
+                            console.log('📋 Sample of processed rows (first 5):');
+                            data.sampleProcessedRows.forEach((sample, idx) => {
+                                console.log(`   ${idx + 1}. ${sample.name} (row ${sample.rowIndex}):`);
+                                console.log(`      - Has Wikipedia data: ${sample.hasCelebInfo ? 'YES' : 'NO'}`);
+                                console.log(`      - Original: gender="${sample.original.gender}", nationality="${sample.original.nationality}", photo="${sample.original.photo}", nicknames="${sample.original.nicknames}"`);
+                                console.log(`      - Reason: ${sample.reason}`);
+                            });
                         }
                     }
                     
