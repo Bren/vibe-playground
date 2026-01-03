@@ -1221,12 +1221,22 @@
                 
                 const data = await response.json();
                 console.log('📦 Response data:', data);
+                console.log('📊 Detailed response:', JSON.stringify(data, null, 2));
                 
                 if (data.success) {
                     // Show detailed success message
-                    const message = `✅ Processed ${data.processed || 0} rows. ${data.updated || 0} rows updated. ${data.remaining || 0} rows remaining.`;
+                    const updatedCount = data.updated || 0;
+                    const remainingCount = data.remaining !== undefined ? data.remaining : (data.incompleteRows - data.processed);
+                    const message = `✅ Processed ${data.processed || 0} rows. ${updatedCount} rows updated. ${remainingCount} rows remaining.`;
                     console.log('✅ Success:', message);
-                    console.log('📊 Full response:', JSON.stringify(data, null, 2));
+                    console.log(`📈 Stats: ${updatedCount} updated, ${data.errors || 0} errors`);
+                    
+                    if (updatedCount === 0 && data.processed > 0) {
+                        console.warn('⚠️ No rows were updated! This could mean:');
+                        console.warn('   - All rows already have data');
+                        console.warn('   - Wikipedia lookups failed for all rows');
+                        console.warn('   - No changes were detected');
+                    }
                     
                     statsContent.innerHTML = `<div class="modal-loading" style="color: #4CAF50;">${message}<br>Refreshing statistics...</div>`;
                     
