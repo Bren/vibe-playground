@@ -953,13 +953,8 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                 });
                 const genderLabel = genderRes.data.entities?.[genderId]?.labels?.en?.value;
                 if (genderLabel) {
-                    if (genderLabel.toLowerCase().includes('male') || genderLabel.toLowerCase() === 'male') {
-                        gender = 'Male';
-                    } else if (genderLabel.toLowerCase().includes('female') || genderLabel.toLowerCase() === 'female') {
-                        gender = 'Female';
-                    } else {
-                        gender = genderLabel;
-                    }
+                    // Map to Hebrew gender values
+                    gender = translateGenderToHebrew(genderLabel);
                 }
             }
         }
