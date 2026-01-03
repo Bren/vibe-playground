@@ -517,7 +517,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         }
         
         // Fallback: Try Wikipedia search if Wikidata didn't work
-        console.log(`   ⚠️ No Wikidata results, trying Wikipedia search as fallback...`);
+        console.log(`   ⚠️ No Wikidata results found after trying ${searchTerms.slice(0, 3).length} search terms, trying Wikipedia search as fallback...`);
         let title = null;
         let wikiLang = 'en';
         
