@@ -454,6 +454,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                         format: 'json',
                         origin: '*'
                     },
+                    headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
                     timeout: 5000
                 });
 
@@ -472,7 +473,9 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                                     languages: 'en',
                                     format: 'json',
                                     origin: '*'
-                                }
+                                },
+                                headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                                timeout: 3000
                             });
                             const genderLabel = genderRes.data.entities?.[genderId]?.labels?.en?.value;
                             if (genderLabel) {
@@ -638,6 +641,7 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                 format: 'json',
                 origin: '*'
             },
+            headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
             timeout: 5000
         });
 
@@ -664,7 +668,9 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                         languages: 'en',
                         format: 'json',
                         origin: '*'
-                    }
+                    },
+                    headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
+                    timeout: 3000
                 });
                 const genderLabel = genderRes.data.entities?.[genderId]?.labels?.en?.value;
                 if (genderLabel) {
