@@ -219,10 +219,10 @@ exports.handler = async (event, context) => {
                     console.log(`   🔍 Attempting Wikipedia lookup for: "${row.name}"${row.nicknames ? ` (nicknames: ${row.nicknames})` : ''}`);
                     const lookupStartTime = Date.now();
                     
-                    // Minimal delay to avoid rate limiting (30ms between requests)
-                    // Reduced delay for faster batch processing
-                    if (processedCount > 0 && processedCount % 10 !== 0) {
-                        await new Promise(resolve => setTimeout(resolve, 30));
+                    // Small delay to avoid rate limiting (40ms between requests)
+                    // Only delay every 5th request to speed up processing
+                    if (processedCount > 0 && processedCount % 5 !== 0) {
+                        await new Promise(resolve => setTimeout(resolve, 40));
                     }
                     
                     celebInfo = await getCelebrityInfoFromName(row.name, row.nicknames);
