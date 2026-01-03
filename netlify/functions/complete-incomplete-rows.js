@@ -486,47 +486,99 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                         }
                     }
 
-                    // Get nationality (P27)
-                    const nationalities = entity.claims?.P27 || [];
-                    if (nationalities.length > 0) {
-                        const natId = nationalities[0].mainsnak?.datavalue?.value?.id;
-                        if (natId) {
-                            const natRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
-                                params: {
-                                    action: 'wbgetentities',
-                                    ids: natId,
-                                    props: 'labels',
-                                    languages: 'en',
-                                    format: 'json',
-                                    origin: '*'
-                                }
-                            });
-                            nationality = natRes.data.entities?.[natId]?.labels?.en?.value || null;
+        // Get nationality - try multiple properties (same logic as getCelebrityInfoFromWikidataId)
+        let nationalityId = null;
+        
+        // First try P27 (citizenship) - most common for real people
+        const nationalities = entity.claims?.P27 || [];
+        if (nationalities.length > 0) {
+            nationalityId = nationalities[0].mainsnak?.datavalue?.value?.id;
+        }
+        
+        // If no citizenship, try P495 (country of origin) - for fictional characters
+        if (!nationalityId) {
+            const originCountries = entity.claims?.P495 || [];
+            if (originCountries.length > 0) {
+                nationalityId = originCountries[0].mainsnak?.datavalue?.value?.id;
+            }
+        }
+        
+        // If still no nationality, try P19 (place of birth) - can infer nationality
+        if (!nationalityId) {
+            const birthPlaces = entity.claims?.P19 || [];
+            if (birthPlaces.length > 0) {
+                const birthPlaceId = birthPlaces[0].mainsnak?.datavalue?.value?.id;
+                if (birthPlaceId) {
+                    // Get the birth place entity to see if it has country info
+                    try {
+                        const birthPlaceRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                            params: {
+                                action: 'wbgetentities',
+                                ids: birthPlaceId,
+                                props: 'claims',
+                                format: 'json',
+                                origin: '*'
+                            },
+                            timeout: 3000
+                        });
+                        const birthPlaceEntity = birthPlaceRes.data.entities?.[birthPlaceId];
+                        // Check if birth place has P17 (country) property
+                        const countryClaims = birthPlaceEntity?.claims?.P17 || [];
+                        if (countryClaims.length > 0) {
+                            nationalityId = countryClaims[0].mainsnak?.datavalue?.value?.id;
                         }
+                    } catch (e) {
+                        // Ignore errors, just continue
                     }
+                }
+            }
+        }
+        
+        if (nationalityId) {
+            const natRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                params: {
+                    action: 'wbgetentities',
+                    ids: nationalityId,
+                    props: 'labels',
+                    languages: 'en',
+                    format: 'json',
+                    origin: '*'
+                },
+                timeout: 3000
+            });
+            nationality = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
+        }
                     
-                    // Get nicknames/aliases
+                    // Get comprehensive nicknames/aliases/name variations
                     // P1449 - nickname
-                    // P1477 - birth name
+                    // P1477 - birth name (full real name)
                     // P1559 - name in native language
                     // P742 - pseudonym
+                    // P1705 - native label (full name)
+                    // P2561 - name (full name)
                     const aliases = [];
                     
+                    const extractTextValue = (claim) => {
+                        const value = claim.mainsnak?.datavalue?.value;
+                        if (value) {
+                            if (value.text) return value.text;
+                            if (typeof value === 'string') return value;
+                        }
+                        return null;
+                    };
+                    
+                    // Extract from various name properties
                     const nicknameClaims = entity.claims?.P1449 || [];
                     const birthNameClaims = entity.claims?.P1477 || [];
                     const nativeNameClaims = entity.claims?.P1559 || [];
                     const pseudonymClaims = entity.claims?.P742 || [];
+                    const nativeLabelClaims = entity.claims?.P1705 || [];
+                    const nameClaims = entity.claims?.P2561 || [];
                     
-                    [nicknameClaims, birthNameClaims, nativeNameClaims, pseudonymClaims].forEach(claims => {
+                    [nicknameClaims, birthNameClaims, nativeNameClaims, pseudonymClaims, nativeLabelClaims, nameClaims].forEach(claims => {
                         claims.forEach(claim => {
-                            const value = claim.mainsnak?.datavalue?.value;
-                            if (value) {
-                                if (value.text) {
-                                    aliases.push(value.text);
-                                } else if (typeof value === 'string') {
-                                    aliases.push(value);
-                                }
-                            }
+                            const text = extractTextValue(claim);
+                            if (text) aliases.push(text);
                         });
                     });
                     
@@ -535,11 +587,19 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                         aliases.push(data.title);
                     }
                     
+                    // Get all labels (English, Hebrew, etc.) as potential name variations
+                    const entityLabels = entity.labels || {};
+                    Object.values(entityLabels).forEach(label => {
+                        if (label && label.value && label.value !== name) {
+                            aliases.push(label.value);
+                        }
+                    });
+                    
                     if (aliases.length > 0) {
-                        // Remove duplicates and the original name
+                        // Remove duplicates and the original name, limit to reasonable number
                         const uniqueAliases = [...new Set(aliases)]
-                            .filter(alias => alias && alias.toLowerCase() !== name.toLowerCase())
-                            .slice(0, 3); // Limit to 3 nicknames
+                            .filter(alias => alias && alias.trim() && alias.toLowerCase() !== name.toLowerCase())
+                            .slice(0, 10); // Increased limit to get more name variations
                         if (uniqueAliases.length > 0) {
                             nicknames = uniqueAliases.join(', ');
                         }
@@ -617,23 +677,70 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
             }
         }
 
-        // Get nationality (P27)
+        // Get nationality - try multiple properties
+        // P27 - country of citizenship (for real people)
+        // P495 - country of origin (for fictional characters/works)
+        // P19 - place of birth (can infer nationality)
+        let nationalityId = null;
+        
+        // First try P27 (citizenship) - most common for real people
         const nationalities = entity.claims?.P27 || [];
         if (nationalities.length > 0) {
-            const natId = nationalities[0].mainsnak?.datavalue?.value?.id;
-            if (natId) {
-                const natRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
-                    params: {
-                        action: 'wbgetentities',
-                        ids: natId,
-                        props: 'labels',
-                        languages: 'en',
-                        format: 'json',
-                        origin: '*'
-                    }
-                });
-                nationality = natRes.data.entities?.[natId]?.labels?.en?.value || null;
+            nationalityId = nationalities[0].mainsnak?.datavalue?.value?.id;
+        }
+        
+        // If no citizenship, try P495 (country of origin) - for fictional characters
+        if (!nationalityId) {
+            const originCountries = entity.claims?.P495 || [];
+            if (originCountries.length > 0) {
+                nationalityId = originCountries[0].mainsnak?.datavalue?.value?.id;
             }
+        }
+        
+        // If still no nationality, try P19 (place of birth) - can infer nationality
+        if (!nationalityId) {
+            const birthPlaces = entity.claims?.P19 || [];
+            if (birthPlaces.length > 0) {
+                const birthPlaceId = birthPlaces[0].mainsnak?.datavalue?.value?.id;
+                if (birthPlaceId) {
+                    // Get the birth place entity to see if it has country info
+                    try {
+                        const birthPlaceRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                            params: {
+                                action: 'wbgetentities',
+                                ids: birthPlaceId,
+                                props: 'claims',
+                                format: 'json',
+                                origin: '*'
+                            },
+                            timeout: 3000
+                        });
+                        const birthPlaceEntity = birthPlaceRes.data.entities?.[birthPlaceId];
+                        // Check if birth place has P17 (country) property
+                        const countryClaims = birthPlaceEntity?.claims?.P17 || [];
+                        if (countryClaims.length > 0) {
+                            nationalityId = countryClaims[0].mainsnak?.datavalue?.value?.id;
+                        }
+                    } catch (e) {
+                        // Ignore errors, just continue
+                    }
+                }
+            }
+        }
+        
+        if (nationalityId) {
+            const natRes = await axios.get(`https://www.wikidata.org/w/api.php`, {
+                params: {
+                    action: 'wbgetentities',
+                    ids: nationalityId,
+                    props: 'labels',
+                    languages: 'en',
+                    format: 'json',
+                    origin: '*'
+                },
+                timeout: 3000
+            });
+            nationality = natRes.data.entities?.[nationalityId]?.labels?.en?.value || null;
         }
         
         // Get photo (P18)
@@ -671,14 +778,50 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
             }
         }
         
-        // Get labels for nicknames
-        const labels = entity.labels || {};
-        const labelList = [];
-        if (labels.en) labelList.push(labels.en.value);
-        if (labels.he && labels.he.value !== labels.en?.value) labelList.push(labels.he.value);
+        // Get comprehensive nicknames/aliases/name variations
+        const aliases = [];
         
-        if (labelList.length > 1) {
-            nicknames = labelList.slice(1).join(', ');
+        const extractTextValue = (claim) => {
+            const value = claim.mainsnak?.datavalue?.value;
+            if (value) {
+                if (value.text) return value.text;
+                if (typeof value === 'string') return value;
+            }
+            return null;
+        };
+        
+        // Extract from various name properties
+        const nicknameClaims = entity.claims?.P1449 || [];
+        const birthNameClaims = entity.claims?.P1477 || [];
+        const nativeNameClaims = entity.claims?.P1559 || [];
+        const pseudonymClaims = entity.claims?.P742 || [];
+        const nativeLabelClaims = entity.claims?.P1705 || [];
+        const nameClaims = entity.claims?.P2561 || [];
+        
+        [nicknameClaims, birthNameClaims, nativeNameClaims, pseudonymClaims, nativeLabelClaims, nameClaims].forEach(claims => {
+            claims.forEach(claim => {
+                const text = extractTextValue(claim);
+                if (text) aliases.push(text);
+            });
+        });
+        
+        // Get all labels (English, Hebrew, etc.) as potential name variations
+        const labels = entity.labels || {};
+        const mainName = labels.en?.value || labels.he?.value || '';
+        Object.values(labels).forEach(label => {
+            if (label && label.value && label.value !== mainName) {
+                aliases.push(label.value);
+            }
+        });
+        
+        if (aliases.length > 0) {
+            // Remove duplicates and the original name, limit to reasonable number
+            const uniqueAliases = [...new Set(aliases)]
+                .filter(alias => alias && alias.trim() && alias.toLowerCase() !== mainName.toLowerCase())
+                .slice(0, 10); // Increased limit to get more name variations
+            if (uniqueAliases.length > 0) {
+                nicknames = uniqueAliases.join(', ');
+            }
         }
         
         return {
