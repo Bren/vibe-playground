@@ -171,8 +171,15 @@ exports.handler = async (event, context) => {
                         console.log(`   📊 Row needs: gender=${!row.gender ? 'YES' : 'no'}, nationality=${!row.nationality ? 'YES' : 'no'}, photo=${!row.photo ? 'YES' : 'no'}, nicknames=${!row.nicknames ? 'YES' : 'no'}`);
                     }
                 } catch (err) {
+                    wikipediaFailureCount++;
                     console.log(`   ❌ Error fetching Wikipedia data: ${err.message}`);
+                    console.log(`   📋 Error type: ${err.constructor.name}`);
+                    console.log(`   📋 Error code: ${err.code || 'N/A'}`);
                     console.log(`   📋 Error details: ${err.stack || 'No stack trace'}`);
+                    if (err.response) {
+                        console.log(`   📋 HTTP Status: ${err.response.status}`);
+                        console.log(`   📋 Response data: ${JSON.stringify(err.response.data).substring(0, 200)}`);
+                    }
                 }
                 
                 // Build updated row - fill missing fields with Wikipedia data
@@ -442,7 +449,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                         origin: '*'
                     },
                     headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                    timeout: 5000
+                    timeout: 10000
                 });
                 
                 const wdResults = wdSearchRes.data?.search || [];
@@ -495,7 +502,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                         origin: '*'
                     },
                     headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                    timeout: 5000
+                    timeout: 10000
                 });
                 
                 const results = searchRes.data.query?.search || [];
@@ -507,6 +514,10 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                 }
             } catch (err) {
                 console.log(`   ⚠️ Search failed for "${term}" on ${lang === 'he' ? 'Hebrew' : 'English'} Wikipedia: ${err.message}`);
+                console.log(`   📋 Error type: ${err.constructor.name}, code: ${err.code || 'N/A'}`);
+                if (err.response) {
+                    console.log(`   📋 HTTP Status: ${err.response.status}`);
+                }
                 continue;
             }
         }
@@ -575,7 +586,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                         origin: '*'
                     },
                     headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                    timeout: 5000
+                    timeout: 10000
                 });
 
                 const entity = wdRes.data.entities?.[wikidataId];
@@ -816,7 +827,7 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                         origin: '*'
                     },
                     headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
-                    timeout: 3000
+                    timeout: 8000
                 });
                 const genderLabel = genderRes.data.entities?.[genderId]?.labels?.en?.value;
                 if (genderLabel) {
