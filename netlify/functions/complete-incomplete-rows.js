@@ -633,7 +633,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         let gender = null;
         let nationality = null;
         // Photo already extracted from Wikipedia summary above, but we'll try to get better one from Wikidata
-        let nicknames = null;
+        let extractedNicknames = null;
 
         if (wikidataId) {
             try {
@@ -1072,7 +1072,7 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
                 .filter(alias => alias && alias.trim() && alias.toLowerCase() !== mainName.toLowerCase())
                 .slice(0, 10); // Increased limit to get more name variations
             if (uniqueAliases.length > 0) {
-                nicknames = uniqueAliases.join(', ');
+                extractedNicknames = uniqueAliases.join(', ');
             }
         }
         
@@ -1081,7 +1081,7 @@ async function getCelebrityInfoFromWikidataId(wikidataId) {
             gender: gender,
             nationality: nationality,
             photo: photo,
-            nicknames: nicknames
+            nicknames: extractedNicknames
         };
         
     } catch (error) {
