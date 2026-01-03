@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const axios = require('axios');
+const OpenAI = require('openai');
 
 // Helper function to translate gender to Hebrew
 function translateGenderToHebrew(gender) {
@@ -903,6 +904,138 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         if (error.response) {
             console.error(`   📋 HTTP Status: ${error.response.status}`);
             console.error(`   📋 Response: ${JSON.stringify(error.response.data).substring(0, 200)}`);
+        }
+        
+        // If Wikipedia/Wikidata failed, try ChatGPT as fallback
+        console.log(`   🤖 Wikipedia/Wikidata lookup failed, trying ChatGPT fallback...`);
+        const chatGptResult = await getCelebrityInfoFromChatGPT(name, nicknames);
+        if (chatGptResult) {
+            console.log(`   ✅ ChatGPT found data: gender=${chatGptResult.gender || 'N/A'}, nationality=${chatGptResult.nationality || 'N/A'}, nicknames=${chatGptResult.nicknames || 'N/A'}`);
+            return chatGptResult;
+        }
+        
+        return null;
+    }
+}
+
+// Helper function to get celebrity info from ChatGPT/OpenAI API
+async function getCelebrityInfoFromChatGPT(name, nicknames = '') {
+    // Check if OpenAI API key is configured
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+        console.log(`   ⚠️ OPENAI_API_KEY not configured, skipping ChatGPT lookup`);
+        return null;
+    }
+    
+    try {
+        const openai = new OpenAI({ apiKey: openaiApiKey });
+        
+        // Build search terms - prioritize English names from nicknames
+        let searchName = name;
+        if (nicknames) {
+            const nicknameList = nicknames.split(',').map(n => n.trim()).filter(n => n);
+            const englishNicks = nicknameList
+                .filter(nick => /[a-zA-Z]/.test(nick) && nick.length > 2)
+                .sort((a, b) => b.length - a.length);
+            if (englishNicks.length > 0) {
+                searchName = englishNicks[0]; // Use longest English nickname
+            }
+        }
+        
+        const prompt = `You are a helpful assistant that provides structured information about famous people and fictional characters.
+
+Given the name "${searchName}"${name !== searchName ? ` (also known as "${name}")` : ''}, please provide the following information in JSON format:
+{
+  "gender": "male" or "female" or "non-binary" or null,
+  "nationality": "country name in English" or null,
+  "nicknames": "comma-separated list of known names, aliases, and variations" or null,
+  "isFictional": true or false,
+  "photoSource": "suggested source for finding a photo URL (e.g., 'Wikipedia', 'IMDb', 'official website')" or null
+}
+
+Rules:
+- If this is a fictional character, set "isFictional": true and provide nationality if the character is associated with a specific country
+- For real people, provide gender and nationality if known
+- Include the full name and common variations in "nicknames"
+- Be specific and accurate - if you're not certain, use null
+- Return ONLY valid JSON, no additional text
+
+Name to look up: "${searchName}"`;
+
+        console.log(`   🤖 Calling ChatGPT API for: "${searchName}"...`);
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini', // Using cheaper model for cost efficiency
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are a helpful assistant that provides accurate information about famous people and fictional characters in JSON format.'
+                },
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ],
+            temperature: 0.3, // Lower temperature for more consistent, factual responses
+            max_tokens: 300,
+            timeout: 10000 // 10 second timeout
+        });
+        
+        const content = response.choices[0]?.message?.content?.trim();
+        if (!content) {
+            console.log(`   ⚠️ ChatGPT returned empty response`);
+            return null;
+        }
+        
+        // Parse JSON response
+        let parsed;
+        try {
+            // Try to extract JSON from response (in case there's extra text)
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                parsed = JSON.parse(jsonMatch[0]);
+            } else {
+                parsed = JSON.parse(content);
+            }
+        } catch (parseError) {
+            console.error(`   ❌ Failed to parse ChatGPT JSON response:`, parseError.message);
+            console.error(`   📋 Response content: ${content.substring(0, 200)}`);
+            return null;
+        }
+        
+        // Build result object
+        const result = {
+            name: searchName,
+            gender: parsed.gender ? translateGenderToHebrew(parsed.gender) : null,
+            nationality: parsed.nationality ? translateNationalityToHebrew(parsed.nationality) : null,
+            photo: null, // ChatGPT can't provide direct photo URLs, but we can use the suggestion later
+            nicknames: parsed.nicknames || null
+        };
+        
+        // Merge with existing nicknames
+        if (nicknames && result.nicknames) {
+            const existing = nicknames.split(',').map(n => n.trim()).filter(n => n);
+            const newNicks = result.nicknames.split(',').map(n => n.trim()).filter(n => n);
+            const merged = [...new Set([...existing, ...newNicks])];
+            result.nicknames = merged.join(', ');
+        } else if (nicknames) {
+            result.nicknames = nicknames;
+        }
+        
+        // Add the main name as a nickname if not already present
+        if (result.nicknames && !result.nicknames.toLowerCase().includes(searchName.toLowerCase())) {
+            result.nicknames = `${searchName}, ${result.nicknames}`;
+        } else if (!result.nicknames) {
+            result.nicknames = searchName;
+        }
+        
+        console.log(`   ✅ ChatGPT lookup successful`);
+        return result;
+        
+    } catch (error) {
+        console.error(`   ❌ Error calling ChatGPT API:`, error.message);
+        if (error.response) {
+            console.error(`   📋 HTTP Status: ${error.response?.status}`);
+            console.error(`   📋 Response: ${JSON.stringify(error.response?.data).substring(0, 200)}`);
         }
         return null;
     }
