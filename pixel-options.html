@@ -940,7 +940,13 @@
         
         // Complete incomplete rows
         async function completeIncompleteRows() {
+            console.log('🔍 completeIncompleteRows called');
             const completeBtn = document.getElementById('completeBtn');
+            if (!completeBtn) {
+                console.error('❌ completeBtn not found!');
+                alert('Button element not found. Please refresh the page.');
+                return;
+            }
             const resultsSection = document.getElementById('resultsSection');
             const resultsContent = document.getElementById('resultsContent');
             const loadingMsg = document.getElementById('loadingMessage');
