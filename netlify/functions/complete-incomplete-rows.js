@@ -2,6 +2,10 @@ const { google } = require('googleapis');
 const axios = require('axios');
 const OpenAI = require('openai');
 
+// Placeholder value to mark fields where we tried to find data but couldn't
+// This prevents the script from repeatedly trying to look up the same missing data
+const NOT_FOUND_PLACEHOLDER = 'null';
+
 // Helper function to translate gender to Hebrew
 function translateGenderToHebrew(gender) {
     if (!gender) return null;
@@ -155,12 +159,14 @@ exports.handler = async (event, context) => {
             };
             
             // Check if row is complete (all 6 columns filled)
+            // Treat "null" placeholder as "complete" (we tried to find it, nothing exists)
+            const isFieldComplete = (field) => field && field !== NOT_FOUND_PLACEHOLDER;
             const isComplete = rowData.name && 
                               rowData.publishDate && 
-                              rowData.gender && 
-                              rowData.nationality && 
-                              rowData.photo && 
-                              rowData.nicknames;
+                              isFieldComplete(rowData.gender) && 
+                              isFieldComplete(rowData.nationality) && 
+                              isFieldComplete(rowData.photo) && 
+                              isFieldComplete(rowData.nicknames);
             
             if (isComplete) {
                 completeRows.push(rowData);
@@ -308,20 +314,49 @@ exports.handler = async (event, context) => {
                 }
                 
                 // Build updated row - fill missing fields with Wikipedia data
-                // Only use existing data if it's not empty, otherwise use Wikipedia data
+                // If lookup failed completely (celebInfo is null), mark missing fields as "null" to prevent future lookups
+                // Only use existing data if it's not empty, otherwise use Wikipedia data or "null" if not found
+                const getFieldValue = (existingValue, fixedValue, celebInfoValue, fieldName) => {
+                    // If we have a fixed value (from misalignment correction), use it
+                    if (fixedValue && fixedValue.trim()) {
+                        return fixedValue;
+                    }
+                    // If we have existing value (and it's not the placeholder), keep it
+                    if (existingValue && existingValue.trim() && existingValue !== NOT_FOUND_PLACEHOLDER) {
+                        return existingValue;
+                    }
+                    // If we found data from Wikipedia/Wikidata/ChatGPT, use it
+                    if (celebInfoValue) {
+                        return celebInfoValue;
+                    }
+                    // If lookup completely failed (celebInfo is null) and field was empty, mark as "null"
+                    if (!celebInfo && !existingValue) {
+                        console.log(`   📝 Marking ${fieldName} as "${NOT_FOUND_PLACEHOLDER}" (lookup failed, no data found)`);
+                        return NOT_FOUND_PLACEHOLDER;
+                    }
+                    // Otherwise, keep existing value (might be empty or placeholder)
+                    return existingValue || '';
+                };
+                
                 const updatedRow = {
                     name: row.name, // Keep original name
                     publishDate: row.publishDate || '', // Keep publish date if exists
-                    // Use existing value if present, otherwise use Wikipedia data
-                    gender: (fixedGender && fixedGender.trim()) ? fixedGender : (celebInfo?.gender || ''),
-                    nationality: (fixedNationality && fixedNationality.trim()) ? fixedNationality : (celebInfo?.nationality || ''),
-                    photo: (fixedPhoto && fixedPhoto.trim()) ? fixedPhoto : (celebInfo?.photo || ''),
+                    gender: getFieldValue(row.gender, fixedGender, celebInfo?.gender, 'gender'),
+                    nationality: getFieldValue(row.nationality, fixedNationality, celebInfo?.nationality, 'nationality'),
+                    photo: getFieldValue(row.photo, fixedPhoto, celebInfo?.photo, 'photo'),
                     // For nicknames, merge existing with Wikipedia data (avoid duplicates)
-                    nicknames: mergeNicknames(row.nicknames, celebInfo?.nicknames)
+                    // Only mark as "null" if we have no existing nicknames AND no new ones from lookup
+                    nicknames: row.nicknames && row.nicknames.trim() 
+                        ? mergeNicknames(row.nicknames, celebInfo?.nicknames)
+                        : (celebInfo?.nicknames || (!celebInfo ? NOT_FOUND_PLACEHOLDER : ''))
                 };
                 
                 // Normalize empty strings for comparison
-                const normalize = (val) => (val || '').trim();
+                // Treat "null" placeholder as a valid value (not empty)
+                const normalize = (val) => {
+                    const trimmed = (val || '').trim();
+                    return trimmed === NOT_FOUND_PLACEHOLDER ? NOT_FOUND_PLACEHOLDER : trimmed;
+                };
                 const originalRow = {
                     gender: normalize(row.gender),
                     nationality: normalize(row.nationality),
@@ -353,7 +388,7 @@ exports.handler = async (event, context) => {
                     (!originalRow.photo && updatedRowNormalized.photo) ||
                     (!originalRow.nicknames && updatedRowNormalized.nicknames);
                 
-                const shouldUpdate = hasChanges || isFillingMissingData;
+                const shouldUpdate = hasChanges || isFillingMissingData || isMarkingAsNull;
                 
                 // Debug: Log why we're updating or not
                 if (shouldUpdate) {
