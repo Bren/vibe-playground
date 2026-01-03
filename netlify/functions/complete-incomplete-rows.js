@@ -27,7 +27,12 @@ function translateNationalityToHebrew(nationality) {
     const translations = {
         'israel': 'ישראל',
         'united states': 'ארצות הברית',
+        'united states of america': 'ארצות הברית',
+        'usa': 'ארצות הברית',
+        'us': 'ארצות הברית',
         'united kingdom': 'בריטניה',
+        'uk': 'בריטניה',
+        'great britain': 'בריטניה',
         'ukraine': 'אוקראינה',
         'france': 'צרפת',
         'germany': 'גרמניה',
@@ -36,6 +41,9 @@ function translateNationalityToHebrew(nationality) {
         'canada': 'קנדה',
         'australia': 'אוסטרליה',
         'russia': 'רוסיה',
+        'russian federation': 'רוסיה',
+        'soviet union': 'ברית המועצות',
+        'ussr': 'ברית המועצות',
         'china': 'סין',
         'japan': 'יפן',
         'india': 'הודו',
@@ -45,11 +53,14 @@ function translateNationalityToHebrew(nationality) {
         'south korea': 'דרום קוריאה',
         'poland': 'פולין',
         'netherlands': 'הולנד',
+        'dutch republic': 'הולנד',
+        'holland': 'הולנד',
         'belgium': 'בלגיה',
         'sweden': 'שוודיה',
         'norway': 'נורווגיה',
         'denmark': 'דנמרק',
         'finland': 'פינלנד',
+        'iceland': 'איסלנד',
         'greece': 'יוון',
         'portugal': 'פורטוגל',
         'ireland': 'אירלנד',
@@ -62,7 +73,21 @@ function translateNationalityToHebrew(nationality) {
     };
     
     const lower = nationality.toLowerCase().trim();
-    return translations[lower] || nationality; // Return Hebrew translation or original if not found
+    
+    // Try exact match first
+    if (translations[lower]) {
+        return translations[lower];
+    }
+    
+    // Try partial matches for compound names (e.g., "Dutch Republic" contains "dutch")
+    for (const [key, value] of Object.entries(translations)) {
+        if (lower.includes(key) || key.includes(lower)) {
+            return value;
+        }
+    }
+    
+    // Return original if no translation found
+    return nationality;
 }
 
 exports.handler = async (event, context) => {
