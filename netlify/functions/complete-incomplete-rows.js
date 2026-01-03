@@ -472,6 +472,8 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         console.log(`   🔍 Searching Wikidata directly FIRST for: "${searchTerms[0].term}" (${searchTerms.length} search terms total)...`);
         for (const { term, lang } of searchTerms.slice(0, 3)) {
             try {
+                console.log(`   🔎 Attempting Wikidata search for: "${term}" (lang: ${lang})...`);
+                const searchStartTime = Date.now();
                 const wdSearchRes = await axios.get('https://www.wikidata.org/w/api.php', {
                     params: {
                         action: 'wbsearchentities',
@@ -484,9 +486,13 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                     headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
                     timeout: 10000
                 });
+                const searchDuration = Date.now() - searchStartTime;
+                console.log(`   ⏱️ Wikidata search took ${searchDuration}ms`);
                 
                 const wdResults = wdSearchRes.data?.search || [];
+                console.log(`   📊 Wikidata returned ${wdResults.length} results`);
                 if (wdResults.length > 0) {
+                    console.log(`   📋 First result: ${wdResults[0].label} (${wdResults[0].description || 'no description'})`);
                     // Prefer results that look like people (have "musician", "singer", "actor", etc. in description)
                     // This is the EXACT same logic that worked for Sting
                     const personResults = wdResults.filter(r => 
@@ -505,7 +511,14 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                     break;
                 }
             } catch (err) {
-                console.log(`   ⚠️ Wikidata search failed for "${term}": ${err.message}`);
+                console.log(`   ❌ Wikidata search FAILED for "${term}": ${err.message}`);
+                console.log(`   📋 Error type: ${err.constructor.name}, code: ${err.code || 'N/A'}`);
+                if (err.response) {
+                    console.log(`   📋 HTTP Status: ${err.response.status}`);
+                    console.log(`   📋 Response: ${JSON.stringify(err.response.data).substring(0, 200)}`);
+                } else if (err.code === 'ECONNABORTED') {
+                    console.log(`   ⏱️ Request timed out after 10 seconds`);
+                }
                 continue;
             }
         }
