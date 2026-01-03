@@ -18,8 +18,8 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #F5F5F0;
+            color: #2C2C2C;
             min-height: 100vh;
             padding: 2rem;
         }
@@ -35,7 +35,7 @@
             font-size: 3rem;
             font-weight: 300;
             margin-bottom: 2rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: #2C2C2C;
         }
         
         .nav {
@@ -43,37 +43,41 @@
         }
         
         .nav a {
-            color: white;
+            color: #7FD3E8;
             text-decoration: none;
             margin: 0 1rem;
             padding: 0.5rem 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
+            border: 1px solid #D8D8D0;
+            border-radius: 8px;
             transition: all 0.3s ease;
+            background: #F5F5F0;
         }
         
         .nav a:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: #E8E8E0;
+            border-color: #7FD3E8;
+            color: #5BB8D0;
         }
         
         .content {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
+            background: #FFFFFF;
+            border-radius: 20px;
             padding: 2rem;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid #D8D8D0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
         
         /* Date Picker - Always Visible at Top - Very Compact */
         .date-picker-section {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: #FFFFFF;
+            border-radius: 12px;
             padding: 8px;
             margin-bottom: 0.5rem;
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
+            border: 1px solid #D8D8D0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .date-picker-header {
@@ -85,21 +89,24 @@
         
         .date-picker-month {
             font-size: 0.75rem;
-            font-weight: bold;
+            font-weight: 600;
+            color: #2C2C2C;
         }
         
         .date-picker-nav {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
+            background: #E8E8E0;
+            border: 1px solid #D8D8D0;
+            color: #2C2C2C;
             padding: 3px 8px;
-            border-radius: 3px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.7rem;
+            transition: all 0.2s ease;
         }
         
         .date-picker-nav:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: #D8D8D0;
+            border-color: #7FD3E8;
         }
         
         .date-picker-grid {
@@ -110,9 +117,9 @@
         
         .date-picker-day-header {
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
             padding: 2px;
-            opacity: 0.8;
+            color: #666;
             font-size: 0.55rem;
         }
         
@@ -120,48 +127,57 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            background: #F5F5F0;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.6rem;
             height: 24px;
             min-height: 24px;
             max-height: 24px;
+            border: 1px solid transparent;
         }
         
         .date-picker-day:hover:not(.disabled):not(.empty):not(.selected) {
-            background: rgba(255, 255, 255, 0.3);
+            background: #E8E8E0;
+            border-color: #7FD3E8;
             transform: scale(1.05);
         }
         
         .date-picker-day.disabled {
-            background: rgba(255, 0, 0, 0.2);
+            background: #F5F5F0;
             cursor: not-allowed;
-            opacity: 0.5;
+            opacity: 0.4;
+            border-color: #D4A5A5;
         }
         
         .date-picker-day.available {
-            background: rgba(76, 175, 80, 0.2);
+            background: rgba(184, 233, 134, 0.2);
             cursor: pointer;
+            border-color: rgba(184, 233, 134, 0.3);
         }
         
         .date-picker-day.available:hover {
-            background: rgba(76, 175, 80, 0.3);
+            background: rgba(184, 233, 134, 0.35);
+            border-color: #B8E986;
         }
         
         .date-picker-day.selected {
-            background: rgba(76, 175, 80, 0.6);
-            border: 2px solid #4CAF50;
+            background: #B8E986;
+            border: 2px solid #B8E986;
+            color: #2C2C2C;
+            font-weight: 600;
         }
         
         .date-picker-day.empty {
             background: transparent;
             cursor: default;
+            border: none;
         }
         
         .date-picker-day.today {
-            border: 2px solid #4CAF50;
+            border: 2px solid #7FD3E8;
+            font-weight: 600;
         }
         
         /* Generate Button */
@@ -175,50 +191,55 @@
         }
         
         .generate-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #9B7EDE;
             color: white;
             border: none;
             padding: 15px 30px;
-            border-radius: 25px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 2px 8px rgba(155, 126, 222, 0.25);
         }
         
         .generate-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(155, 126, 222, 0.35);
+            background: #8B6ECE;
         }
         
         .generate-btn:disabled {
-            background: #ccc;
+            background: #E8E8E0;
+            color: #999;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
         
         .complete-btn {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            border: none;
+            background: #E8E8E0;
+            color: #2C2C2C;
+            border: 1px solid #D8D8D0;
             padding: 15px 30px;
-            border-radius: 25px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-;        }
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
         
         .complete-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            background: #D8D8D0;
+            border-color: #C8C8C0;
         }
         
         .complete-btn:disabled {
-            background: #ccc;
+            background: #F5F5F0;
+            color: #999;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -227,8 +248,9 @@
         .results-section {
             margin: 2rem 0;
             padding: 20px;
-            background: rgba(76, 175, 80, 0.1);
-            border-radius: 10px;
+            background: rgba(184, 233, 134, 0.15);
+            border-radius: 12px;
+            border: 1px solid rgba(184, 233, 134, 0.3);
             display: none;
         }
         
@@ -238,32 +260,35 @@
         
         .results-section h3 {
             margin-bottom: 15px;
-            color: #4CAF50;
+            color: #7A9E5A;
         }
         
         .results-section .result-item {
             margin: 10px 0;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
+            background: #FFFFFF;
+            border-radius: 8px;
+            border: 1px solid #D8D8D0;
         }
         
         .db-management-btn {
-            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
-            color: white;
-            border: none;
+            background: #E8E8E0;
+            color: #2C2C2C;
+            border: 1px solid #D8D8D0;
             padding: 15px 30px;
-            border-radius: 25px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         .db-management-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            background: #D8D8D0;
+            border-color: #C8C8C0;
         }
         
         /* Modal Styles */
@@ -274,9 +299,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(44, 44, 44, 0.6);
             z-index: 1000;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(8px);
         }
         
         .modal-overlay.active {
@@ -286,15 +311,16 @@
         }
         
         .modal-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #FFFFFF;
             border-radius: 20px;
             padding: 2rem;
             max-width: 800px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
             position: relative;
+            border: 1px solid #D8D8D0;
         }
         
         .modal-header {
@@ -307,13 +333,13 @@
         .modal-header h2 {
             margin: 0;
             font-size: 2rem;
-            color: white;
+            color: #2C2C2C;
         }
         
         .modal-close {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
+            background: #E8E8E0;
+            border: 1px solid #D8D8D0;
+            color: #2C2C2C;
             font-size: 1.5rem;
             width: 40px;
             height: 40px;
@@ -323,15 +349,16 @@
         }
         
         .modal-close:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: #D8D8D0;
             transform: rotate(90deg);
         }
         
         .stats-container {
-            background: rgba(255, 255, 255, 0.1);
+            background: #F5F5F0;
             border-radius: 15px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
+            border: 1px solid #D8D8D0;
         }
         
         .stats-total {
@@ -339,7 +366,7 @@
             font-weight: bold;
             margin-bottom: 1.5rem;
             text-align: center;
-            color: white;
+            color: #2C2C2C;
         }
         
         .stats-column {
@@ -348,22 +375,23 @@
             gap: 1rem;
             margin-bottom: 1rem;
             padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
+            background: #FFFFFF;
             border-radius: 10px;
+            border: 1px solid #D8D8D0;
         }
         
         .stats-column-name {
-            font-weight: bold;
-            color: white;
+            font-weight: 600;
+            color: #2C2C2C;
         }
         
         .stats-complete {
-            color: #4CAF50;
+            color: #7A9E5A;
             font-weight: 600;
         }
         
         .stats-incomplete {
-            color: #f44336;
+            color: #C48A8A;
             font-weight: 600;
         }
         
@@ -373,25 +401,27 @@
         }
         
         .modal-btn {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: #9B7EDE;
             color: white;
             border: none;
             padding: 15px 40px;
-            border-radius: 25px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 2px 8px rgba(155, 126, 222, 0.25);
         }
         
         .modal-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 4px 12px rgba(155, 126, 222, 0.35);
+            background: #8B6ECE;
         }
         
         .modal-btn:disabled {
-            background: #ccc;
+            background: #E8E8E0;
+            color: #999;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -400,7 +430,7 @@
         .modal-loading {
             text-align: center;
             padding: 2rem;
-            color: white;
+            color: #2C2C2C;
         }
         
         /* Celebrity Cards - Force 5 in one row */
@@ -412,13 +442,14 @@
         }
         
         .celebrity-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: #FFFFFF;
             border-radius: 15px;
             overflow: hidden;
             transition: all 0.3s ease;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid #D8D8D0;
             position: relative;
             animation: slideIn 0.5s ease-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         
         @keyframes slideIn {
@@ -434,14 +465,14 @@
         
         .celebrity-card:hover {
             transform: translateY(-5px);
-            border-color: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-color: #7FD3E8;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         }
         
         .celebrity-card.selected {
-            border-color: #4CAF50;
+            border-color: #B8E986;
             border-width: 3px;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+            box-shadow: 0 0 20px rgba(184, 233, 134, 0.4);
         }
         
         .celebrity-card img {
@@ -491,33 +522,35 @@
         }
         
         .btn-select {
-            background: #4caf50;
+            background: #9B7EDE;
             color: white;
         }
         
         .btn-select:hover {
-            background: #45a049;
+            background: #8B6ECE;
         }
         
         .btn-select.selected {
-            background: #2e7d32;
+            background: #7B5EBE;
+            box-shadow: 0 2px 8px rgba(155, 126, 222, 0.4);
         }
         
         .btn-remove {
-            background: #f44336;
+            background: #D4A5A5;
             color: white;
         }
         
         .btn-remove:hover {
-            background: #da190b;
+            background: #C48A8A;
         }
         
         /* Confirm Section */
         .confirm-section {
             margin: 2rem 0;
             padding: 20px;
-            background: rgba(76, 175, 80, 0.2);
-            border-radius: 10px;
+            background: rgba(184, 233, 134, 0.15);
+            border-radius: 12px;
+            border: 1px solid rgba(184, 233, 134, 0.3);
             display: none;
         }
         
@@ -527,36 +560,42 @@
         
         .confirm-info {
             margin-bottom: 15px;
+            color: #2C2C2C;
         }
         
         .confirm-btn {
-            background: #4caf50;
+            background: #9B7EDE;
             color: white;
             border: none;
             padding: 12px 30px;
-            border-radius: 25px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(155, 126, 222, 0.25);
         }
         
         .confirm-btn:hover {
-            background: #45a049;
+            background: #8B6ECE;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(155, 126, 222, 0.35);
         }
         
         .loading {
             text-align: center;
             padding: 40px;
             font-size: 1.2rem;
+            color: #2C2C2C;
         }
         
         .error {
-            background: rgba(255, 0, 0, 0.2);
+            background: rgba(212, 165, 165, 0.2);
+            border: 1px solid rgba(212, 165, 165, 0.4);
             padding: 15px;
             border-radius: 10px;
             margin: 20px 0;
+            color: #C48A8A;
         }
         
         @media (max-width: 1400px) {
