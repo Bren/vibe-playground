@@ -406,6 +406,11 @@ exports.handler = async (event, context) => {
 
 // Helper function to get celebrity info from name
 async function getCelebrityInfoFromName(name, nicknames = '') {
+    if (!name || !name.trim()) {
+        console.log(`   ⚠️ Empty name provided to getCelebrityInfoFromName`);
+        return null;
+    }
+    
     try {
         // Try multiple search strategies for Hebrew/English names
         // PRIORITIZE nicknames first (they often have English names)
@@ -439,10 +444,15 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         // Sort by priority (lower number = higher priority)
         searchTerms.sort((a, b) => (a.priority || 3) - (b.priority || 3));
         
+        if (searchTerms.length === 0) {
+            console.log(`   ⚠️ No search terms generated for "${name}"`);
+            return null;
+        }
+        
         // IMPORTANT: Search Wikidata FIRST (before Wikipedia) to avoid disambiguation pages
         // This is the same logic that worked for Sting
         let wikidataIdFromSearch = null;
-        console.log(`   🔍 Searching Wikidata directly FIRST for: "${searchTerms[0].term}"...`);
+        console.log(`   🔍 Searching Wikidata directly FIRST for: "${searchTerms[0].term}" (${searchTerms.length} search terms total)...`);
         for (const { term, lang } of searchTerms.slice(0, 3)) {
             try {
                 const wdSearchRes = await axios.get('https://www.wikidata.org/w/api.php', {
@@ -787,7 +797,14 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         };
 
     } catch (error) {
-        console.error('Error getting celebrity info:', error);
+        console.error(`   ❌ Error in getCelebrityInfoFromName for "${name}":`, error.message);
+        console.error(`   📋 Error type: ${error.constructor.name}`);
+        console.error(`   📋 Error code: ${error.code || 'N/A'}`);
+        console.error(`   📋 Stack: ${error.stack || 'No stack trace'}`);
+        if (error.response) {
+            console.error(`   📋 HTTP Status: ${error.response.status}`);
+            console.error(`   📋 Response: ${JSON.stringify(error.response.data).substring(0, 200)}`);
+        }
         return null;
     }
 }
