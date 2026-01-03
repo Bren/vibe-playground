@@ -129,14 +129,34 @@ exports.handler = async (event, context) => {
                 let fixedStatus = row.status;
                 let fixedPhoto = row.photo;
                 
-                // Check if columns are misaligned (e.g., "Published" in gender column)
-                if (row.gender && (row.gender.toLowerCase() === 'published' || row.gender.includes('http'))) {
-                    // Gender column has wrong data, shift everything
+                // Check if columns are misaligned (e.g., "Published" in gender column, URLs in wrong places)
+                // More aggressive misalignment detection
+                if (row.gender && (
+                    row.gender.toLowerCase() === 'published' || 
+                    row.gender.includes('http') ||
+                    row.gender.includes('://') ||
+                    row.gender.match(/^https?:\/\//)
+                )) {
+                    // Gender column has wrong data (URL or status), shift everything
                     console.log(`   ⚠️ Detected misaligned columns in row ${row.rowIndex}, fixing...`);
                     fixedGender = '';
-                    fixedNationality = row.gender; // Gender column might have nationality
+                    fixedNationality = row.gender.includes('http') ? '' : row.gender; // Only if not URL
                     fixedStatus = row.nationality || 'Published';
                     fixedPhoto = row.status || row.photo || '';
+                }
+                
+                // Check if nationality column has URL (should be in photo column)
+                if (row.nationality && (row.nationality.includes('http') || row.nationality.includes('://'))) {
+                    console.log(`   ⚠️ Detected URL in nationality column for row ${row.rowIndex}, fixing...`);
+                    fixedPhoto = row.nationality; // Move URL to photo
+                    fixedNationality = '';
+                }
+                
+                // Check if status column has URL
+                if (row.status && (row.status.includes('http') || row.status.includes('://'))) {
+                    console.log(`   ⚠️ Detected URL in status column for row ${row.rowIndex}, fixing...`);
+                    fixedPhoto = row.status; // Move URL to photo
+                    fixedStatus = 'Published';
                 }
                 
                 // Try to fetch data from Wikipedia/Wikidata (try with nicknames if available)
@@ -263,6 +283,7 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
         // Try multiple search strategies for Hebrew/English names
         // PRIORITIZE nicknames first (they often have English names)
         const searchTerms = [];
+        const isHebrewName = /[\u0590-\u05FF]/.test(name);
         
         // If we have nicknames, try those FIRST (often contain English names)
         if (nicknames) {
@@ -270,30 +291,33 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
             // Look for English names in nicknames (non-Hebrew characters)
             nicknameList.forEach(nick => {
                 if (/[a-zA-Z]/.test(nick) && nick.length > 2) {
-                    searchTerms.push(nick);
+                    searchTerms.push({ term: nick, lang: 'en' });
                 }
             });
         }
         
-        // Then try the original name (might be Hebrew or English)
-        searchTerms.push(name);
-        
-        // If name is Hebrew (contains Hebrew characters), try to find English equivalent
-        if (/[\u0590-\u05FF]/.test(name)) {
-            // Name is in Hebrew, prioritize nicknames even more
-            console.log(`   🔤 Hebrew name detected: ${name}, prioritizing nicknames`);
+        // Then try the original name
+        if (isHebrewName) {
+            // Try Hebrew Wikipedia first for Hebrew names
+            searchTerms.push({ term: name, lang: 'he' });
+            searchTerms.push({ term: name, lang: 'en' }); // Also try English
+        } else {
+            // English name, try English Wikipedia
+            searchTerms.push({ term: name, lang: 'en' });
         }
         
         let title = null;
+        let wikiLang = 'en';
         
         // Try each search term
-        for (const searchTerm of searchTerms) {
+        for (const { term, lang } of searchTerms) {
             try {
-                const searchRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+                const wikiBase = lang === 'he' ? 'https://he.wikipedia.org' : 'https://en.wikipedia.org';
+                const searchRes = await axios.get(`${wikiBase}/w/api.php`, {
                     params: {
                         action: 'query',
                         list: 'search',
-                        srsearch: searchTerm,
+                        srsearch: term,
                         srlimit: 3,
                         srnamespace: 0,
                         format: 'json',
@@ -306,11 +330,12 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
                 const results = searchRes.data.query?.search || [];
                 if (results.length > 0) {
                     title = results[0].title;
-                    console.log(`   ✅ Found Wikipedia page: ${title} (searched: ${searchTerm})`);
+                    wikiLang = lang;
+                    console.log(`   ✅ Found Wikipedia page: ${title} (searched: ${term} on ${lang === 'he' ? 'Hebrew' : 'English'} Wikipedia)`);
                     break;
                 }
             } catch (err) {
-                console.log(`   ⚠️ Search failed for "${searchTerm}": ${err.message}`);
+                console.log(`   ⚠️ Search failed for "${term}" on ${lang === 'he' ? 'Hebrew' : 'English'} Wikipedia: ${err.message}`);
                 continue;
             }
         }
@@ -320,8 +345,9 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
             return null;
         }
         
-        // Get detailed info
-        const wikiRes = await axios.get(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+        // Get detailed info from the appropriate Wikipedia
+        const wikiBase = wikiLang === 'he' ? 'https://he.wikipedia.org' : 'https://en.wikipedia.org';
+        const wikiRes = await axios.get(`${wikiBase}/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
             headers: { 'User-Agent': 'PixelOptions/1.0 (contact@example.com)' },
             timeout: 5000
         });
@@ -332,10 +358,10 @@ async function getCelebrityInfoFromName(name, nicknames = '') {
             return null;
         }
         
-        // Get Wikidata ID
+        // Get Wikidata ID from the appropriate Wikipedia
         let wikidataId = null;
         try {
-            const wikidataRes = await axios.get('https://en.wikipedia.org/w/api.php', {
+            const wikidataRes = await axios.get(`${wikiBase}/w/api.php`, {
                 params: {
                     action: 'query',
                     prop: 'pageprops',
